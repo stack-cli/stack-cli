@@ -1,0 +1,86 @@
+name: Rust on Nails Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      DEVCONTAINER_NAME: purtontech/rust-on-nails-devcontainer
+      OPERATOR_IMAGE_NAME: purtontech/stack-operator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Download latest earthly
+        run: sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'
+
+      - name: Earthly version
+        run: earthly --version
+
+      - name: Build Stack CLI
+        run: earthly --allow-privileged --output --ci +stack-cli
+
+      - name: Prepare CLI artifact
+        run: |
+          set -euo pipefail
+          if [ -f "./stack-cli" ]; then
+            echo "Found stack-cli at repository root"
+            chmod +x ./stack-cli
+          else
+            SRC=$(find . -type f -name stack-cli | head -n 1 || true)
+            if [ -z "$SRC" ]; then
+              echo "stack-cli binary not found in the workspace"
+              find . -maxdepth 4 -type f -name stack-cli
+              exit 1
+            fi
+            echo "Copying stack-cli from $SRC"
+            cp "$SRC" ./stack-cli
+            chmod +x ./stack-cli
+          fi
+
+      - name: Build and push operator image (latest)
+        run: earthly --ci --push +stack-operator-image --IMAGE ${OPERATOR_IMAGE_NAME}:latest
+
+      - name: Build and push DevContainer image (latest)
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t $DEVCONTAINER_NAME:latest \
+            --push dev-env-as-code
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: npx --yes -p semantic-release -p @semantic-release/github -p @semantic-release/exec -p @codedependant/semantic-release-docker -p @semantic-release/git semantic-release
