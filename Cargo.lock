@@ -595,6 +595,7 @@ dependencies = [
  "anyhow",
  "clap",
  "dagger-sdk",
+ "eyre",
  "tokio",
 ]
 
