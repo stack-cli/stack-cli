@@ -1,9 +1,9 @@
-# Rust on Nails
+# Stack
 
-Rust on Nails ships two deliverables:
+Stack ships two deliverables:
 
-- **`stack-cli`** — a Rust CLI/operator that bootstraps the Nails platform (Postgres, Keycloak, ingress, and StackApp CRDs) into a Kubernetes cluster.
-- **`stack-cli.com`** — the public documentation site (Dioxus SSR + Tailwind) that explains how to build Nails apps.
+- **`stack-cli`** — a Rust CLI/operator that bootstraps the Stack platform (Postgres, Keycloak, ingress, and StackApp CRDs) into a Kubernetes cluster.
+- **`stack-cli.com`** — the public documentation site (Dioxus SSR + Tailwind) that explains how to build Stack apps.
 
 Everything lives in this monorepo so code, docs, and manifests version together.
 
@@ -13,7 +13,7 @@ Everything lives in this monorepo so code, docs, and manifests version together.
 | --- | --- |
 | `crates/stack-cli` | Source for the CLI/operator plus Kubernetes manifests under `config/` and Keycloak realm templates under `keycloak/`. |
 | `crates/stack-cli.com` | Documentation + marketing site. Contains markdown content in `content/`, assets in `assets/`, Tailwind entrypoints, and the Dioxus app in `src/`. |
-| `demo-apps/` | Example Nails applications used in the docs and demos. |
+| `demo-apps/` | Example Stack applications used in the docs and demos. |
 | `Justfile` | Workflow shortcuts for cluster setup, docs watch tasks, etc. |
 
 ## Prerequisites
