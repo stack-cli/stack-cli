@@ -1,0 +1,85 @@
+use crate::args::CliTarget;
+use anyhow::{Context, Result};
+use dagger_sdk::{Directory, Query};
+
+const BASE_IMAGE: &str = "rust:1.77";
+
+pub async fn build_cli(client: &Query, repo: &Directory, target: CliTarget) -> Result<()> {
+    match target {
+        CliTarget::Linux => build_cli_linux(client, repo).await,
+        CliTarget::Macos => build_cli_macos(client, repo).await,
+        CliTarget::Windows => build_cli_windows(client, repo).await,
+    }
+}
+
+async fn build_cli_linux(client: &Query, repo: &Directory) -> Result<()> {
+    let container = client
+        .container()
+        .from(BASE_IMAGE)
+        .with_directory("/workspace", repo.clone())
+        .with_workdir("/workspace/crates/stack-cli")
+        .with_user("root")
+        .with_exec(vec!["cargo", "build", "--release"]);
+
+    container
+        .file("/workspace/target/release/stack")
+        .export("artifacts/linux/stack")
+        .await
+        .context("failed to export linux stack cli")?;
+
+    Ok(())
+}
+
+async fn build_cli_macos(client: &Query, repo: &Directory) -> Result<()> {
+    let container = client
+        .container()
+        .from("joseluisq/rust-linux-darwin-builder:1.85")
+        .with_directory("/build", repo.clone())
+        .with_workdir("/build/crates/stack-cli")
+        .with_env_variable("CC", "o64-clang")
+        .with_env_variable("CXX", "o64-clang++")
+        .with_exec(vec![
+            "cargo",
+            "build",
+            "--release",
+            "--target",
+            "x86_64-apple-darwin",
+        ]);
+
+    container
+        .file("/build/target/x86_64-apple-darwin/release/stack")
+        .export("artifacts/macos/stack")
+        .await
+        .context("failed to export macos stack cli")?;
+
+    Ok(())
+}
+
+async fn build_cli_windows(client: &Query, repo: &Directory) -> Result<()> {
+    let container = client
+        .container()
+        .from(BASE_IMAGE)
+        .with_directory("/build", repo.clone())
+        .with_workdir("/build")
+        .with_exec(vec!["sudo", "apt", "update"])
+        .with_exec(vec!["sudo", "apt", "upgrade", "-y"])
+        .with_exec(vec!["sudo", "apt", "install", "-y", "g++-mingw-w64-x86-64"])
+        .with_exec(vec!["rustup", "target", "add", "x86_64-pc-windows-gnu"])
+        .with_workdir("/build/crates/stack-cli")
+        .with_user("root")
+        .with_exec(vec![
+            "cargo",
+            "build",
+            "--release",
+            "--target",
+            "x86_64-pc-windows-gnu",
+        ]);
+
+    container
+        .file("/build/target/x86_64-pc-windows-gnu/release/stack.exe")
+        .export("artifacts/windows/stack.exe")
+        .await
+        .context("failed to export windows stack cli")?;
+
+    Ok(())
+}
