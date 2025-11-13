@@ -2,23 +2,17 @@
 
 This repository mixes several deliverables that move at different speeds. To keep things tidy, we split the work into three "agents" that each own one slice of the Rust on Nails experience. Use this guide to decide where changes belong and how to validate them before opening a PR.
 
-## Documentation Agent (`crates/static-website`)
-- **Purpose**: Publish the public site that explains how to build Rust on Nails applications. The site is deployed to Cloudflare Pages.
-- **Primary tasks**: Add or update docs in `content/` and assets in `assets/`. When adding tutorials, prefer runnable snippets that match the default project template.
-- **Working locally**: Run `just wts` for Tailwind and `just ws` for the Rust/Dioxus generator. Browse `http://localhost:8080` to preview the rendered pages under `dist/`.
-- **Before shipping**: `DO_NOT_RUN_SERVER=1 cargo run --bin static-website` to ensure the generator succeeds, then run the Cloudflare preview workflow if build or deployment config changed.
-
-## Dev Environment Agent (`nails-devcontainer`)
-- **Purpose**: Maintain the reusable development environment used by community members and contributors.
-- **Primary tasks**: Keep `devcontainer-template.json` and wrapper scripts in sync with the CLI and website. Document required tooling in `README.md`.
-- **Working locally**: Use `devcontainer up` (VS Code) or `devcontainer build --workspace-folder .` to verify changes. Ensure the container exposes port 8080 for the docs server and ships the CLI binaries or aliases referenced in the guides.
-- **Before shipping**: Bump version tags when you change the base image or toolchain. Run at least one full `cargo test` inside the container to make sure the toolchain works.
+## Documentation Agent (`crates/stack-cli.com`)
+- **Purpose**: Publish the public docs + marketing site that explains Nails concepts and walks users through the CLI flows.
+- **Primary tasks**: Update markdown in `content/`, assets in `assets/`, and Dioxus components in `src/`. Keep code samples aligned with the default Nails template and live CLI flags.
+- **Working locally**: `just wts` to watch Tailwind builds and `just ws` to run the Dioxus/Axum dev server (see README). Preview at `http://localhost:8080`.
+- **Before shipping**: Run `DO_NOT_RUN_SERVER=1 cargo run --bin static-website` to ensure the site renders without the dev server, then trigger the Cloudflare Pages preview when build logic changes.
 
 ## Platform Agent (`crates/stack-cli`)
-- **Purpose**: Provide the internal deployment/PaaS layer that installs operators into Kubernetes clusters for Rust on Nails applications.
-- **Primary tasks**: Extend the `stack-cli` binary, manage Helm-like manifests under `config/`, and maintain integrations with Envoy and Keycloak.
-- **Working locally**: `cargo run --bin stack-cli -- -h` to inspect commands. Use `cargo run --bin stack-cli -- operator` to run the controller loop, and the `init`/`install` subcommands to configure a cluster. The dev container already maps your kubeconfig—fall back to `tmp/kubeconfig` if needed.
-- **Before shipping**: `cargo fmt`, `cargo clippy -- -D warnings`, and `cargo test`. When changing cluster assets, test against a local K3s install (`curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server --write-kubeconfig-mode="644"' sh -`). Document any new flags in `README.md`.
+- **Purpose**: Own the CLI/operator that installs the Nails platform (CNPG, Keycloak, ingress, StackApps) into Kubernetes clusters.
+- **Primary tasks**: Extend CLI commands, reconcile loop logic, and curated manifests in `config/` and `keycloak/`. Ensure docs reference real flags/behavior.
+- **Working locally**: `just dev-init`, `just get-config`, and `just dev-setup` to smoke test against k3d. Use `cargo run --bin stack-cli -- init/install/operator` for targeted workflows.
+- **Before shipping**: `cargo fmt`, `cargo clippy -- -D warnings`, and `cargo test`. For manifest or controller changes, validate against a local K3d/K3s cluster and document new flags in the README/docs.
 
 ## Cross-Cutting Expectations
 - Follow `CONTRIBUTING.md` for code review and branching conventions.
