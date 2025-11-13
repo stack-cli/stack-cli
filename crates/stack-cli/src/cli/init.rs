@@ -18,6 +18,7 @@ use kube::api::PostParams;
 use kube::Api;
 use kube::Client;
 use kube::CustomResourceExt;
+use kube::Error as KubeError;
 use kube_runtime::conditions;
 use kube_runtime::wait::await_condition;
 use kube_runtime::wait::Condition;
@@ -330,11 +331,31 @@ pub(crate) async fn ensure_stackapp_crd(client: &Client) -> Result<(), Error> {
 
 pub(crate) async fn ensure_namespace(client: &Client, namespace: &str) -> Result<Namespace> {
     println!("📦 Creating namespace {}", namespace);
-    // Define the API object for Namespace
+    const MAX_ATTEMPTS: usize = 5;
+    const RETRY_DELAY_SECS: u64 = 2;
+
+    let mut attempt = 0;
+    loop {
+        attempt += 1;
+        match try_ensure_namespace(client, namespace).await {
+            Ok(ns) => return Ok(ns),
+            Err(err) if attempt < MAX_ATTEMPTS && is_transient_namespace_error(&err) => {
+                println!(
+                    "⏳ Namespace {} not ready yet (attempt {}/{}). Retrying...",
+                    namespace, attempt, MAX_ATTEMPTS
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
+            }
+            Err(err) => return Err(err),
+        }
+    }
+}
+
+async fn try_ensure_namespace(client: &Client, namespace: &str) -> Result<Namespace> {
     let namespaces: Api<Namespace> = Api::all(client.clone());
     match namespaces.get(namespace).await {
         Ok(ns) => Ok(ns),
-        Err(kube::Error::Api(err)) if err.code == 404 => {
+        Err(KubeError::Api(err)) if err.code == 404 => {
             let new_namespace = Namespace {
                 metadata: ObjectMeta {
                     name: Some(namespace.to_string()),
@@ -348,12 +369,20 @@ pub(crate) async fn ensure_namespace(client: &Client, namespace: &str) -> Result
                 .await
             {
                 Ok(ns) => Ok(ns),
-                Err(kube::Error::Api(err)) if err.code == 409 => {
-                    Ok(namespaces.get(namespace).await?)
-                }
+                Err(KubeError::Api(err)) if err.code == 409 => Ok(namespaces.get(namespace).await?),
                 Err(err) => Err(err.into()),
             }
         }
         Err(err) => Err(err.into()),
     }
+}
+
+fn is_transient_namespace_error(err: &anyhow::Error) -> bool {
+    if let Some(kube_err) = err.downcast_ref::<KubeError>() {
+        return matches!(kube_err, KubeError::HyperError(_))
+            || matches!(kube_err, KubeError::Api(error_response)
+                if error_response.code == 404
+                    && error_response.reason == "Failed to parse error data");
+    }
+    false
 }
