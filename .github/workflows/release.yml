@@ -1,0 +1,31 @@
+name: Release Latest Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or tag to release from'
+        required: false
+        default: main
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Run Linux build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Dagger build
+        id: dagger
+        continue-on-error: true
+        run: cargo run -p dagger-pipeline -- build linux
+        env:
+          DAGGER_LOG_FORMAT: plain

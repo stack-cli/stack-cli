@@ -1,4 +1,4 @@
-name: dagger pipeline
+name: Continuous Integration
 
 on:
   push:
