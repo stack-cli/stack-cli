@@ -77,6 +77,8 @@ jobs:
   build-linux:
     name: Build Linux binary
     runs-on: ubuntu-latest
+    needs:
+      - get-version
     permissions:
       contents: read
       id-token: write
@@ -90,6 +92,7 @@ jobs:
         run: cargo run -p dagger-pipeline -- build linux
         env:
           DAGGER_LOG_FORMAT: plain
+          STACK_VERSION: rc-${{ needs.get-version.outputs.version }}
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4

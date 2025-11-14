@@ -26,7 +26,7 @@ async fn build_cli_linux(client: &Query, repo: &Directory) -> Result<()> {
         .await
         .context("failed to export linux stack cli")?;
 
-    operator::build_container(client, &binary).await?;
+    operator::package_and_publish(client, &binary).await?;
 
     Ok(())
 }
