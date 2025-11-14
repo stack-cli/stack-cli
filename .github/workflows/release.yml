@@ -41,28 +41,26 @@ jobs:
           gh release download "$tag" --dir rc-assets
           echo "files=$(ls rc-assets | xargs)" >> "$GITHUB_OUTPUT"
 
-      - name: Create stable tag
-        shell: bash
+      - name: Configure Git for PAT pushes
         run: |
-          set -euo pipefail
-          ver="v${{ steps.rc.outputs.base }}"
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          if git rev-parse "${ver}" >/dev/null 2>&1; then
-            echo "Tag ${ver} already exists."
-            exit 1
-          fi
-          # Tag the same commit as the RC
-          commit=$(git rev-list -n 1 "${{ steps.rc.outputs.latest_rc }}")
-          git tag -a "${ver}" -m "Promote ${{ steps.rc.outputs.latest_rc }} to ${ver}" "$commit"
-          git push origin "${ver}"
+          git remote set-url origin "https://x-access-token:${{ secrets.RELEASE_PAT }}@github.com/${{ github.repository }}.git"
+
+      - name: Create stable tag (same commit as RC)
+        run: |
+          set -euo pipefail
+          rc_tag="${{ steps.rc.outputs.latest_rc }}"
+          stable="v${{ steps.rc.outputs.base }}"
+          commit=$(git rev-list -n 1 "${rc_tag}")
+          git tag -a "${stable}" -m "Promote ${rc_tag} to ${stable}" "${commit}"
+          git push origin "${stable}"
 
       - name: Create GitHub Release (stable)
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
         with:
           tag_name: v${{ steps.rc.outputs.base }}
-          name: v${{ steps.rc.outputs.base }}
           prerelease: false
           files: rc-assets/*
-          body: |
-            Promoted from ${{ steps.rc.outputs.latest_rc }}.
