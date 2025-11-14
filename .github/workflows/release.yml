@@ -36,4 +36,4 @@ jobs:
           echo "version=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Print calculated version
-        run: echo "Next version is: ${{ steps.semver.outputs.version }}"
+        run: echo "Next version is ${{ steps.semver.outputs.version }}"
