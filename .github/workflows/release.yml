@@ -1,31 +1,41 @@
-name: Release Latest Version
+name: Test Semantic Release Version
 
 on:
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Branch or tag to release from'
-        required: false
-        default: main
-
-permissions:
-  contents: write
-  packages: write
+  workflow_dispatch: {}
 
 jobs:
-  build:
-    name: Run Linux build
+  get-version:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Run Dagger build
-        id: dagger
-        continue-on-error: true
-        run: cargo run -p dagger-pipeline -- build linux
-        env:
-          DAGGER_LOG_FORMAT: plain
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install semantic-release
+        run: npm install -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+
+      - name: Create .releaserc.json
+        run: |
+          cat > .releaserc.json <<'EOF'
+          {
+            "branches": [{ "name": "main" }],
+            "tagFormat": "v${version}",
+            "plugins": [
+              "@semantic-release/commit-analyzer",
+              "@semantic-release/release-notes-generator"
+            ]
+          }
+          EOF
+
+      - name: Calculate next version (dry-run)
+        id: semver
+        run: |
+          set -euo pipefail
+          npx semantic-release --dry-run --config .releaserc.json | tee sr.log
+          VER=$(grep -Eo 'next release version is [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?' sr.log | awk '{print $5}' || true)
+          echo "version=${VER}" >> $GITHUB_OUTPUT
+
+      - name: Print calculated version
+        run: echo "Next version is: ${{ steps.semver.outputs.version }}"
