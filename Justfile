@@ -7,7 +7,7 @@ dev-init:
 
 dev-setup:
     cargo run --bin stack-cli -- init --no-operator
-    cargo run --bin stack-cli -- install --manifest demo-apps/demo-stack-app.yaml
+    cargo run --bin stack-cli -- install --manifest demo-apps/demo.stack.yaml
     cargo run --bin stack-cli -- operator --once
 
 codex: 
