@@ -44,6 +44,8 @@ jobs:
       - name: Create stable tag (same commit as RC)
         run: |
           set -euo pipefail
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
           rc_tag="${{ steps.rc.outputs.latest_rc }}"
           stable="v${{ steps.rc.outputs.base }}"
           commit=$(git rev-list -n 1 "${rc_tag}")
@@ -53,7 +55,7 @@ jobs:
       - name: Create GitHub Release (stable)
         uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.rc.outputs.base }}
           prerelease: false
