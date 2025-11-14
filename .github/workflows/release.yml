@@ -14,23 +14,26 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
       - name: Install semantic-release
         run: npm i -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator
 
-      - name: Create releaserc (no repo file)
-        run: >
-          node -e "require('fs').writeFileSync('.releaserc.json',
-          JSON.stringify({branches:[{name:'main'}],tagFormat:'v${version}',plugins:['@semantic-release/commit-analyzer','@semantic-release/release-notes-generator']},null,2))"
+      - name: Create .releaserc.json (in CI only)
+        shell: bash
+        run: |
+          printf '%s' '{"branches":[{"name":"main"}],"tagFormat":"v${version}","plugins":["@semantic-release/commit-analyzer","@semantic-release/release-notes-generator"]]}' > .releaserc.json
 
       - name: Calculate next version (dry-run)
         id: semver
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           npx semantic-release --dry-run --config .releaserc.json | tee sr.log
-          VER=$(grep -Eo 'next release version is [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?' sr.log | awk '{print $5}' || true)
-          echo "version=${VER}" >> $GITHUB_OUTPUT
+          ver=$(grep -Eo 'next release version is [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?' sr.log | awk '{print $5}' || true)
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Print calculated version
         run: echo "Next version is: ${{ steps.semver.outputs.version }}"
