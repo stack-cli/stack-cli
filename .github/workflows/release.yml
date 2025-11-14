@@ -1,50 +1,68 @@
-name: Test Semantic Release Version
+name: Promote latest RC to Stable
 
 on:
   workflow_dispatch: {}
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
-  get-version:
+  promote:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Need tags
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install semantic-release
-        run: npm install -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator
-
-      - name: Create .releaserc.json
-        run: |
-          cat > .releaserc.json <<'EOF'
-          {
-            "branches": [{ "name": "main" }],
-            "tagFormat": "v${version}",
-            "plugins": [
-              "@semantic-release/commit-analyzer",
-              "@semantic-release/release-notes-generator"
-            ]
-          }
-          EOF
-
-      - name: Calculate next version (dry-run)
-        id: semver
+      - name: Find latest RC tag
+        id: rc
+        shell: bash
         run: |
           set -euo pipefail
-          npx semantic-release --dry-run | tee sr.log
-          VER=$(grep -Eo 'next release version is [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?' sr.log | awk '{print $5}' || true)
-          echo "version=${VER}" >> $GITHUB_OUTPUT
+          latest_rc=$(git tag -l "v*-rc.*" --sort=-v:refname | head -n1)
+          if [ -z "${latest_rc}" ]; then
+            echo "No RC tags found"
+            exit 1
+          fi
+          echo "latest_rc=${latest_rc}" >> "$GITHUB_OUTPUT"
+          base="${latest_rc%%-rc.*}"
+          echo "base=${base#v}" >> "$GITHUB_OUTPUT"
+          echo "Promoting ${latest_rc} -> ${base}"
 
-      - name: Print calculated version
-        run: echo "Next version is ${{ steps.semver.outputs.version }}"
+      - name: Get RC release assets
+        id: rc_assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.rc.outputs.latest_rc }}"
+          echo "Fetching assets from ${tag}"
+          gh release download "$tag" --dir rc-assets
+          echo "files=$(ls rc-assets | xargs)" >> "$GITHUB_OUTPUT"
+
+      - name: Create stable tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          ver="v${{ steps.rc.outputs.base }}"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          if git rev-parse "${ver}" >/dev/null 2>&1; then
+            echo "Tag ${ver} already exists."
+            exit 1
+          fi
+          # Tag the same commit as the RC
+          commit=$(git rev-list -n 1 "${{ steps.rc.outputs.latest_rc }}")
+          git tag -a "${ver}" -m "Promote ${{ steps.rc.outputs.latest_rc }} to ${ver}" "$commit"
+          git push origin "${ver}"
+
+      - name: Create GitHub Release (stable)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.rc.outputs.base }}
+          name: v${{ steps.rc.outputs.base }}
+          prerelease: false
+          files: rc-assets/*
+          body: |
+            Promoted from ${{ steps.rc.outputs.latest_rc }}.
