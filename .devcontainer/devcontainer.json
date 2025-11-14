@@ -2,14 +2,14 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.224.3/containers/rust-postgres
 {
 	"name": "Stack CLI",
-	"dockerComposeFile": [
-		"docker-compose.yml",
-		"docker-compose.postgres.yml"
-	],
-	"service": "app",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": "."
+	},
 	"workspaceFolder": "/workspace",
 	"mounts": [
-		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
 	],
 	"customizations": {
 		"vscode": {

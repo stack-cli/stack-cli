@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'crates/stack-cli.com/**'
+      - '.devcontainer/**'
       - '*.md'
       - '.github/workflows/release*.yml'
       - '.github/workflows/spell-check.yml'
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths-ignore:
       - 'crates/stack-cli.com/**'
+      - '.devcontainer/**'
       - '*.md'
       - '.github/workflows/release*.yml'
       - '.github/workflows/spell-check.yml'
