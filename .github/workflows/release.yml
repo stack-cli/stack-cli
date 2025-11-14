@@ -1,33 +1,28 @@
 name: Test Semantic Release Version
-
 on:
   workflow_dispatch: {}
 
 jobs:
   get-version:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install semantic-release
-        run: npm install -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Create .releaserc.json
-        run: |
-          cat > .releaserc.json <<'EOF'
-          {
-            "branches": [{ "name": "main" }],
-            "tagFormat": "v${version}",
-            "plugins": [
-              "@semantic-release/commit-analyzer",
-              "@semantic-release/release-notes-generator"
-            ]
-          }
-          EOF
+      - name: Install semantic-release
+        run: npm i -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+
+      - name: Create releaserc (no repo file)
+        run: >
+          node -e "require('fs').writeFileSync('.releaserc.json',
+          JSON.stringify({branches:[{name:'main'}],tagFormat:'v${version}',plugins:['@semantic-release/commit-analyzer','@semantic-release/release-notes-generator']},null,2))"
 
       - name: Calculate next version (dry-run)
         id: semver
