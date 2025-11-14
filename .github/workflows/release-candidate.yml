@@ -151,7 +151,7 @@ jobs:
             echo "Version not calculated" >&2
             exit 1
           fi
-          tag="rc-${version}"
+          tag="v${version}-rc"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "name=Release Candidate $version" >> "$GITHUB_OUTPUT"
 
