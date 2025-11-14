@@ -215,6 +215,11 @@ jobs:
           asset_path: release-artifacts/stack-cli-windows/stack.exe
           asset_name: stack-windows.exe
           asset_content_type: application/octet-stream
+          
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Commit version bump (no workflow change)
         shell: bash
@@ -223,5 +228,5 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add crates/stack-cli/Cargo.toml
-          git commit -m "chore(release): set stack-cli to ${{ steps.semver.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git commit -m "chore(rc): set stack-cli to ${{ needs.get-version.outputs.version }} [skip ci]" || echo "No changes to commit"
           git push
