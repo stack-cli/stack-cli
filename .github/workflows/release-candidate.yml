@@ -147,15 +147,28 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "name=Release Candidate v${version}" >> "$GITHUB_OUTPUT"
 
+      - name: Check for existing release
+        id: release_exists
+        run: |
+          set -euo pipefail
+          tag="${{ steps.release_meta.outputs.tag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $tag already exists; will reuse."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create GitHub release
         id: create_release
+        if: steps.release_exists.outputs.exists != 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.release_meta.outputs.tag }}
           release_name: ${{ steps.release_meta.outputs.name }}
-          target_commitish: ${{ inputs.ref }}
+          commitish: ${{ inputs.ref }}
           prerelease: true
           body: |
             Release candidate built from `${{ inputs.ref }}`.
