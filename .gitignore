@@ -1,5 +1,6 @@
 rust-on-nails.com/public
 .DS_Store
+artifacts
 
 # Needed or semantic release adds a lod of stuff when udating our version numbers.
 node_modules

@@ -26,7 +26,7 @@ async fn build_cli_linux(client: &Query, repo: &Directory) -> Result<()> {
         .with_exec(vec!["cargo", "build", "--release"]);
 
     container
-        .file("/workspace/target/release/stack")
+        .file("/workspace/target/release/stack-cli")
         .export("artifacts/linux/stack")
         .await
         .context("failed to export linux stack cli")?;
@@ -51,7 +51,7 @@ async fn build_cli_macos(client: &Query, repo: &Directory) -> Result<()> {
         ]);
 
     container
-        .file("/build/target/x86_64-apple-darwin/release/stack")
+        .file("/build/target/x86_64-apple-darwin/release/stack-cli")
         .export("artifacts/macos/stack")
         .await
         .context("failed to export macos stack cli")?;
@@ -80,7 +80,7 @@ async fn build_cli_windows(client: &Query, repo: &Directory) -> Result<()> {
         ]);
 
     container
-        .file("/build/target/x86_64-pc-windows-gnu/release/stack.exe")
+        .file("/build/target/x86_64-pc-windows-gnu/release/stack-cli.exe")
         .export("artifacts/windows/stack.exe")
         .await
         .context("failed to export windows stack cli")?;

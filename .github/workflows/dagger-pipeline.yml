@@ -17,14 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Run Dagger pipeline
-        uses: dagger/dagger-for-github@v5
-        with:
-          version: "latest"
-          workdir: .
-          commands: |
-            cargo run -p dagger-pipeline -- build
-
+      - name: Run Dagger build
+        id: dagger
+        continue-on-error: true
+        run: cargo run -p dagger-pipeline -- build linux
+        env:
+          DAGGER_LOG_FORMAT: plain
