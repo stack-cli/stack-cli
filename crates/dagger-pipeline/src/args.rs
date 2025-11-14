@@ -29,4 +29,3 @@ impl CliTarget {
         [Self::Linux, Self::Macos, Self::Windows]
     }
 }
-

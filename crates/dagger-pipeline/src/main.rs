@@ -1,5 +1,6 @@
 mod args;
 mod cli;
+mod operator;
 
 use anyhow::{Context, Result};
 use args::{Args, CliTarget, Command};

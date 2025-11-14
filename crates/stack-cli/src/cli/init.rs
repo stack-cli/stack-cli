@@ -369,7 +369,9 @@ async fn try_ensure_namespace(client: &Client, namespace: &str) -> Result<Namesp
                 .await
             {
                 Ok(ns) => Ok(ns),
-                Err(KubeError::Api(err)) if err.code == 409 => Ok(namespaces.get(namespace).await?),
+                Err(KubeError::Api(err)) if err.code == 409 => {
+                    Ok(namespaces.get(namespace).await?)
+                }
                 Err(err) => Err(err.into()),
             }
         }
