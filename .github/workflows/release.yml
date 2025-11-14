@@ -42,7 +42,7 @@ jobs:
         id: semver
         run: |
           set -euo pipefail
-          npx semantic-release --dry-run --config .releaserc.json | tee sr.log
+          npx semantic-release --dry-run
           VER=$(grep -Eo 'next release version is [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z\.-]+)?' sr.log | awk '{print $5}' || true)
           echo "version=${VER}" >> $GITHUB_OUTPUT
 
