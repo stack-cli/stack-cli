@@ -4,7 +4,19 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'crates/stack-cli.com/**'
+      - '*.md'
+      - '.github/workflows/release*.yml'
+      - '.github/workflows/spell-check.yml'
+      - Justfile
   pull_request:
+    paths-ignore:
+      - 'crates/stack-cli.com/**'
+      - '*.md'
+      - '.github/workflows/release*.yml'
+      - '.github/workflows/spell-check.yml'
+      - Justfile
 
 jobs:
   build:
