@@ -55,7 +55,7 @@ jobs:
 
       - name: Print calculated version
         run: echo "Next version is ${{ steps.semver.outputs.version }}"
-        
+
       - name: Update crates/stack-cli/Cargo.toml version
         shell: bash
         run: |
@@ -73,16 +73,6 @@ jobs:
             }
             {print}
           ' "$TOML" > "$TOML.tmp" && mv "$TOML.tmp" "$TOML"
-
-      - name: Commit version bump (no workflow change)
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add crates/stack-cli/Cargo.toml
-          git commit -m "chore(release): set stack-cli to ${{ steps.semver.outputs.version }} [skip ci]" || echo "No changes to commit"
-          git push
 
   build-linux:
     name: Build Linux binary
@@ -225,3 +215,13 @@ jobs:
           asset_path: release-artifacts/stack-cli-windows/stack.exe
           asset_name: stack-windows.exe
           asset_content_type: application/octet-stream
+
+      - name: Commit version bump (no workflow change)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add crates/stack-cli/Cargo.toml
+          git commit -m "chore(release): set stack-cli to ${{ steps.semver.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git push
