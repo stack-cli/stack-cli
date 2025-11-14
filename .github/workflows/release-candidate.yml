@@ -178,12 +178,20 @@ jobs:
         with:
           path: release-artifacts
 
+      - name: Prepare release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          cp release-artifacts/stack-cli-linux/stack release-assets/stack-cli-linux
+          cp release-artifacts/stack-cli-macos/stack release-assets/stack-cli-macos
+          cp release-artifacts/stack-cli-windows.exe/stack.exe release-assets/stack-cli-windows.exe
+
       - name: Upload release assets
         run: |
           set -euo pipefail
           tag="${{ steps.release_meta.outputs.tag }}"
           gh release upload "$tag" \
-            "release-artifacts/stack-cli-linux/stack#stack-cli-linux" \
-            "release-artifacts/stack-cli-macos/stack#stack-cli-macos" \
-            "release-artifacts/stack-cli-windows.exe/stack.exe#stack-cli-windows.exe" \
+            release-assets/stack-cli-linux \
+            release-assets/stack-cli-macos \
+            release-assets/stack-cli-windows.exe \
             --clobber
