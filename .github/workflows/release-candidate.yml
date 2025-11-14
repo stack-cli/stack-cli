@@ -126,7 +126,13 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
     steps:
+      - name: Checkout repository (for gh CLI context)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Determine release metadata
         id: release_meta
         run: |
