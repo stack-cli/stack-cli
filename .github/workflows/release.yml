@@ -52,6 +52,33 @@ jobs:
           git tag -a "${stable}" -m "Promote ${rc_tag} to ${stable}" "${commit}"
           git push origin "${stable}"
 
+      - name: Update docs with stable version
+        env:
+          STABLE_VERSION: v${{ steps.rc.outputs.base }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STABLE_VERSION}" ]; then
+            echo "Stable version is empty" >&2
+            exit 1
+          fi
+
+          docs_file="crates/stack-cli.com/content/docs/index.md"
+          home_file="crates/stack-cli.com/src/pages/home.rs"
+
+          sed -i "s/export STACK_VERSION=.*/export STACK_VERSION=${STABLE_VERSION}/" "$docs_file"
+          sed -i "s/export STACK_VERSION=.*/export STACK_VERSION=${STABLE_VERSION}/" "$home_file"
+
+          if git diff --quiet -- "$docs_file" "$home_file"; then
+            echo "Files already set to ${STABLE_VERSION}; skipping commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: update STACK_VERSION to ${STABLE_VERSION}"
+          git push origin "HEAD:${BRANCH_NAME}"
+
       - name: Create GitHub Release (stable)
         uses: softprops/action-gh-release@v2
         env:

@@ -5,8 +5,8 @@ use crate::layouts::layout::Layout;
 use dioxus::prelude::*;
 
 pub fn home_page() -> String {
-    let install_script = r#"export STACK_VERSION=v1.3.30
-curl -OL https://github.com/purton-tech/rust-on-nails/releases/download/${STACK_VERSION}/stack-cli \
+    let install_script = r#"export STACK_VERSION=v1.0.0
+curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-cli \
   && chmod +x ./stack-cli \
   && sudo mv ./stack-cli /usr/local/bin/stack"#;
 
