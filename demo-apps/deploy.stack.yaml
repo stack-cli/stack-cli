@@ -1,8 +1,8 @@
 apiVersion: stack-cli.dev/v1
 kind: StackApp
 metadata:
-  name: bionic
-  namespace: bionic
+  name: deploy-mcp
+  namespace: deploy-mcp
 spec:
   web:
     image: ghcr.io/bionic-gpt/bionicgpt:1.11.58
