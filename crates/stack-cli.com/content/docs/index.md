@@ -11,10 +11,10 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
 1. **Grab the CLI.**
 
    ```bash
-   export STACK_VERSION=v1.3.30
-   curl -OL https://github.com/purton-tech/rust-on-nails/releases/download/${STACK_VERSION}/stack-cli \
-     && chmod +x ./stack-cli \
-     && sudo mv ./stack-cli /usr/local/bin/stack
+   export STACK_VERSION=v1.0.0
+   curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-linux \
+   && chmod +x ./stack-linux \
+   && sudo mv ./stack-linux /usr/local/bin/stack
    ```
 
 2. **Bootstrap the platform operators into your cluster.**
