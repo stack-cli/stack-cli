@@ -110,7 +110,7 @@ pub fn Navigation(mobile_menu: Option<Element>, section: Section) -> Element {
                     ul { class: "menu menu-horizontal",
                         li {
                             a {
-                                href: "https://github.com/stack-cli/rstack-cli",
+                                href: "https://github.com/stack-cli/stack-cli",
                                 img { src: "https://img.shields.io/github/stars/stack-cli/stack-cli" }
                             }
                         }
