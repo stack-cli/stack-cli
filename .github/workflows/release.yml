@@ -14,6 +14,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Need tags
+          persist-credentials: false  # Let us supply our own token for pushes
 
       - name: Find latest RC tag
         id: rc
@@ -52,6 +53,8 @@ jobs:
           # If a PAT with workflow scope is provided, use it so pushing a tag that
           # references workflow changes is allowed.
           if [ -n "${WORKFLOWS_PAT:-}" ]; then
+            # Remove any GITHUB_TOKEN extraheader added by checkout so PAT is used
+            git config --unset-all http.https://github.com/.extraheader || true
             git remote set-url origin "https://x-access-token:${WORKFLOWS_PAT}@github.com/${GITHUB_REPOSITORY}.git"
           fi
 
