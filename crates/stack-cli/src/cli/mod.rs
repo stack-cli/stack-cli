@@ -71,7 +71,7 @@ pub enum Commands {
     Init(Initializer),
     /// Run the Stack Kubernetes Operator
     Operator(OperatorArgs),
-    /// Run the Stack Kubernetes Operator
+    /// Install Cloudflare Tunnel
     Cloudflare(CloudflareInstaller),
     /// Show platform connection details (Keycloak credentials, Cloudflare URL)
     Status(StatusArgs),
