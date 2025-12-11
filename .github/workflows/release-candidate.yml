@@ -113,3 +113,86 @@ jobs:
           name: ${{ matrix.asset_name }}
           path: ${{ matrix.artifact_path }}
           if-no-files-found: error
+
+
+  pre-release-candidate:
+    name: Push Executables to a Pre Release
+    runs-on: ubuntu-latest
+    needs:
+      - get-version
+      - build-cli
+    outputs:
+      tag: ${{ steps.release_meta.outputs.tag }}
+      version: ${{ steps.release_meta.outputs.version }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout repository (for gh CLI context)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release metadata
+        id: release_meta
+        run: |
+          set -euo pipefail
+          version="${{ needs.get-version.outputs.version }}"
+          if [ -z "$version" ]; then
+            echo "Version not calculated" >&2
+            exit 1
+          fi
+          tag="v${version}-rc"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "name=Release Candidate v${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Check for existing release
+        id: release_exists
+        run: |
+          set -euo pipefail
+          tag="${{ steps.release_meta.outputs.tag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $tag already exists; will reuse."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub release
+        id: create_release
+        if: steps.release_exists.outputs.exists != 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          release_name: ${{ steps.release_meta.outputs.name }}
+          commitish: ${{ inputs.ref }}
+          prerelease: true
+          body: |
+            Release candidate built from `${{ inputs.ref }}`.
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Prepare release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          cp release-artifacts/stack-cli-linux/stack release-assets/stack-cli-linux
+          cp release-artifacts/stack-cli-macos/stack release-assets/stack-cli-macos
+          cp release-artifacts/stack-cli-windows.exe/stack.exe release-assets/stack-cli-windows.exe
+
+      - name: Upload release assets
+        run: |
+          set -euo pipefail
+          tag="${{ steps.release_meta.outputs.tag }}"
+          gh release upload "$tag" \
+            release-assets/stack-cli-linux \
+            release-assets/stack-cli-macos \
+            release-assets/stack-cli-windows.exe \
+            --clobber
