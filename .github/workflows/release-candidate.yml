@@ -56,24 +56,6 @@ jobs:
       - name: Print calculated version
         run: echo "Next version is ${{ steps.semver.outputs.version }}"
 
-      - name: Update crates/stack-cli/Cargo.toml version
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE="${{ steps.semver.outputs.version }}"   # e.g. 1.2.3
-
-          TOML="crates/stack-cli/Cargo.toml"
-          # Replace the *first* version line inside the [package] section only.
-          awk -v ver="$BASE" '
-            BEGIN {done=0; inpkg=0}
-            /^\[package\]/ {inpkg=1}
-            inpkg==1 && !done && $0 ~ /^\s*version\s*=\s*".*"(\s*#.*)?$/ {
-              sub(/version\s*=\s*".*"/, "version = \"" ver "\"")
-              done=1
-            }
-            {print}
-          ' "$TOML" > "$TOML.tmp" && mv "$TOML.tmp" "$TOML"
-
   build-cli:
     name: Build CLI binaries
     runs-on: ubuntu-latest
@@ -99,6 +81,24 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
+
+      - name: Update crates/stack-cli/Cargo.toml version
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="${{ needs.get-version.outputs.version }}"   # e.g. 1.2.3
+
+          TOML="crates/stack-cli/Cargo.toml"
+          # Replace the *first* version line inside the [package] section only.
+          awk -v ver="$BASE" '
+            BEGIN {done=0; inpkg=0}
+            /^\[package\]/ {inpkg=1}
+            inpkg==1 && !done && $0 ~ /^\s*version\s*=\s*".*"(\s*#.*)?$/ {
+              sub(/version\s*=\s*".*"/, "version = \"" ver "\"")
+              done=1
+            }
+            {print}
+          ' "$TOML" > "$TOML.tmp" && mv "$TOML.tmp" "$TOML"
 
       - name: Build CLI (${{ matrix.platform }})
         run: cargo run -p dagger-pipeline -- build ${{ matrix.platform }}
