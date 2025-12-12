@@ -58,7 +58,18 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
 
     finalizer::add(client.clone(), &name, &namespace).await?;
 
-    database::deploy(client.clone(), &namespace, DEFAULT_DB_DISK_SIZE_GB, &None).await?;
+    let insecure_override_passwords = app
+        .spec
+        .db
+        .as_ref()
+        .and_then(|db| db.danger_insecure_password.clone());
+    database::deploy(
+        client.clone(),
+        &namespace,
+        DEFAULT_DB_DISK_SIZE_GB,
+        &insecure_override_passwords,
+    )
+    .await?;
 
     let auth_hostname = app
         .spec

@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 pub struct StackAppSpec {
     pub web: WebContainer,
     pub auth: Option<AuthConfig>,
+    pub db: Option<DbConfig>,
 }
 
 /// Web application container reference.
@@ -28,6 +29,13 @@ pub struct WebContainer {
     pub expose_db_port: Option<u16>,
     /// Optional NodePort number to expose the app (nginx) service.
     pub expose_app_port: Option<u16>,
+}
+
+/// Optional database configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct DbConfig {
+    /// Danger: overrides generated DB passwords. Use only for local development.
+    pub danger_insecure_password: Option<String>,
 }
 
 /// Optional authentication configuration.
