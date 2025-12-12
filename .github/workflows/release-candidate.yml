@@ -103,7 +103,7 @@ jobs:
       - name: Build CLI (${{ matrix.platform }})
         run: cargo run -p dagger-pipeline -- build ${{ matrix.platform }}
         env:
-          STACK_VERSION: v${{ needs.get-version.outputs.version }}-rc
+          STACK_VERSION: v${{ needs.get-version.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
