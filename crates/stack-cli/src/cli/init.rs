@@ -24,7 +24,7 @@ use kube_runtime::wait::await_condition;
 use kube_runtime::wait::Condition;
 use serde_json::json;
 
-const OPERATOR_IMAGE: &str = " ghcr.io/stack-cli/stack-operator";
+const OPERATOR_IMAGE: &str = "ghcr.io/stack-cli/stack-operator";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const CNPG_YAML: &str = include_str!("../../config/cnpg-1.22.1.yaml");
 const NGINX_YAML: &str = include_str!("../../config/nginx-ingress.yaml");
