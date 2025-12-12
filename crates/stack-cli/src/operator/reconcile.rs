@@ -7,13 +7,16 @@ use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
     core::v1::{ConfigMap, Secret, Service},
 };
-use kube::api::DeleteParams;
+use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client, Resource, ResourceExt};
 use kube_runtime::controller::Action;
-use serde_json::json;
+use serde_json::{json, Value};
 use std::{sync::Arc, time::Duration};
 
 const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
+const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
+const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
+const STACK_DB_CLUSTER_NAME: &str = "stack-db-cluster";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
 const CLOUDFLARE_SECRET_NAME: &str = "cloudflare-credentials";
@@ -95,6 +98,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     }
 
     deploy_web_app(&client, &namespace, &app.spec).await?;
+    ensure_optional_nodeports(&client, &namespace, &app.spec).await?;
 
     Ok(Action::requeue(Duration::from_secs(10)))
 }
@@ -192,6 +196,45 @@ async fn deploy_web_app(
     .await
 }
 
+async fn ensure_optional_nodeports(
+    client: &Client,
+    namespace: &str,
+    spec: &StackAppSpec,
+) -> Result<(), Error> {
+    if let Some(node_port) = spec.web.expose_db_port {
+        ensure_nodeport_service(
+            client,
+            namespace,
+            DB_NODEPORT_SERVICE_NAME,
+            json!({
+                "cnpg.io/cluster": STACK_DB_CLUSTER_NAME,
+                "role": "primary"
+            }),
+            5432,
+            node_port,
+        )
+        .await?;
+    } else {
+        delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
+    }
+
+    if let Some(node_port) = spec.web.expose_app_port {
+        ensure_nodeport_service(
+            client,
+            namespace,
+            APP_NODEPORT_SERVICE_NAME,
+            json!({ "app": nginx::NGINX_NAME }),
+            nginx::NGINX_PORT,
+            node_port,
+        )
+        .await?;
+    } else {
+        delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
+    }
+
+    Ok(())
+}
+
 async fn delete_application_resources(client: &Client, namespace: &str) -> Result<(), Error> {
     let deployments: Api<KubeDeployment> = Api::namespaced(client.clone(), namespace);
     if deployments.get(APPLICATION_NAME).await.is_ok() {
@@ -200,12 +243,9 @@ async fn delete_application_resources(client: &Client, namespace: &str) -> Resul
             .await?;
     }
 
-    let services: Api<Service> = Api::namespaced(client.clone(), namespace);
-    if services.get(APPLICATION_NAME).await.is_ok() {
-        services
-            .delete(APPLICATION_NAME, &DeleteParams::default())
-            .await?;
-    }
+    delete_service_if_exists(client, namespace, APPLICATION_NAME).await?;
+    delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
+    delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
 
     Ok(())
 }
@@ -230,6 +270,59 @@ async fn delete_cloudflare_resources(client: &Client, namespace: &str) -> Result
         configs
             .delete(CLOUDFLARE_CONFIG_NAME, &DeleteParams::default())
             .await?;
+    }
+
+    Ok(())
+}
+
+async fn ensure_nodeport_service(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+    selector: Value,
+    target_port: u16,
+    node_port: u16,
+) -> Result<(), Error> {
+    let service = json!({
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": {
+            "name": name,
+            "namespace": namespace
+        },
+        "spec": {
+            "type": "NodePort",
+            "selector": selector,
+            "ports": [
+                {
+                    "port": target_port,
+                    "targetPort": target_port,
+                    "nodePort": node_port
+                }
+            ]
+        }
+    });
+
+    let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
+    service_api
+        .patch(
+            name,
+            &PatchParams::apply(crate::MANAGER).force(),
+            &Patch::Apply(service),
+        )
+        .await?;
+
+    Ok(())
+}
+
+async fn delete_service_if_exists(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+) -> Result<(), Error> {
+    let services: Api<Service> = Api::namespaced(client.clone(), namespace);
+    if services.get(name).await.is_ok() {
+        services.delete(name, &DeleteParams::default()).await?;
     }
 
     Ok(())

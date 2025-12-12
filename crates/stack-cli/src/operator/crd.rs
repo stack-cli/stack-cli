@@ -24,6 +24,10 @@ pub struct WebContainer {
     pub image: String,
     /// Container port exposed by the application (e.g. 7903)
     pub port: u16,
+    /// Optional NodePort number to expose the database service.
+    pub expose_db_port: Option<u16>,
+    /// Optional NodePort number to expose the app (nginx) service.
+    pub expose_app_port: Option<u16>,
 }
 
 /// Optional authentication configuration.
