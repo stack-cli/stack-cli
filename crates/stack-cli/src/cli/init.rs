@@ -217,7 +217,7 @@ async fn create_operator(client: &Client, namespace: &str) -> Result<()> {
                     "serviceAccountName": "stack-operator-service-account",
                     "containers": json!([{
                         "name": "stack-operator",
-                        "image": format!("{}:{}", OPERATOR_IMAGE, VERSION)
+                        "image": format!("{}:v{}", OPERATOR_IMAGE, VERSION)
                     }]),
                 }
             }
