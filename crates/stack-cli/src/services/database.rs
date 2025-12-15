@@ -89,7 +89,11 @@ pub async fn deploy(
                     secret: SecretSpec {
                         name: "db-owner".to_string(),
                     },
+                    post_init_application_sql: Some(vec![
+                        "CREATE EXTENSION IF NOT EXISTS vector".to_string()
+                    ]),
                     post_init_sql: Some(vec![
+                        "ALTER ROLE db-owner WITH CREATEROLE CREATEDB".to_string(),
                         format!(
                             "CREATE ROLE application_user LOGIN ENCRYPTED PASSWORD '{}'",
                             app_database_password
@@ -98,9 +102,6 @@ pub async fn deploy(
                             "CREATE ROLE application_readonly LOGIN ENCRYPTED PASSWORD '{}'",
                             readonly_database_password
                         ),
-                    ]),
-                    post_init_application_sql: Some(vec![
-                        "CREATE EXTENSION IF NOT EXISTS vector".to_string()
                     ]),
                 },
             },

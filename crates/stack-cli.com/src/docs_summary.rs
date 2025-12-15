@@ -47,6 +47,17 @@ pub fn summary() -> Summary {
                         author_image: None,
                         author: None,
                     },
+                    Page {
+                        date: "",
+                        title: "Storage",
+                        description:
+                            "Supabase Storage defaults, MinIO, and how to point at external S3",
+                        folder: "docs/storage/",
+                        markdown: include_str!("../content/docs/storage/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
                 ],
             },
             Category {

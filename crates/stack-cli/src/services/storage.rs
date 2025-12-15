@@ -5,6 +5,7 @@ use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
+use rand::{distributions::Alphanumeric, Rng};
 use serde_json::json;
 
 pub const STORAGE_NAME: &str = "storage";
@@ -12,7 +13,6 @@ pub const DEFAULT_STORAGE_IMAGE: &str = "supabase/storage-api:v1.33.0";
 pub const DEFAULT_STORAGE_PORT: u16 = 5000;
 const STORAGE_AUTH_SECRET_NAME: &str = "storage-auth";
 const STORAGE_AUTH_SECRET_KEY: &str = "auth-jwt-secret";
-const STORAGE_AUTH_SECRET_VALUE: &str = "f023d3db-39dc-4ac9-87b2-b2be72e9162b";
 const STORAGE_S3_SECRET_NAME: &str = "storage-s3";
 const STORAGE_S3_BUCKET_KEY: &str = "STORAGE_S3_BUCKET";
 const STORAGE_S3_ENDPOINT_KEY: &str = "STORAGE_S3_ENDPOINT";
@@ -22,11 +22,6 @@ const AWS_ACCESS_KEY_ID_KEY: &str = "AWS_ACCESS_KEY_ID";
 const AWS_SECRET_ACCESS_KEY_KEY: &str = "AWS_SECRET_ACCESS_KEY";
 const S3_PROTOCOL_ACCESS_KEY_ID_KEY: &str = "S3_PROTOCOL_ACCESS_KEY_ID";
 const S3_PROTOCOL_ACCESS_KEY_SECRET_KEY: &str = "S3_PROTOCOL_ACCESS_KEY_SECRET";
-const DEFAULT_AWS_ACCESS_KEY_ID: &str = "supa-storage";
-const DEFAULT_AWS_SECRET_ACCESS_KEY: &str = "secret1234";
-const DEFAULT_S3_PROTOCOL_ACCESS_KEY_ID: &str = "625729a08b95bf1b7ff351a663f3a23c";
-const DEFAULT_S3_PROTOCOL_ACCESS_KEY_SECRET: &str =
-    "850181e4652dd023b7a98c58ae0d2d34bd487ee0cc3254aed6eda37307425907";
 const DEFAULT_S3_BUCKET: &str = "supa-storage-bucket";
 const DEFAULT_S3_ENDPOINT: &str = "http://minio:9000";
 const DEFAULT_S3_REGION: &str = "us-east-1";
@@ -44,6 +39,7 @@ pub async fn deploy(
         .and_then(|c| c.s3_secret_name.as_ref())
         .map(String::from)
         .unwrap_or_else(|| STORAGE_S3_SECRET_NAME.to_string());
+    let secret_name_env = secret_name.clone();
     let install_minio = config.map_or(true, |c| {
         c.install_minio.unwrap_or(c.s3_secret_name.is_none())
     });
@@ -54,7 +50,7 @@ pub async fn deploy(
     }
 
     if install_minio {
-        deploy_minio(client.clone(), namespace).await?;
+        deploy_minio(client.clone(), namespace, &secret_name).await?;
     }
 
     let env = vec![
@@ -76,7 +72,7 @@ pub async fn deploy(
             "name": "STORAGE_S3_BUCKET",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": STORAGE_S3_BUCKET_KEY
                 }
             }
@@ -85,7 +81,7 @@ pub async fn deploy(
             "name": "STORAGE_S3_ENDPOINT",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": STORAGE_S3_ENDPOINT_KEY
                 }
             }
@@ -94,7 +90,7 @@ pub async fn deploy(
             "name": "STORAGE_S3_FORCE_PATH_STYLE",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": STORAGE_S3_FORCE_PATH_STYLE_KEY
                 }
             }
@@ -103,7 +99,7 @@ pub async fn deploy(
             "name": "STORAGE_S3_REGION",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": STORAGE_S3_REGION_KEY
                 }
             }
@@ -113,7 +109,7 @@ pub async fn deploy(
             "name": "AWS_ACCESS_KEY_ID",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": AWS_ACCESS_KEY_ID_KEY
                 }
             }
@@ -122,7 +118,7 @@ pub async fn deploy(
             "name": "AWS_SECRET_ACCESS_KEY",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": AWS_SECRET_ACCESS_KEY_KEY
                 }
             }
@@ -131,7 +127,7 @@ pub async fn deploy(
             "name": "S3_PROTOCOL_ACCESS_KEY_ID",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": S3_PROTOCOL_ACCESS_KEY_ID_KEY
                 }
             }
@@ -140,7 +136,7 @@ pub async fn deploy(
             "name": "S3_PROTOCOL_ACCESS_KEY_SECRET",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": secret_name,
+                    "name": secret_name_env,
                     "key": S3_PROTOCOL_ACCESS_KEY_SECRET_KEY
                 }
             }
@@ -218,12 +214,22 @@ pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
             .delete(STORAGE_AUTH_SECRET_NAME, &DeleteParams::default())
             .await?;
     }
+    if secrets.get(STORAGE_S3_SECRET_NAME).await.is_ok() {
+        secrets
+            .delete(STORAGE_S3_SECRET_NAME, &DeleteParams::default())
+            .await?;
+    }
 
     Ok(())
 }
 
 async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
+    let existing = secret_api.get(STORAGE_AUTH_SECRET_NAME).await.ok();
+    let secret_value = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, STORAGE_AUTH_SECRET_KEY))
+        .unwrap_or_else(random_token);
 
     let secret_manifest = json!({
         "apiVersion": "v1",
@@ -233,7 +239,7 @@ async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
             "namespace": namespace
         },
         "stringData": {
-            STORAGE_AUTH_SECRET_KEY: STORAGE_AUTH_SECRET_VALUE
+            STORAGE_AUTH_SECRET_KEY: secret_value
         }
     });
 
@@ -250,6 +256,40 @@ async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
 
 async fn ensure_s3_secret(client: Client, namespace: &str, secret_name: &str) -> Result<(), Error> {
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
+    let existing = secret_api.get(secret_name).await.ok();
+
+    let bucket = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, STORAGE_S3_BUCKET_KEY))
+        .unwrap_or_else(|| DEFAULT_S3_BUCKET.to_string());
+    let endpoint = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, STORAGE_S3_ENDPOINT_KEY))
+        .unwrap_or_else(|| DEFAULT_S3_ENDPOINT.to_string());
+    let region = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, STORAGE_S3_REGION_KEY))
+        .unwrap_or_else(|| DEFAULT_S3_REGION.to_string());
+    let force_path_style = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, STORAGE_S3_FORCE_PATH_STYLE_KEY))
+        .unwrap_or_else(|| DEFAULT_S3_FORCE_PATH_STYLE.to_string());
+    let access_key_id = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, AWS_ACCESS_KEY_ID_KEY))
+        .unwrap_or_else(random_token);
+    let secret_access_key = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, AWS_SECRET_ACCESS_KEY_KEY))
+        .unwrap_or_else(random_token);
+    let protocol_access_key_id = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, S3_PROTOCOL_ACCESS_KEY_ID_KEY))
+        .unwrap_or_else(random_token);
+    let protocol_access_key_secret = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, S3_PROTOCOL_ACCESS_KEY_SECRET_KEY))
+        .unwrap_or_else(random_token);
 
     let secret_manifest = json!({
         "apiVersion": "v1",
@@ -259,14 +299,14 @@ async fn ensure_s3_secret(client: Client, namespace: &str, secret_name: &str) ->
             "namespace": namespace
         },
         "stringData": {
-            STORAGE_S3_BUCKET_KEY: DEFAULT_S3_BUCKET,
-            STORAGE_S3_ENDPOINT_KEY: DEFAULT_S3_ENDPOINT,
-            STORAGE_S3_REGION_KEY: DEFAULT_S3_REGION,
-            STORAGE_S3_FORCE_PATH_STYLE_KEY: DEFAULT_S3_FORCE_PATH_STYLE,
-            AWS_ACCESS_KEY_ID_KEY: DEFAULT_AWS_ACCESS_KEY_ID,
-            AWS_SECRET_ACCESS_KEY_KEY: DEFAULT_AWS_SECRET_ACCESS_KEY,
-            S3_PROTOCOL_ACCESS_KEY_ID_KEY: DEFAULT_S3_PROTOCOL_ACCESS_KEY_ID,
-            S3_PROTOCOL_ACCESS_KEY_SECRET_KEY: DEFAULT_S3_PROTOCOL_ACCESS_KEY_SECRET
+            STORAGE_S3_BUCKET_KEY: bucket,
+            STORAGE_S3_ENDPOINT_KEY: endpoint,
+            STORAGE_S3_REGION_KEY: region,
+            STORAGE_S3_FORCE_PATH_STYLE_KEY: force_path_style,
+            AWS_ACCESS_KEY_ID_KEY: access_key_id,
+            AWS_SECRET_ACCESS_KEY_KEY: secret_access_key,
+            S3_PROTOCOL_ACCESS_KEY_ID_KEY: protocol_access_key_id,
+            S3_PROTOCOL_ACCESS_KEY_SECRET_KEY: protocol_access_key_secret
         }
     });
 
@@ -281,10 +321,26 @@ async fn ensure_s3_secret(client: Client, namespace: &str, secret_name: &str) ->
     Ok(())
 }
 
-async fn deploy_minio(client: Client, namespace: &str) -> Result<(), Error> {
+async fn deploy_minio(client: Client, namespace: &str, secret_name: &str) -> Result<(), Error> {
     let env = vec![
-        json!({"name": "MINIO_ROOT_USER", "value": DEFAULT_AWS_ACCESS_KEY_ID}),
-        json!({"name": "MINIO_ROOT_PASSWORD", "value": DEFAULT_AWS_SECRET_ACCESS_KEY}),
+        json!({
+            "name": "MINIO_ROOT_USER",
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": secret_name,
+                    "key": AWS_ACCESS_KEY_ID_KEY
+                }
+            }
+        }),
+        json!({
+            "name": "MINIO_ROOT_PASSWORD",
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": secret_name,
+                    "key": AWS_SECRET_ACCESS_KEY_KEY
+                }
+            }
+        }),
         json!({"name": "MINIO_DOMAIN", "value": "minio"}),
     ];
 
@@ -324,4 +380,27 @@ async fn deploy_minio(client: Client, namespace: &str) -> Result<(), Error> {
         namespace,
     )
     .await
+}
+
+fn random_token() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect()
+}
+
+fn read_secret_field(secret: &Secret, key: &str) -> Option<String> {
+    if let Some(data) = &secret.data {
+        if let Some(value) = data.get(key) {
+            if let Ok(val) = String::from_utf8(value.0.clone()) {
+                return Some(val);
+            }
+        }
+    }
+
+    secret
+        .string_data
+        .as_ref()
+        .and_then(|map| map.get(key).cloned())
 }
