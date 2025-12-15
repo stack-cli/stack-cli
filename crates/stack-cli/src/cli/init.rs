@@ -53,7 +53,9 @@ pub async fn init(initializer: &crate::cli::Initializer) -> Result<()> {
         create_operator(&client, &initializer.operator_namespace).await?;
     }
 
-    bootstrap_keycloak_namespace(&client).await?;
+    if initializer.install_keycloak {
+        bootstrap_keycloak_namespace(&client).await?;
+    }
 
     Ok(())
 }
