@@ -14,7 +14,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Need tags
-          persist-credentials: false  # Let us supply our own token for pushes
 
       - name: Find latest RC tag
         id: rc
@@ -43,8 +42,6 @@ jobs:
           echo "files=$(ls rc-assets | xargs)" >> "$GITHUB_OUTPUT"
 
       - name: Create stable tag (same commit as RC)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git config user.name "${{ github.actor }}"
