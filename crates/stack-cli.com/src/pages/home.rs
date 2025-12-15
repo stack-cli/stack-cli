@@ -6,9 +6,9 @@ use dioxus::prelude::*;
 
 pub fn home_page() -> String {
     let install_script = r#"export STACK_VERSION=v1.1.0
-curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-linux \
-  && chmod +x ./stack-linux \
-  && sudo mv ./stack-linux /usr/local/bin/stack"#;
+curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-cli-linux \
+  && chmod +x ./stack-cli-linux \
+  && sudo mv ./stack-cli-linux /usr/local/bin/stack"#;
 
     let release_candidate_script = r#"RC_TAG=$(
   curl -s https://api.github.com/repos/stack-cli/stack-cli/releases \
