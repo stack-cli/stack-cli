@@ -43,20 +43,10 @@ jobs:
           echo "files=$(ls rc-assets | xargs)" >> "$GITHUB_OUTPUT"
 
       - name: Create stable tag (same commit as RC)
-        env:
-          WORKFLOWS_PAT: ${{ secrets.WORKFLOWS_PAT }}
         run: |
           set -euo pipefail
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-
-          # If a PAT with workflow scope is provided, use it so pushing a tag that
-          # references workflow changes is allowed.
-          if [ -n "${WORKFLOWS_PAT:-}" ]; then
-            # Remove any GITHUB_TOKEN extraheader added by checkout so PAT is used
-            git config --unset-all http.https://github.com/.extraheader || true
-            git remote set-url origin "https://x-access-token:${WORKFLOWS_PAT}@github.com/${GITHUB_REPOSITORY}.git"
-          fi
 
           rc_tag="${{ steps.rc.outputs.latest_rc }}"
           stable="v${{ steps.rc.outputs.base }}"
