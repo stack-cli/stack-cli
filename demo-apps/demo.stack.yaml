@@ -14,5 +14,5 @@ spec:
   auth:
     jwt: "1"
   storage:
-    expose_storage_port: 
+    expose_storage_port: 30012
     install_minio: true

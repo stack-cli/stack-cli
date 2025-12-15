@@ -122,21 +122,21 @@ pub async fn deploy(
     secret_data.insert(
         "migrations-url".to_string(),
         format!(
-            "postgres://db-owner:{}@stack-db-cluster-rw:5432/stack_app?sslmode=disable",
+            "postgres://db-owner:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
             dbowner_password
         ),
     );
     secret_data.insert(
         "application-url".to_string(),
         format!(
-            "postgres://application_user:{}@stack-db-cluster-rw:5432/stack_app?sslmode=disable",
+            "postgres://application_user:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
             app_database_password
         ),
     );
     secret_data.insert(
         "readonly-url".to_string(),
         format!(
-            "postgres://application_readonly:{}@stack-db-cluster-rw:5432/stack_app?sslmode=disable",
+            "postgres://application_readonly:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
             readonly_database_password
         ),
     );

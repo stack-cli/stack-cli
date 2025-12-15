@@ -145,6 +145,7 @@ pub async fn deploy(
                 }
             }
         }),
+        json!({"name": "DB_INSTALL_ROLES", "value": "true"}),
         json!({"name": "STORAGE_FILE_LOCAL_STORAGE_PATH", "value": "/var/lib/storage"}),
         json!({
             "name": "AUTH_JWT_SECRET",

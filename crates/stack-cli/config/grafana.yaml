@@ -33,7 +33,7 @@ data:
         access: proxy
         url: stack-db-cluster-rw:5432
         user: application_readonly
-        database: stack_app
+        database: stack-app
         secureJsonData:
           password: $APPLICATION_PASSWORD
         jsonData:

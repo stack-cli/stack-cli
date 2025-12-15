@@ -5,7 +5,7 @@
             "Group": "Servers",
             "Host": "stack-db-cluster-rw",
             "Port": 5432,
-            "MaintenanceDB": "stack_app",
+            "MaintenanceDB": "stack-app",
             "Username": "application_readonly",
             "PassFile": "/pgadmin4/passfile",
             "SavePassword": true,
