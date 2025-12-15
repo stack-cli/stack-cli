@@ -4,8 +4,12 @@ metadata:
   name: stack-app
   namespace: stack-demo
 spec:
+  db:
+    danger_insecure_password: testpassword
   web:
     image: traefik/whoami:v1.11
     port: 80
+    expose_app_port: 30010
+    expose_db_port: 30011
   auth:
     jwt: "1"
