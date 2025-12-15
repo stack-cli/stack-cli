@@ -13,6 +13,7 @@ pub struct Command {
 pub struct InitContainer {
     pub image_name: String,
     pub env: Vec<Value>,
+    pub command: Option<Command>,
 }
 
 pub struct ServiceDeployment {
@@ -42,12 +43,19 @@ pub async fn deployment(
 
     let init_containers: Vec<Value> =
         if let Some(init_container) = service_deployment.init_container {
-            vec![json!({
+            let mut container = json!({
                 "name": "init",
                 "image": init_container.image_name,
                 "imagePullPolicy": "IfNotPresent",
                 "env": init_container.env
-            })]
+            });
+
+            if let Some(command) = init_container.command {
+                container["command"] = serde_json::to_value(command.command).unwrap_or_default();
+                container["args"] = serde_json::to_value(command.args).unwrap_or_default();
+            }
+
+            vec![container]
         } else {
             vec![]
         };

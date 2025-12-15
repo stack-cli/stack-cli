@@ -29,6 +29,7 @@ const DEFAULT_S3_FORCE_PATH_STYLE: &str = "true";
 const MINIO_NAME: &str = "minio";
 const MINIO_IMAGE: &str = "minio/minio:latest";
 const MINIO_PORT: u16 = 9000;
+const MINIO_MC_IMAGE: &str = "minio/mc:latest";
 
 pub async fn deploy(
     client: Client,
@@ -53,6 +54,62 @@ pub async fn deploy(
     if install_minio {
         deploy_minio(client.clone(), namespace, &secret_name).await?;
     }
+
+    let minio_init = if install_minio {
+        Some(deployment::InitContainer {
+            image_name: MINIO_MC_IMAGE.to_string(),
+            env: vec![
+                json!({
+                    "name": STORAGE_S3_BUCKET_KEY,
+                    "valueFrom": {
+                        "secretKeyRef": {
+                            "name": secret_name_env,
+                            "key": STORAGE_S3_BUCKET_KEY
+                        }
+                    }
+                }),
+                json!({
+                    "name": STORAGE_S3_ENDPOINT_KEY,
+                    "valueFrom": {
+                        "secretKeyRef": {
+                            "name": secret_name_env,
+                            "key": STORAGE_S3_ENDPOINT_KEY
+                        }
+                    }
+                }),
+                json!({
+                    "name": AWS_ACCESS_KEY_ID_KEY,
+                    "valueFrom": {
+                        "secretKeyRef": {
+                            "name": secret_name_env,
+                            "key": AWS_ACCESS_KEY_ID_KEY
+                        }
+                    }
+                }),
+                json!({
+                    "name": AWS_SECRET_ACCESS_KEY_KEY,
+                    "valueFrom": {
+                        "secretKeyRef": {
+                            "name": secret_name_env,
+                            "key": AWS_SECRET_ACCESS_KEY_KEY
+                        }
+                    }
+                }),
+            ],
+            command: Some(deployment::Command {
+                command: vec!["/bin/sh".to_string(), "-c".to_string()],
+                args: vec![r#"set -e
+mc alias set supa-minio "$STORAGE_S3_ENDPOINT" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"
+mc mb --ignore-existing supa-minio/"$STORAGE_S3_BUCKET"
+mc mb --ignore-existing supa-minio/warehouse--table-s3
+mc anonymous set download supa-minio/warehouse--table-s3 || true
+"#
+                .to_string()],
+            }),
+        })
+    } else {
+        None
+    };
 
     let env = vec![
         json!({
@@ -174,7 +231,7 @@ pub async fn deploy(
             replicas: 1,
             port: DEFAULT_STORAGE_PORT,
             env,
-            init_container: None,
+            init_container: minio_init,
             command: None,
             volume_mounts,
             volumes,
