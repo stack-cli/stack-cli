@@ -40,7 +40,9 @@ pub async fn init(initializer: &crate::cli::Initializer) -> Result<()> {
     println!("✅ Connected");
 
     install_postgres_operator(&client).await?;
-    install_keycloak_operator(&client).await?;
+    if initializer.install_keycloak {
+        install_keycloak_operator(&client).await?;
+    }
     if !initializer.disable_ingress {
         install_nginx_operator(&client).await?;
     }
