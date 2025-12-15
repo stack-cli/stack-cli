@@ -11,7 +11,7 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
 1. **Grab the CLI.**
 
    ```bash
-   export STACK_VERSION=v1.0.0
+   export STACK_VERSION=v1.1.0
    curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-linux \
    && chmod +x ./stack-linux \
    && sudo mv ./stack-linux /usr/local/bin/stack
