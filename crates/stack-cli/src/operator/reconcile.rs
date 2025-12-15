@@ -73,8 +73,8 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     )
     .await?;
 
-    if app.spec.storage.is_some() {
-        storage::deploy(client.clone(), &namespace).await?;
+    if let Some(storage_spec) = app.spec.storage.as_ref() {
+        storage::deploy(client.clone(), &namespace, Some(storage_spec)).await?;
     } else {
         storage::delete(client.clone(), &namespace).await?;
     }

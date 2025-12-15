@@ -54,4 +54,10 @@ pub struct AuthConfig {
 pub struct StorageConfig {
     /// Optional NodePort number to expose the storage service.
     pub expose_storage_port: Option<u16>,
+    /// If set, storage will read S3 credentials and settings from this secret instead of the default.
+    /// Expected keys: STORAGE_S3_BUCKET, STORAGE_S3_ENDPOINT, STORAGE_S3_REGION, STORAGE_S3_FORCE_PATH_STYLE,
+    /// AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_PROTOCOL_ACCESS_KEY_ID, S3_PROTOCOL_ACCESS_KEY_SECRET.
+    pub s3_secret_name: Option<String>,
+    /// When true, deploy the bundled MinIO instance; defaults to true when no s3_secret_name is provided.
+    pub install_minio: Option<bool>,
 }
