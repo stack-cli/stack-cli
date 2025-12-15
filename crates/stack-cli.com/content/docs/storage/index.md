@@ -70,3 +70,28 @@ psql -U db-owner -d stack-app -c 'select * from storage.buckets;'
 ```
 
 You should see the `avatars` bucket row. The locale warnings from the container shell are harmless.
+
+### Upload a file
+
+Create a bucket and upload a file using the demo manifest (NodePort 30012) and the demo JWT:
+
+```bash
+# Create bucket (if not already present)
+curl -X POST 'http://host.docker.internal:30012/bucket' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjEzNTMxOTg1LCJleHAiOjE5MjkxMDc5ODV9.th84OKK0Iz8QchDyXZRrojmKSEZ-OuitQm_5DvLiSIc' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "avatars"}'
+
+# Upload a small file
+echo "hello storage" > hello.txt
+curl -X POST 'http://host.docker.internal:30012/object/avatars/hello.txt' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjEzNTMxOTg1LCJleHAiOjE5MjkxMDc5ODV9.th84OKK0Iz8QchDyXZRrojmKSEZ-OuitQm_5DvLiSIc' \
+  -H 'Content-Type: text/plain' \
+  --data-binary @hello.txt
+```
+
+Then check the DB:
+
+```bash
+psql -U db-owner -d stack-app -c 'select id, name, bucket_id, version from storage.objects;'
+```
