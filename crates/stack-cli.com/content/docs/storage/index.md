@@ -51,3 +51,22 @@ Then set `s3_secret_name` to that secret and `install_minio: false` if you don�
 - Storage uses the `migrations-url` from the `database-urls` secret so it can run migrations and manage roles (`DB_INSTALL_ROLES=true`).
 - JWT auth uses the generated `storage-auth` secret and HS256; override by patching that secret if you need to share a token across services.
 - Supabase Storage keeps metadata in your app’s Postgres database under the `storage` schema (tables like `buckets`, `objects`, and policies). Plan migrations/backups accordingly—metadata and object store must stay in sync.
+
+## Quick local test (demo manifest)
+
+With the demo manifest (`expose_storage_port: 30012` and `danger_override_jwt_secret` set), you can hit the Storage API directly:
+
+```bash
+curl --location --request POST 'http://host.docker.internal:30012/bucket' \
+  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjEzNTMxOTg1LCJleHAiOjE5MjkxMDc5ODV9.th84OKK0Iz8QchDyXZRrojmKSEZ-OuitQm_5DvLiSIc' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"name": "avatars"}'
+```
+
+Then verify in Postgres (inside the CNPG primary pod):
+
+```bash
+psql -U db-owner -d stack-app -c 'select * from storage.buckets;'
+```
+
+You should see the `avatars` bucket row. The locale warnings from the container shell are harmless.
