@@ -5,14 +5,15 @@ metadata:
   namespace: stack-demo
 spec:
   db:
-    danger_insecure_password: testpassword
+    danger_override_password: testpassword
     expose_db_port: 30011
   web:
     image: traefik/whoami:v1.11
     port: 80
     expose_app_port: 30010
   auth:
-    jwt: "1"
+    danger_override_jwt: "1"
   storage:
     expose_storage_port: 30012
     install_minio: true
+    danger_override_jwt_secret: f023d3db-39dc-4ac9-87b2-b2be72e9162b

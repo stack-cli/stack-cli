@@ -64,7 +64,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .spec
         .db
         .as_ref()
-        .and_then(|db| db.danger_insecure_password.clone());
+        .and_then(|db| db.danger_override_password.clone());
     database::deploy(
         client.clone(),
         &namespace,

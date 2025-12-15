@@ -34,7 +34,7 @@ pub struct WebContainer {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 pub struct DbConfig {
     /// Danger: overrides generated DB passwords. Use only for local development.
-    pub danger_insecure_password: Option<String>,
+    pub danger_override_password: Option<String>,
     /// Optional NodePort number to expose the database service.
     pub expose_db_port: Option<u16>,
 }
@@ -46,7 +46,7 @@ pub struct AuthConfig {
     #[serde(rename = "hostname-url")]
     pub hostname_url: Option<String>,
     /// Static JWT token forwarded by nginx when OIDC is disabled.
-    pub jwt: Option<String>,
+    pub danger_override_jwt: Option<String>,
 }
 
 /// Optional Supabase storage configuration.
@@ -60,4 +60,6 @@ pub struct StorageConfig {
     pub s3_secret_name: Option<String>,
     /// When true, deploy the bundled MinIO instance; defaults to true when no s3_secret_name is provided.
     pub install_minio: Option<bool>,
+    /// Danger: override the generated AUTH_JWT_SECRET; intended only for tests.
+    pub danger_override_jwt_secret: Option<String>,
 }
