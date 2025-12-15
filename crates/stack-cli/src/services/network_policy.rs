@@ -8,27 +8,40 @@ use kube::api::{Patch, PatchParams};
 use kube::{Api, Client};
 use serde_json::json;
 
-pub async fn default_deny(client: Client, name: &str, namespace: &str) -> Result<(), Error> {
+pub async fn default_deny(
+    client: Client,
+    name: &str,
+    namespace: &str,
+    allow_from_anywhere: bool,
+) -> Result<(), Error> {
     let policy_name = format!("{}-network-policy", name);
 
-    // Ingress: allow from same namespace + ingress-nginx
-    let ingress = json!([{
-        "from": [
-            {
-                "namespaceSelector": {
-                    "matchLabels": {
-                        "kubernetes.io/metadata.name": namespace
-                    }
-                }
-            },
-            {
-                "namespaceSelector": {
-                    "matchLabels": {
-                        "kubernetes.io/metadata.name": "ingress-nginx"
-                    }
+    // Ingress: allow from same namespace + ingress-nginx + optional 0.0.0.0/0 (for NodePort exposure)
+    let mut ingress_sources = vec![
+        json!({
+            "namespaceSelector": {
+                "matchLabels": {
+                    "kubernetes.io/metadata.name": namespace
                 }
             }
-        ]
+        }),
+        json!({
+            "namespaceSelector": {
+                "matchLabels": {
+                    "kubernetes.io/metadata.name": "ingress-nginx"
+                }
+            }
+        }),
+    ];
+
+    if allow_from_anywhere {
+        ingress_sources.push(json!({
+            "ipBlock": { "cidr": "0.0.0.0/0" }
+        }));
+    }
+
+    let ingress = json!([{
+        "from": ingress_sources
     }]);
 
     // Egress: allow DNS + namespace-local traffic

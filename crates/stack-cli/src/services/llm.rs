@@ -27,6 +27,7 @@ pub async fn deploy(client: Client, spec: StackAppSpec, namespace: &str) -> Resu
             volumes: vec![],
         },
         namespace,
+        false,
     )
     .await?;
 

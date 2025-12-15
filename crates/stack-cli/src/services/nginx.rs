@@ -138,6 +138,7 @@ server {{
             })],
         },
         namespace,
+        true,
     )
     .await?;
 

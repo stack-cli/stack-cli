@@ -122,6 +122,7 @@ pub async fn deploy(
             })],
         },
         namespace,
+        false,
     )
     .await?;
 

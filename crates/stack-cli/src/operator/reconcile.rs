@@ -88,7 +88,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .spec
         .auth
         .as_ref()
-        .and_then(|auth| auth.jwt.clone())
+        .and_then(|auth| auth.danger_override_jwt.clone())
         .unwrap_or_else(|| "1".to_string());
 
     if let Some(hostname_url) = auth_hostname {
@@ -211,6 +211,7 @@ async fn deploy_web_app(
             volumes: vec![],
         },
         namespace,
+        spec.web.expose_app_port.is_some(),
     )
     .await
 }

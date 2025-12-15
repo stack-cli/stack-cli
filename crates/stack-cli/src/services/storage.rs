@@ -180,6 +180,7 @@ pub async fn deploy(
             volumes,
         },
         namespace,
+        true,
     )
     .await
 }
@@ -384,6 +385,7 @@ async fn deploy_minio(client: Client, namespace: &str, secret_name: &str) -> Res
             volumes,
         },
         namespace,
+        true,
     )
     .await
 }

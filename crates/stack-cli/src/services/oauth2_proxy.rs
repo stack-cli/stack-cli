@@ -121,6 +121,7 @@ pub async fn deploy(
             volumes: vec![],
         },
         namespace,
+        false,
     )
     .await?;
 
