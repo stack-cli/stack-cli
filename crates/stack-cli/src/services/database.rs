@@ -93,7 +93,7 @@ pub async fn deploy(
                         "CREATE EXTENSION IF NOT EXISTS vector".to_string()
                     ]),
                     post_init_sql: Some(vec![
-                        "ALTER ROLE db-owner WITH CREATEROLE CREATEDB".to_string(),
+                        "ALTER ROLE \"db-owner\" WITH SUPERUSER CREATEROLE CREATEDB".to_string(),
                         format!(
                             "CREATE ROLE application_user LOGIN ENCRYPTED PASSWORD '{}'",
                             app_database_password

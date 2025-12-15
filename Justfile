@@ -4,10 +4,9 @@ list:
 dev-init:
     k3d cluster delete k3d-stack
     k3d cluster create k3d-stack --agents 1 -p "30010-30012:30010-30012@agent:0"
-    just  get-config
+    just get-config
 
 dev-setup:
-    just get-config
     cargo run --bin stack-cli -- init --no-operator
     cargo run --bin stack-cli -- install --manifest demo-apps/demo.stack.yaml
     cargo run --bin stack-cli -- operator --once
