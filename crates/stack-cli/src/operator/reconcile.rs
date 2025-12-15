@@ -2,7 +2,7 @@ use super::crd::{StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
-use crate::services::{database, deployment, keycloak, nginx, oauth2_proxy};
+use crate::services::{database, deployment, keycloak, nginx, oauth2_proxy, storage};
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
     core::v1::{ConfigMap, Secret, Service},
@@ -16,6 +16,7 @@ use std::{sync::Arc, time::Duration};
 const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
 const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
+const STORAGE_NODEPORT_SERVICE_NAME: &str = "storage-development";
 const STACK_DB_CLUSTER_NAME: &str = "stack-db-cluster";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
@@ -50,6 +51,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         oauth2_proxy::delete(client.clone(), &namespace).await?;
         nginx::delete_nginx(client.clone(), &namespace).await?;
         keycloak::delete(client.clone(), &namespace).await?;
+        storage::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace).await?;
         finalizer::delete(client, &name, &namespace).await?;
@@ -70,6 +72,12 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         &insecure_override_passwords,
     )
     .await?;
+
+    if app.spec.storage.is_some() {
+        storage::deploy(client.clone(), &namespace).await?;
+    } else {
+        storage::delete(client.clone(), &namespace).await?;
+    }
 
     let auth_hostname = app
         .spec
@@ -212,7 +220,11 @@ async fn ensure_optional_nodeports(
     namespace: &str,
     spec: &StackAppSpec,
 ) -> Result<(), Error> {
-    if let Some(node_port) = spec.web.expose_db_port {
+    if let Some(node_port) = spec
+        .db
+        .as_ref()
+        .and_then(|db_config| db_config.expose_db_port)
+    {
         ensure_nodeport_service(
             client,
             namespace,
@@ -243,6 +255,24 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     }
 
+    if let Some(node_port) = spec
+        .storage
+        .as_ref()
+        .and_then(|storage_config| storage_config.expose_storage_port)
+    {
+        ensure_nodeport_service(
+            client,
+            namespace,
+            STORAGE_NODEPORT_SERVICE_NAME,
+            json!({ "app": storage::STORAGE_NAME }),
+            storage::DEFAULT_STORAGE_PORT,
+            node_port,
+        )
+        .await?;
+    } else {
+        delete_service_if_exists(client, namespace, STORAGE_NODEPORT_SERVICE_NAME).await?;
+    }
+
     Ok(())
 }
 
@@ -257,6 +287,7 @@ async fn delete_application_resources(client: &Client, namespace: &str) -> Resul
     delete_service_if_exists(client, namespace, APPLICATION_NAME).await?;
     delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
+    delete_service_if_exists(client, namespace, STORAGE_NODEPORT_SERVICE_NAME).await?;
 
     Ok(())
 }

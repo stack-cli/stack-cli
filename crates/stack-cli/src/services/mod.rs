@@ -7,3 +7,4 @@ pub mod keycloak_db;
 pub mod network_policy;
 pub mod nginx;
 pub mod oauth2_proxy;
+pub mod storage;

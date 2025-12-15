@@ -16,6 +16,7 @@ pub struct StackAppSpec {
     pub web: WebContainer,
     pub auth: Option<AuthConfig>,
     pub db: Option<DbConfig>,
+    pub storage: Option<StorageConfig>,
 }
 
 /// Web application container reference.
@@ -25,8 +26,6 @@ pub struct WebContainer {
     pub image: String,
     /// Container port exposed by the application (e.g. 7903)
     pub port: u16,
-    /// Optional NodePort number to expose the database service.
-    pub expose_db_port: Option<u16>,
     /// Optional NodePort number to expose the app (nginx) service.
     pub expose_app_port: Option<u16>,
 }
@@ -36,6 +35,8 @@ pub struct WebContainer {
 pub struct DbConfig {
     /// Danger: overrides generated DB passwords. Use only for local development.
     pub danger_insecure_password: Option<String>,
+    /// Optional NodePort number to expose the database service.
+    pub expose_db_port: Option<u16>,
 }
 
 /// Optional authentication configuration.
@@ -46,4 +47,11 @@ pub struct AuthConfig {
     pub hostname_url: Option<String>,
     /// Static JWT token forwarded by nginx when OIDC is disabled.
     pub jwt: Option<String>,
+}
+
+/// Optional Supabase storage configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct StorageConfig {
+    /// Optional NodePort number to expose the storage service.
+    pub expose_storage_port: Option<u16>,
 }

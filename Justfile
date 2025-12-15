@@ -3,7 +3,7 @@ list:
 
 dev-init:
     k3d cluster delete k3d-stack
-    k3d cluster create k3d-stack --agents 1 -p "30010-30011:30010-30011@agent:0"
+    k3d cluster create k3d-stack --agents 1 -p "30010-30012:30010-30012@agent:0"
     just  get-config
 
 dev-setup:
