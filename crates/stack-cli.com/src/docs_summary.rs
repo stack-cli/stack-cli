@@ -58,6 +58,17 @@ pub fn summary() -> Summary {
                         author_image: None,
                         author: None,
                     },
+                    Page {
+                        date: "",
+                        title: "Secrets",
+                        description:
+                            "Use Kubernetes Secrets with Stack services via env and secret_env",
+                        folder: "docs/secrets/",
+                        markdown: include_str!("../content/docs/secrets/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
                 ],
             },
             Category {

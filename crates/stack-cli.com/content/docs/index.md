@@ -69,6 +69,34 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
          superuser_database_url: SUPERUSER_DATABASE_URL
    ```
 
+### Secrets
+
+- Stack uses standard Kubernetes Secrets; bring your own or create them in the app namespace.
+- Wire secrets into services through `services.web.secret_env` to expose specific keys as environment variables.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: stack-demo
+stringData:
+  api_key: super-secret
+---
+apiVersion: stack-cli.dev/v1
+kind: StackApp
+metadata:
+  name: stack-app
+  namespace: stack-demo
+spec:
+  services:
+    web:
+      secret_env:
+        - name: API_KEY
+          secret_name: app-secrets
+          secret_key: api_key
+```
+
 ## Operate and debug
 
 - `stack operator --once` runs a single reconciliation loop locally so you can watch what the controller does without staying connected forever. Drop `--once` to keep it running.
