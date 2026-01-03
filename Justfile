@@ -15,6 +15,9 @@ bionic-setup:
     cargo run --bin stack-cli -- install --manifest demo-apps/bionic.stack.yaml
     cargo run --bin stack-cli -- operator --once
 
+bionic-cloudflare:
+    cargo run --bin stack-cli -- cloudflare --manifest demo-apps/bionic.stack.yaml --name stack
+
 codex: 
     sudo npm install -g @openai/codex
 
