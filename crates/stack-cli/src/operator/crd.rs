@@ -62,10 +62,27 @@ pub struct WebService {
     /// Optional list of secret-backed environment variables injected into the web pod.
     #[serde(default)]
     pub secret_env: Vec<SecretEnvVar>,
+    /// Optional init container to run before the main web container starts.
+    pub init: Option<WebInit>,
     /// Optional environment variable name to receive the application DATABASE_URL (from `database-urls/application-url`).
     pub database_url: Option<String>,
-    /// Optional environment variable name to receive the superuser/migrations URL (from `database-urls/migrations-url`).
-    pub superuser_database_url: Option<String>,
+    /// Optional environment variable name to receive the migrations/superuser URL (from `database-urls/migrations-url`).
+    pub migrations_database_url: Option<String>,
+    /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
+    pub readonly_database_url: Option<String>,
+}
+
+/// Optional init container configuration for the web service.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct WebInit {
+    /// Image to run as init container.
+    pub image: String,
+    /// Optional list of plaintext environment variables injected into the init container.
+    #[serde(default)]
+    pub env: Vec<EnvVar>,
+    /// Optional list of secret-backed environment variables injected into the init container.
+    #[serde(default)]
+    pub secret_env: Vec<SecretEnvVar>,
 }
 
 /// Optional database configuration.

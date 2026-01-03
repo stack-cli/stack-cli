@@ -29,14 +29,15 @@ spec:
 
 ## Database URLs
 
-The controller injects database URLs from the `database-urls` secret. Rename the target env vars if needed:
+The controller only injects database URLs when you opt in on the web service:
 
 ```yaml
 spec:
   services:
     web:
       database_url: DATABASE_URL
-      superuser_database_url: SUPERUSER_DATABASE_URL
+      migrations_database_url: DATABASE_MIGRATIONS_URL
+      readonly_database_url: DATABASE_READONLY_URL
 ```
 
 ## Tips

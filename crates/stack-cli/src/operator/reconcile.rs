@@ -1,4 +1,4 @@
-use super::crd::{StackApp, StackAppSpec};
+use super::crd::{EnvVar, SecretEnvVar, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
@@ -156,91 +156,65 @@ async fn deploy_web_app(
         .and_then(|a| a.hostname_url.clone())
         .unwrap_or_default();
 
-    let db_url_env_name = spec
-        .services
-        .web
-        .database_url
-        .clone()
-        .unwrap_or_else(|| "DATABASE_URL".to_string());
-    let superuser_db_env_name = spec
-        .services
-        .web
-        .superuser_database_url
-        .clone()
-        .unwrap_or_else(|| "DATABASE_MIGRATIONS_URL".to_string());
+    let mut env = vec![json!({"name": "HOSTNAME_URL", "value": hostname_env})];
 
-    let mut env = vec![
-        json!({
-            "name": db_url_env_name,
+    if let Some(db_env_name) = spec.services.web.database_url.clone() {
+        env.push(json!({
+            "name": db_env_name,
             "valueFrom": {
                 "secretKeyRef": {
                     "name": "database-urls",
                     "key": "application-url"
                 }
             }
-        }),
-        json!({
-            "name": "DATABASE_READONLY_URL",
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "database-urls",
-                    "key": "readonly-url"
-                }
-            }
-        }),
-        json!({
-            "name": superuser_db_env_name,
+        }));
+    }
+
+    if let Some(superuser_env_name) = spec.services.web.migrations_database_url.clone() {
+        env.push(json!({
+            "name": superuser_env_name,
             "valueFrom": {
                 "secretKeyRef": {
                     "name": "database-urls",
                     "key": "migrations-url"
                 }
             }
-        }),
-        json!({
-            "name": "DB_OWNER_USERNAME",
+        }));
+    }
+
+    if let Some(readonly_env_name) = spec.services.web.readonly_database_url.clone() {
+        env.push(json!({
+            "name": readonly_env_name,
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": "db-owner",
-                    "key": "username"
+                    "name": "database-urls",
+                    "key": "readonly-url"
                 }
             }
-        }),
-        json!({
-            "name": "DB_OWNER_PASSWORD",
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "db-owner",
-                    "key": "password"
-                }
-            }
-        }),
-        json!({"name": "HOSTNAME_URL", "value": hostname_env}),
-    ];
+        }));
+    }
 
     env.push(json!({
         "name": "WEB_IMAGE",
         "value": spec.services.web.image.clone()
     }));
 
-    for env_var in &spec.services.web.env {
-        env.push(json!({
-            "name": env_var.name,
-            "value": env_var.value
-        }));
-    }
+    append_env_from_spec(
+        &mut env,
+        &spec.services.web.env,
+        &spec.services.web.secret_env,
+    );
 
-    for env_var in &spec.services.web.secret_env {
-        env.push(json!({
-            "name": env_var.name,
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": env_var.secret_name,
-                    "key": env_var.secret_key
-                }
-            }
-        }));
-    }
+    let init_container = spec
+        .services
+        .web
+        .init
+        .as_ref()
+        .map(|init| deployment::InitContainer {
+            image_name: init.image.clone(),
+            env: build_env(&init.env, &init.secret_env),
+            command: None,
+        });
 
     deployment::deployment(
         client.clone(),
@@ -250,7 +224,7 @@ async fn deploy_web_app(
             replicas: WEB_APP_REPLICAS,
             port: spec.services.web.port,
             env,
-            init_container: None,
+            init_container,
             command: None,
             volume_mounts: vec![],
             volumes: vec![],
@@ -422,4 +396,35 @@ async fn cleanup_auth_resources(client: Client, namespace: &str) -> Result<(), E
     oauth2_proxy::delete(client.clone(), namespace).await?;
     keycloak::delete(client, namespace).await?;
     Ok(())
+}
+
+fn append_env_from_spec(
+    env: &mut Vec<Value>,
+    env_vars: &[EnvVar],
+    secret_env_vars: &[SecretEnvVar],
+) {
+    for env_var in env_vars {
+        env.push(json!({
+            "name": env_var.name,
+            "value": env_var.value
+        }));
+    }
+
+    for env_var in secret_env_vars {
+        env.push(json!({
+            "name": env_var.name,
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": env_var.secret_name,
+                    "key": env_var.secret_key
+                }
+            }
+        }));
+    }
+}
+
+fn build_env(env_vars: &[EnvVar], secret_env_vars: &[SecretEnvVar]) -> Vec<Value> {
+    let mut env = Vec::new();
+    append_env_from_spec(&mut env, env_vars, secret_env_vars);
+    env
 }

@@ -25,3 +25,8 @@ spec:
           value: "1"
         - name: JWT_HEADER
           value: Authorization
+      init:
+        image: alpine:3.18
+        env:
+          - name: INIT_MESSAGE
+            value: "warming up"

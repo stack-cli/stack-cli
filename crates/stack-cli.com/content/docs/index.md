@@ -54,19 +54,26 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
    Components belong under `spec.components` (`db`, `auth`, `storage`) while workloads live under `spec.services`. Add application configuration with `env` and `secret_env` on the web service:
 
    ```yaml
-   spec:
-     services:
-       web:
-         env:
-           - name: FEATURE_FLAG
-             value: "true"
-         secret_env:
-           - name: API_KEY
-             secret_name: app-secrets
-             secret_key: api_key
-         # Optional: rename the injected DB URLs
-         database_url: DATABASE_URL
-         superuser_database_url: SUPERUSER_DATABASE_URL
+  spec:
+    services:
+      web:
+        env:
+          - name: FEATURE_FLAG
+            value: "true"
+        secret_env:
+          - name: API_KEY
+            secret_name: app-secrets
+            secret_key: api_key
+        # Explicitly request DB URLs; nothing is injected unless you set these.
+        database_url: DATABASE_URL
+        migrations_database_url: DATABASE_MIGRATIONS_URL
+        readonly_database_url: DATABASE_READONLY_URL
+        # Optional init container
+        init:
+          image: alpine:3.18
+          env:
+            - name: INIT_MESSAGE
+              value: "warming up"
    ```
 
 ### Secrets
