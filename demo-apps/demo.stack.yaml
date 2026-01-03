@@ -16,10 +16,12 @@ spec:
       danger_override_jwt_secret: f023d3db-39dc-4ac9-87b2-b2be72e9162b
   services:
     web:
-      image: traefik/whoami:v1.11
-      port: 80
+      image: mendhak/http-https-echo:latest
+      port: 8080
       expose_app_port: 30010
       database_url: DATABASE_URL
       env:
-        - name: FEATURE_FLAG
-          value: "true"
+        - name: ECHO_INCLUDE_ENV_VARS
+          value: "1"
+        - name: JWT_HEADER
+          value: Authorization
