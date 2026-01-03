@@ -32,7 +32,7 @@ pub struct Initializer {
     #[arg(long, default_value_t = false)]
     pub disable_ingress: bool,
     /// Install Keycloak operator and shared realm
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = true)]
     pub install_keycloak: bool,
     /// Namespace for the operator
     #[arg(long, default_value = "stack-system")]

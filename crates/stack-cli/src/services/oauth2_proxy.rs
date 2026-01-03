@@ -196,7 +196,7 @@ pub async fn ensure_secret(
         client_secret,
         redirect_uris: vec![redirect_uri],
         allow_registration,
-        public_base_url: format!("{}/realms/{}", hostname_url.trim_end_matches('/'), realm),
+        public_base_url: hostname_url.trim_end_matches('/').to_string(),
     })
 }
 
