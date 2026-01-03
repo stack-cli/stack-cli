@@ -158,41 +158,12 @@ async fn deploy_web_app(
 
     let mut env = vec![json!({"name": "HOSTNAME_URL", "value": hostname_env})];
 
-    if let Some(db_env_name) = spec.services.web.database_url.clone() {
-        env.push(json!({
-            "name": db_env_name,
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "database-urls",
-                    "key": "application-url"
-                }
-            }
-        }));
-    }
-
-    if let Some(superuser_env_name) = spec.services.web.migrations_database_url.clone() {
-        env.push(json!({
-            "name": superuser_env_name,
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "database-urls",
-                    "key": "migrations-url"
-                }
-            }
-        }));
-    }
-
-    if let Some(readonly_env_name) = spec.services.web.readonly_database_url.clone() {
-        env.push(json!({
-            "name": readonly_env_name,
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "database-urls",
-                    "key": "readonly-url"
-                }
-            }
-        }));
-    }
+    append_db_envs(
+        &mut env,
+        &spec.services.web.database_url,
+        &spec.services.web.migrations_database_url,
+        &spec.services.web.readonly_database_url,
+    );
 
     env.push(json!({
         "name": "WEB_IMAGE",
@@ -205,16 +176,22 @@ async fn deploy_web_app(
         &spec.services.web.secret_env,
     );
 
-    let init_container = spec
-        .services
-        .web
-        .init
-        .as_ref()
-        .map(|init| deployment::InitContainer {
+    let init_container = spec.services.web.init.as_ref().map(|init| {
+        let mut init_env = Vec::new();
+        append_db_envs(
+            &mut init_env,
+            &init.database_url,
+            &init.migrations_database_url,
+            &init.readonly_database_url,
+        );
+        append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
+
+        deployment::InitContainer {
             image_name: init.image.clone(),
-            env: build_env(&init.env, &init.secret_env),
+            env: init_env,
             command: None,
-        });
+        }
+    });
 
     deployment::deployment(
         client.clone(),
@@ -423,8 +400,45 @@ fn append_env_from_spec(
     }
 }
 
-fn build_env(env_vars: &[EnvVar], secret_env_vars: &[SecretEnvVar]) -> Vec<Value> {
-    let mut env = Vec::new();
-    append_env_from_spec(&mut env, env_vars, secret_env_vars);
-    env
+fn append_db_envs(
+    env: &mut Vec<Value>,
+    database_url: &Option<String>,
+    migrations_database_url: &Option<String>,
+    readonly_database_url: &Option<String>,
+) {
+    if let Some(db_env_name) = database_url.clone() {
+        env.push(json!({
+            "name": db_env_name,
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": "database-urls",
+                    "key": "application-url"
+                }
+            }
+        }));
+    }
+
+    if let Some(superuser_env_name) = migrations_database_url.clone() {
+        env.push(json!({
+            "name": superuser_env_name,
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": "database-urls",
+                    "key": "migrations-url"
+                }
+            }
+        }));
+    }
+
+    if let Some(readonly_env_name) = readonly_database_url.clone() {
+        env.push(json!({
+            "name": readonly_env_name,
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": "database-urls",
+                    "key": "readonly-url"
+                }
+            }
+        }));
+    }
 }

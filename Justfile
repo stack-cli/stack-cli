@@ -11,6 +11,10 @@ dev-setup:
     cargo run --bin stack-cli -- install --manifest demo-apps/demo.stack.yaml
     cargo run --bin stack-cli -- operator --once
 
+bionic-setup:
+    cargo run --bin stack-cli -- install --manifest demo-apps/bionic.stack.yaml
+    cargo run --bin stack-cli -- operator --once
+
 codex: 
     sudo npm install -g @openai/codex
 

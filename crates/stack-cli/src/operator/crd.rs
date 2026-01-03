@@ -83,6 +83,12 @@ pub struct WebInit {
     /// Optional list of secret-backed environment variables injected into the init container.
     #[serde(default)]
     pub secret_env: Vec<SecretEnvVar>,
+    /// Optional environment variable name to receive the application DATABASE_URL (from `database-urls/application-url`).
+    pub database_url: Option<String>,
+    /// Optional environment variable name to receive the migrations/superuser URL (from `database-urls/migrations-url`).
+    pub migrations_database_url: Option<String>,
+    /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
+    pub readonly_database_url: Option<String>,
 }
 
 /// Optional database configuration.

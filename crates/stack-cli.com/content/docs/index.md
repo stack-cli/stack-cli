@@ -71,6 +71,8 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
         # Optional init container
         init:
           image: alpine:3.18
+          # Inject DB URLs into the init container if needed (e.g., migrations)
+          database_url: DATABASE_URL
           env:
             - name: INIT_MESSAGE
               value: "warming up"
