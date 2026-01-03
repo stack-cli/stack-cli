@@ -13,21 +13,59 @@ use serde::{Deserialize, Serialize};
     namespaced
 )]
 pub struct StackAppSpec {
-    pub web: WebContainer,
-    pub auth: Option<AuthConfig>,
+    pub services: Services,
+    #[serde(default)]
+    pub components: Components,
+}
+
+/// Services to deploy into the namespace (web and future helpers).
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct Services {
+    pub web: WebService,
+}
+
+/// Optional platform components.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
+pub struct Components {
     pub db: Option<DbConfig>,
+    pub auth: Option<AuthConfig>,
     pub storage: Option<StorageConfig>,
+}
+
+/// User-defined environment variable sourced from plaintext.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct EnvVar {
+    pub name: String,
+    pub value: String,
+}
+
+/// User-defined environment variable sourced from a Kubernetes secret.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct SecretEnvVar {
+    pub name: String,
+    pub secret_name: String,
+    pub secret_key: String,
 }
 
 /// Web application container reference.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
-pub struct WebContainer {
+pub struct WebService {
     /// Fully-qualified container image reference (e.g. ghcr.io/org/app:tag)
     pub image: String,
     /// Container port exposed by the application (e.g. 7903)
     pub port: u16,
     /// Optional NodePort number to expose the app (nginx) service.
     pub expose_app_port: Option<u16>,
+    /// Optional list of plaintext environment variables injected into the web pod.
+    #[serde(default)]
+    pub env: Vec<EnvVar>,
+    /// Optional list of secret-backed environment variables injected into the web pod.
+    #[serde(default)]
+    pub secret_env: Vec<SecretEnvVar>,
+    /// Optional environment variable name to receive the application DATABASE_URL (from `database-urls/application-url`).
+    pub database_url: Option<String>,
+    /// Optional environment variable name to receive the superuser/migrations URL (from `database-urls/migrations-url`).
+    pub superuser_database_url: Option<String>,
 }
 
 /// Optional database configuration.

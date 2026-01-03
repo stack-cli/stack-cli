@@ -46,6 +46,7 @@ pub async fn deploy(
     };
 
     let hostname_url = spec
+        .components
         .auth
         .as_ref()
         .and_then(|auth| auth.hostname_url.clone())

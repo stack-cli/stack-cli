@@ -40,14 +40,34 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
      name: stack-app
      namespace: stack-demo
    spec:
-     web:
-       image: ghcr.io/stack/demo-app:latest
-       port: 7903
-     auth:
-       jwt: "1"
-   ```
+     components:
+       auth:
+         danger_override_jwt: "1"
+     services:
+       web:
+         image: ghcr.io/stack/demo-app:latest
+         port: 7903
+```
 
    The controller provisions a dedicated CloudNativePG cluster, injects connection strings into secrets, deploys your container as `stack-app`, and keeps everything in sync with the manifest.
+
+   Components belong under `spec.components` (`db`, `auth`, `storage`) while workloads live under `spec.services`. Add application configuration with `env` and `secret_env` on the web service:
+
+   ```yaml
+   spec:
+     services:
+       web:
+         env:
+           - name: FEATURE_FLAG
+             value: "true"
+         secret_env:
+           - name: API_KEY
+             secret_name: app-secrets
+             secret_key: api_key
+         # Optional: rename the injected DB URLs
+         database_url: DATABASE_URL
+         superuser_database_url: SUPERUSER_DATABASE_URL
+   ```
 
 ## Operate and debug
 

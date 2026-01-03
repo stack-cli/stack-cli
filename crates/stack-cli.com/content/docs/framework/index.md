@@ -50,11 +50,13 @@ metadata:
   name: rails-app
   namespace: rails-demo
 spec:
-  web:
-    image: ghcr.io/acme/rails-app:latest
-    port: 3000
-  auth:
-    jwt: "development-token"
+  components:
+    auth:
+      danger_override_jwt: "development-token"
+  services:
+    web:
+      image: ghcr.io/acme/rails-app:latest
+      port: 3000
 ```
 
 Deploy it:
@@ -74,4 +76,4 @@ stack cloudflare --manifest rails-stack-app.yaml --name rails-demo
 stack status --manifest rails-stack-app.yaml
 ```
 
-When you are ready for a permanent hostname, pass `--token` with a Cloudflare tunnel credential and update `auth.hostname-url` inside the manifest so Keycloak and OAuth2 Proxy enforce proper redirects.
+When you are ready for a permanent hostname, pass `--token` with a Cloudflare tunnel credential and update `components.auth.hostname-url` inside the manifest so Keycloak and OAuth2 Proxy enforce proper redirects.

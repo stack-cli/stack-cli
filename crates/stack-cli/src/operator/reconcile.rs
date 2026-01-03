@@ -62,6 +62,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
 
     let insecure_override_passwords = app
         .spec
+        .components
         .db
         .as_ref()
         .and_then(|db| db.danger_override_password.clone());
@@ -73,7 +74,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     )
     .await?;
 
-    if let Some(storage_spec) = app.spec.storage.as_ref() {
+    if let Some(storage_spec) = app.spec.components.storage.as_ref() {
         storage::deploy(client.clone(), &namespace, Some(storage_spec)).await?;
     } else {
         storage::delete(client.clone(), &namespace).await?;
@@ -81,11 +82,13 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
 
     let auth_hostname = app
         .spec
+        .components
         .auth
         .as_ref()
         .and_then(|auth| auth.hostname_url.clone());
     let jwt_value = app
         .spec
+        .components
         .auth
         .as_ref()
         .and_then(|auth| auth.danger_override_jwt.clone())
@@ -95,12 +98,18 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         let realm_config =
             oauth2_proxy::ensure_secret(client.clone(), &namespace, &hostname_url).await?;
         keycloak::ensure_realm(client.clone(), &realm_config).await?;
-        oauth2_proxy::deploy(client.clone(), &namespace, &hostname_url, app.spec.web.port).await?;
+        oauth2_proxy::deploy(
+            client.clone(),
+            &namespace,
+            &hostname_url,
+            app.spec.services.web.port,
+        )
+        .await?;
         nginx::deploy_nginx(
             &client,
             &namespace,
             nginx::NginxMode::Oidc,
-            app.spec.web.port,
+            app.spec.services.web.port,
         )
         .await?;
     } else {
@@ -111,7 +120,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             nginx::NginxMode::StaticJwt {
                 token: jwt_value.clone(),
             },
-            app.spec.web.port,
+            app.spec.services.web.port,
         )
         .await?;
     }
@@ -141,14 +150,28 @@ async fn deploy_web_app(
     spec: &StackAppSpec,
 ) -> Result<(), Error> {
     let hostname_env = spec
+        .components
         .auth
         .as_ref()
         .and_then(|a| a.hostname_url.clone())
         .unwrap_or_default();
 
+    let db_url_env_name = spec
+        .services
+        .web
+        .database_url
+        .clone()
+        .unwrap_or_else(|| "DATABASE_URL".to_string());
+    let superuser_db_env_name = spec
+        .services
+        .web
+        .superuser_database_url
+        .clone()
+        .unwrap_or_else(|| "DATABASE_MIGRATIONS_URL".to_string());
+
     let mut env = vec![
         json!({
-            "name": "DATABASE_URL",
+            "name": db_url_env_name,
             "valueFrom": {
                 "secretKeyRef": {
                     "name": "database-urls",
@@ -166,7 +189,7 @@ async fn deploy_web_app(
             }
         }),
         json!({
-            "name": "DATABASE_MIGRATIONS_URL",
+            "name": superuser_db_env_name,
             "valueFrom": {
                 "secretKeyRef": {
                     "name": "database-urls",
@@ -195,15 +218,37 @@ async fn deploy_web_app(
         json!({"name": "HOSTNAME_URL", "value": hostname_env}),
     ];
 
-    env.push(json!({"name": "WEB_IMAGE", "value": spec.web.image.clone()}));
+    env.push(json!({
+        "name": "WEB_IMAGE",
+        "value": spec.services.web.image.clone()
+    }));
+
+    for env_var in &spec.services.web.env {
+        env.push(json!({
+            "name": env_var.name,
+            "value": env_var.value
+        }));
+    }
+
+    for env_var in &spec.services.web.secret_env {
+        env.push(json!({
+            "name": env_var.name,
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": env_var.secret_name,
+                    "key": env_var.secret_key
+                }
+            }
+        }));
+    }
 
     deployment::deployment(
         client.clone(),
         deployment::ServiceDeployment {
             name: APPLICATION_NAME.to_string(),
-            image_name: spec.web.image.clone(),
+            image_name: spec.services.web.image.clone(),
             replicas: WEB_APP_REPLICAS,
-            port: spec.web.port,
+            port: spec.services.web.port,
             env,
             init_container: None,
             command: None,
@@ -211,7 +256,7 @@ async fn deploy_web_app(
             volumes: vec![],
         },
         namespace,
-        spec.web.expose_app_port.is_some(),
+        spec.services.web.expose_app_port.is_some(),
     )
     .await
 }
@@ -222,6 +267,7 @@ async fn ensure_optional_nodeports(
     spec: &StackAppSpec,
 ) -> Result<(), Error> {
     if let Some(node_port) = spec
+        .components
         .db
         .as_ref()
         .and_then(|db_config| db_config.expose_db_port)
@@ -242,7 +288,7 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     }
 
-    if let Some(node_port) = spec.web.expose_app_port {
+    if let Some(node_port) = spec.services.web.expose_app_port {
         ensure_nodeport_service(
             client,
             namespace,
@@ -257,6 +303,7 @@ async fn ensure_optional_nodeports(
     }
 
     if let Some(node_port) = spec
+        .components
         .storage
         .as_ref()
         .and_then(|storage_config| storage_config.expose_storage_port)

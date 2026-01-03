@@ -11,7 +11,7 @@ Stack relies on Keycloak for OAuth2 and OpenID Connect flows. When you run `stac
 
 ## How Stack uses Keycloak
 
-- Each `StackApp` with `spec.auth.hostname-url` defined triggers the Stack controller to ensure a Keycloak realm and OAuth2 Proxy configuration exist.
+- Each `StackApp` with `spec.components.auth.hostname-url` defined triggers the Stack controller to ensure a Keycloak realm and OAuth2 Proxy configuration exist.
 - The CLI creates an initial admin secret named `keycloak-initial-admin` in the Keycloak namespace. `stack status --manifest …` reads this secret so you can log in instantly.
 - OAuth2 Proxy is configured to trust Keycloak and inject the right upstream headers toward your app.
 
