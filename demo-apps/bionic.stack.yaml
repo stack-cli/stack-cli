@@ -7,8 +7,10 @@ spec:
   components:
     db:
     auth:
+      # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
       hostname-url: http://localhost:30013
       expose_auth_port: 30013
+      # Make keycloak admin accessible via /oidc/admin
       expose_admin: true
     storage:
       install_minio: true
@@ -16,10 +18,12 @@ spec:
     web:
       image: ghcr.io/bionic-gpt/bionicgpt:1.11.59
       port: 7703
+      # Pass an env var called APP_DATABASE_URL which is the application_user role.
       database_url: APP_DATABASE_URL
       init:
         image: ghcr.io/bionic-gpt/bionicgpt-db-migrations:1.11.59
         migrations_database_url: DATABASE_URL
+        # Add any env vars required.
         env:
           - name: INIT_MESSAGE
             value: "warming up"
