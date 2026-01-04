@@ -105,10 +105,17 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             app.spec.services.web.port,
         )
         .await?;
+        let allow_admin = app
+            .spec
+            .components
+            .auth
+            .as_ref()
+            .and_then(|auth| auth.expose_admin)
+            .unwrap_or(false);
         nginx::deploy_nginx(
             &client,
             &namespace,
-            nginx::NginxMode::Oidc,
+            nginx::NginxMode::Oidc { allow_admin },
             app.spec.services.web.port,
         )
         .await?;
@@ -239,7 +246,13 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     }
 
-    if let Some(node_port) = spec.services.web.expose_app_port {
+    let auth_node_port = spec
+        .components
+        .auth
+        .as_ref()
+        .and_then(|auth_config| auth_config.expose_auth_port)
+        .or(spec.services.web.expose_app_port);
+    if let Some(node_port) = auth_node_port {
         ensure_nodeport_service(
             client,
             namespace,

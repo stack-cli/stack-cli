@@ -30,7 +30,7 @@ pub async fn deploy(
 
     let hostname_base = hostname_url.trim_end_matches('/');
     let external_realm_base = format!(
-        "{}/realms/{}/protocol/openid-connect",
+        "{}/oidc/realms/{}/protocol/openid-connect",
         hostname_base, namespace
     );
     let internal_realm_base = format!(
@@ -202,7 +202,7 @@ pub async fn ensure_secret(
         client_secret,
         redirect_uris: vec![redirect_uri],
         allow_registration,
-        public_base_url: hostname_url.trim_end_matches('/').to_string(),
+        public_base_url: format!("{}/oidc", hostname_url.trim_end_matches('/')),
     })
 }
 

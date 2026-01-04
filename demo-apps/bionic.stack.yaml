@@ -7,7 +7,9 @@ spec:
   components:
     db:
     auth:
-      hostname-url: https://tissue-correspondence-again-allen.trycloudflare.com
+      hostname-url: http://localhost:30013
+      expose_auth_port: 30013
+      expose_admin: true
     storage:
       install_minio: true
   services:

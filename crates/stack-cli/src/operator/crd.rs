@@ -108,6 +108,10 @@ pub struct AuthConfig {
     pub hostname_url: Option<String>,
     /// Static JWT token forwarded by nginx when OIDC is disabled.
     pub danger_override_jwt: Option<String>,
+    /// Optional NodePort number to expose the auth (nginx) service.
+    pub expose_auth_port: Option<u16>,
+    /// When true, allow the Keycloak admin console to be proxied via /oidc/admin.
+    pub expose_admin: Option<bool>,
 }
 
 /// Optional Supabase storage configuration.

@@ -15,7 +15,7 @@ pub const NGINX_NAME: &str = "nginx";
 pub const NGINX_PORT: u16 = 80;
 
 pub enum NginxMode {
-    Oidc,
+    Oidc { allow_admin: bool },
     StaticJwt { token: String },
 }
 
@@ -31,8 +31,20 @@ pub async fn deploy_nginx(
     let image_name = "nginx:1.27.2".to_string();
 
     let config_body = match mode {
-        NginxMode::Oidc => r#"
-server {
+        NginxMode::Oidc { allow_admin } => {
+            let admin_block = if allow_admin {
+                String::new()
+            } else {
+                r#"
+    location ^~ /oidc/admin {
+        return 404;
+    }
+"#
+                .to_string()
+            };
+            format!(
+                r#"
+server {{
     listen 80;
 
     # Increase buffer sizes to handle large headers
@@ -40,51 +52,27 @@ server {
     proxy_buffers       4 256k;
     proxy_busy_buffers_size 256k;
     set $forwarded_proto $scheme;
-    if ($http_x_forwarded_proto != "") {
+    if ($http_x_forwarded_proto != "") {{
         set $forwarded_proto $http_x_forwarded_proto;
-    }
+    }}
 
-    location /oidc {
-        proxy_pass http://keycloak-service:8080;
+{admin_block}
+    location = /oidc {{
+        return 301 /oidc/;
+    }}
+
+    location ^~ /oidc/ {{
+        proxy_pass http://keycloak-service:8080/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $forwarded_proto;
         proxy_set_header X-Forwarded-Host $host;
-        proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/$1;
-    }
+        proxy_set_header X-Forwarded-Prefix /oidc;
+        proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/oidc/$1;
+    }}
 
-    location /realms {
-        proxy_pass http://keycloak-service:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $forwarded_proto;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/$1;
-    }
-
-    location /admin {
-        proxy_pass http://keycloak-service:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $forwarded_proto;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/$1;
-    }
-
-    location /resources {
-        proxy_pass http://keycloak-service:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $forwarded_proto;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/$1;
-    }
-
-    location / {
+    location / {{
         proxy_pass http://oauth2-proxy:7900;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -92,10 +80,12 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;
         proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/$1;
-    }
-}
-"#
-        .to_string(),
+    }}
+}}
+"#,
+                admin_block = admin_block
+            )
+        }
         NginxMode::StaticJwt { token } => {
             let escaped_token = token.replace('"', "\\\"");
             format!(
