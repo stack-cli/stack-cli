@@ -7,7 +7,7 @@ spec:
   components:
     db:
     auth:
-      hostname-url: https://inch-idol-controls-branches.trycloudflare.com/
+      hostname-url: https://tissue-correspondence-again-allen.trycloudflare.com
     storage:
       install_minio: true
   services:

@@ -33,6 +33,10 @@ pub async fn deploy(
         "{}/realms/{}/protocol/openid-connect",
         hostname_base, namespace
     );
+    let internal_realm_base = format!(
+        "{}/realms/{}",
+        KEYCLOAK_INTERNAL_URL, namespace
+    );
 
     deployment::deployment(
         client.clone(),
@@ -58,6 +62,8 @@ pub async fn deploy(
                 json!({"name": "OAUTH2_PROXY_UPSTREAMS", "value": format!("http://{}:{}", APPLICATION_NAME, upstream_port)}),
                 json!({"name": "OAUTH2_PROXY_UPSTREAM_TIMEOUT", "value": "600s"}),
                 json!({"name": "OAUTH2_PROXY_LOGIN_URL", "value": format!("{}/auth", external_realm_base)}),
+                json!({"name": "OAUTH2_PROXY_REDEEM_URL", "value": format!("{}/protocol/openid-connect/token", internal_realm_base)}),
+                json!({"name": "OAUTH2_PROXY_OIDC_JWKS_URL", "value": format!("{}/protocol/openid-connect/certs", internal_realm_base)}),
                 json!({
                     "name":
                     "OAUTH2_PROXY_CLIENT_SECRET",

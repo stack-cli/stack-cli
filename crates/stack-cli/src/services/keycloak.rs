@@ -6,6 +6,8 @@ use kube::core::dynamic::{ApiResource, DynamicObject};
 use kube::core::gvk::GroupVersionKind;
 use kube::{Api, Client};
 use serde_json::{json, Value};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 const CONFIG_JSON: &str = include_str!("../../keycloak/realm.json");
 const KEYCLOAK_API_GROUP: &str = "k8s.keycloak.org";
@@ -14,6 +16,7 @@ pub const KEYCLOAK_NAME: &str = "keycloak";
 pub const KEYCLOAK_SERVICE_NAME: &str = "keycloak-service";
 pub const KEYCLOAK_INTERNAL_URL: &str = "http://keycloak-service.keycloak.svc.cluster.local:8080";
 pub const KEYCLOAK_REALM_BASE_PATH: &str = "/realms";
+const REALM_HASH_ANNOTATION: &str = "stack-cli.dev/realm-hash";
 
 const KEYCLOAK_INSTALL_HINT: &str =
     "Keycloak operator is not installed. Run `stack-cli init` or apply the manifests in `crates/stack-cli/config` before reconciling.";
@@ -41,6 +44,22 @@ pub async fn ensure_realm(client: Client, config: &RealmConfig) -> Result<(), Er
     ensure_namespace_service(client.clone(), &config.namespace).await?;
     let realm_api = keycloak_realm_import_api(client, KEYCLOAK_NAMESPACE);
     let resource_name = format!("keycloak-realm-{}", config.realm);
+    let desired_hash = realm_hash(config);
+
+    if let Ok(existing) = realm_api.get(&resource_name).await {
+        let existing_hash = existing
+            .metadata
+            .annotations
+            .as_ref()
+            .and_then(|annotations| annotations.get(REALM_HASH_ANNOTATION))
+            .map(String::as_str);
+
+        if existing_hash != Some(desired_hash.as_str()) {
+            realm_api
+                .delete(&resource_name, &DeleteParams::default())
+                .await?;
+        }
+    }
 
     let realm_resource = json!({
         "apiVersion": format!("{}/{}", KEYCLOAK_API_GROUP, "v2alpha1"),
@@ -48,6 +67,9 @@ pub async fn ensure_realm(client: Client, config: &RealmConfig) -> Result<(), Er
         "metadata": {
             "name": resource_name,
             "namespace": KEYCLOAK_NAMESPACE,
+            "annotations": {
+                REALM_HASH_ANNOTATION: desired_hash
+            }
         },
         "spec": {
             "keycloakCRName": KEYCLOAK_NAME,
@@ -94,6 +116,17 @@ pub async fn ensure_realm(client: Client, config: &RealmConfig) -> Result<(), Er
         }
         Err(err) => Err(err.into()),
     }
+}
+
+fn realm_hash(config: &RealmConfig) -> String {
+    let mut hasher = DefaultHasher::new();
+    config.realm.hash(&mut hasher);
+    config.client_id.hash(&mut hasher);
+    config.client_secret.hash(&mut hasher);
+    config.redirect_uris.hash(&mut hasher);
+    config.allow_registration.hash(&mut hasher);
+    config.public_base_url.hash(&mut hasher);
+    format!("{:x}", hasher.finish())
 }
 
 pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
