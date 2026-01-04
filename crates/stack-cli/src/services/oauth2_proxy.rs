@@ -64,6 +64,7 @@ pub async fn deploy(
                 json!({"name": "OAUTH2_PROXY_LOGIN_URL", "value": format!("{}/auth", external_realm_base)}),
                 json!({"name": "OAUTH2_PROXY_REDEEM_URL", "value": format!("{}/protocol/openid-connect/token", internal_realm_base)}),
                 json!({"name": "OAUTH2_PROXY_OIDC_JWKS_URL", "value": format!("{}/protocol/openid-connect/certs", internal_realm_base)}),
+                json!({"name": "OAUTH2_PROXY_SKIP_OIDC_DISCOVERY", "value": "true"}),
                 json!({
                     "name":
                     "OAUTH2_PROXY_CLIENT_SECRET",
