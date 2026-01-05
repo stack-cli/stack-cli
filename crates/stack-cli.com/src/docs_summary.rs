@@ -9,7 +9,7 @@ pub fn summary() -> Summary {
                 pages: vec![
                     Page {
                         date: "",
-                        title: "Introduction",
+                        title: "Quick Start",
                         description: "Install Stack and apply your first StackApp",
                         folder: "docs/",
                         markdown: include_str!("../content/docs/index.md"),
