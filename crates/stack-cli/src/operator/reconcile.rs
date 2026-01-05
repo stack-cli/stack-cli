@@ -4,11 +4,11 @@ use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
 use crate::services::{
     cloudflare, database, deployment, jwt_secrets, keycloak, nginx, oauth2_proxy, postgrest,
-    storage,
+    realtime, storage,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
-    core::v1::{ConfigMap, Secret, Service},
+    core::v1::{ConfigMap, Service},
 };
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client, Resource, ResourceExt};
@@ -55,6 +55,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         keycloak::delete(client.clone(), &namespace).await?;
         storage::delete(client.clone(), &namespace).await?;
         postgrest::delete(client.clone(), &namespace).await?;
+        realtime::delete(client.clone(), &namespace).await?;
         jwt_secrets::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace).await?;
@@ -90,6 +91,12 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         postgrest::delete(client.clone(), &namespace).await?;
     }
 
+    if let Some(realtime_spec) = app.spec.components.realtime.as_ref() {
+        realtime::deploy(client.clone(), &namespace, Some(realtime_spec)).await?;
+    } else {
+        realtime::delete(client.clone(), &namespace).await?;
+    }
+
     let auth_hostname = app
         .spec
         .components
@@ -99,6 +106,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
 
     let include_storage = app.spec.components.storage.is_some();
     let include_rest = app.spec.components.rest.is_some();
+    let include_realtime = app.spec.components.realtime.is_some();
 
     if let Some(hostname_url) = auth_hostname {
         let realm_config =
@@ -125,6 +133,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             app.spec.services.web.port,
             include_storage,
             include_rest,
+            include_realtime,
         )
         .await?;
     } else {
@@ -146,6 +155,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             app.spec.services.web.port,
             include_storage,
             include_rest,
+            include_realtime,
         )
         .await?;
     }

@@ -44,6 +44,34 @@ fn proxy_block(path: &str, service: &str, port: u16, proto_var: &str) -> String 
     )
 }
 
+fn websocket_block(path: &str, service: &str, port: u16, proto_var: &str) -> String {
+    format!(
+        r#"
+    location = {path} {{
+        return 301 {path}/;
+    }}
+
+    location ^~ {path}/ {{
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://{service}:{port}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto {proto_var};
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
+    }}
+"#,
+        path = path,
+        service = service,
+        port = port,
+        proto_var = proto_var
+    )
+}
+
 // The web user interface
 pub async fn deploy_nginx(
     client: &Client,
@@ -52,6 +80,7 @@ pub async fn deploy_nginx(
     upstream_port: u16,
     include_storage: bool,
     include_rest: bool,
+    include_realtime: bool,
 ) -> Result<(), Error> {
     let env = vec![];
 
@@ -64,6 +93,11 @@ pub async fn deploy_nginx(
     };
     let rest_block = if include_rest {
         proxy_block("/rest", "rest", 3000, "$forwarded_proto")
+    } else {
+        String::new()
+    };
+    let realtime_block = if include_realtime {
+        websocket_block("/realtime", "realtime", 4000, "$forwarded_proto")
     } else {
         String::new()
     };
@@ -112,6 +146,7 @@ server {{
 
 {storage_block}
 {rest_block}
+{realtime_block}
 
     location / {{
         proxy_pass http://oauth2-proxy:7900;
@@ -127,6 +162,7 @@ server {{
                 admin_block = admin_block
                 , storage_block = storage_block
                 , rest_block = rest_block
+                , realtime_block = realtime_block
             )
         }
         NginxMode::StaticJwt { token } => {
@@ -141,6 +177,11 @@ server {{
             } else {
                 String::new()
             };
+            let realtime_block = if include_realtime {
+                websocket_block("/realtime", "realtime", 4000, "$scheme")
+            } else {
+                String::new()
+            };
             format!(
                 r#"
 server {{
@@ -152,6 +193,7 @@ server {{
 
 {storage_block}
 {rest_block}
+{realtime_block}
 
     location / {{
         proxy_pass http://{app}:{port};
@@ -170,6 +212,7 @@ server {{
                 token = escaped_token
                 , storage_block = storage_block
                 , rest_block = rest_block
+                , realtime_block = realtime_block
             )
         }
     };

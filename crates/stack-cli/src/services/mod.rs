@@ -9,4 +9,5 @@ pub mod network_policy;
 pub mod nginx;
 pub mod oauth2_proxy;
 pub mod postgrest;
+pub mod realtime;
 pub mod storage;

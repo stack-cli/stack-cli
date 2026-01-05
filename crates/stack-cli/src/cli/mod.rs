@@ -15,7 +15,6 @@ pub struct Cli {
 }
 
 #[derive(Parser)]
-#[derive(Parser)]
 pub struct Initializer {
     /// Install ingress
     #[arg(long, default_value_t = false)]

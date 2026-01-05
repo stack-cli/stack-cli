@@ -12,6 +12,7 @@ spec:
       expose_db_port: 30011
     rest: {}
     auth: {}
+    realtime: {}
     storage:
       install_minio: true
   services:

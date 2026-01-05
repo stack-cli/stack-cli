@@ -32,6 +32,7 @@ pub struct Components {
     pub storage: Option<StorageConfig>,
     pub cloudflare: Option<CloudflareConfig>,
     pub ingress: Option<IngressConfig>,
+    pub realtime: Option<RealtimeConfig>,
     pub rest: Option<RestConfig>,
 }
 
@@ -148,3 +149,7 @@ pub struct RestConfig {
     /// Optional JWT expiry to set in app settings (seconds).
     pub jwt_expiry: Option<String>,
 }
+
+/// Optional Realtime configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct RealtimeConfig {}
