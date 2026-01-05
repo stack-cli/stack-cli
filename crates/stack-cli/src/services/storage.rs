@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::operator::crd::StorageConfig;
 use crate::services::deployment;
+use crate::services::jwt_secrets;
 use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
@@ -11,8 +12,6 @@ use serde_json::json;
 pub const STORAGE_NAME: &str = "storage";
 pub const DEFAULT_STORAGE_IMAGE: &str = "supabase/storage-api:v1.33.0";
 pub const DEFAULT_STORAGE_PORT: u16 = 5000;
-const STORAGE_AUTH_SECRET_NAME: &str = "storage-auth";
-const STORAGE_AUTH_SECRET_KEY: &str = "auth-jwt-secret";
 const STORAGE_S3_SECRET_NAME: &str = "storage-s3";
 const STORAGE_S3_BUCKET_KEY: &str = "STORAGE_S3_BUCKET";
 const STORAGE_S3_ENDPOINT_KEY: &str = "STORAGE_S3_ENDPOINT";
@@ -46,7 +45,7 @@ pub async fn deploy(
     });
 
     let override_jwt = config.and_then(|c| c.danger_override_jwt_secret.clone());
-    ensure_secret(client.clone(), namespace, override_jwt).await?;
+    jwt_secrets::ensure_secret(client.clone(), namespace, override_jwt).await?;
     if config.is_none() || config.and_then(|c| c.s3_secret_name.as_ref()).is_none() {
         ensure_s3_secret(client.clone(), namespace, &secret_name).await?;
     }
@@ -205,8 +204,8 @@ mc anonymous set download supa-minio/warehouse--table-s3 || true
             "name": "AUTH_JWT_SECRET",
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": STORAGE_AUTH_SECRET_NAME,
-                    "key": STORAGE_AUTH_SECRET_KEY
+                    "name": jwt_secrets::JWT_AUTH_SECRET_NAME,
+                    "key": jwt_secrets::JWT_SECRET_KEY
                 }
             }
         }),
@@ -268,9 +267,13 @@ pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
     }
 
     let secrets: Api<Secret> = Api::namespaced(client, namespace);
-    if secrets.get(STORAGE_AUTH_SECRET_NAME).await.is_ok() {
+    if secrets
+        .get(jwt_secrets::JWT_AUTH_SECRET_NAME)
+        .await
+        .is_ok()
+    {
         secrets
-            .delete(STORAGE_AUTH_SECRET_NAME, &DeleteParams::default())
+            .delete(jwt_secrets::JWT_AUTH_SECRET_NAME, &DeleteParams::default())
             .await?;
     }
     if secrets.get(STORAGE_S3_SECRET_NAME).await.is_ok() {
@@ -278,42 +281,6 @@ pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
             .delete(STORAGE_S3_SECRET_NAME, &DeleteParams::default())
             .await?;
     }
-
-    Ok(())
-}
-
-async fn ensure_secret(
-    client: Client,
-    namespace: &str,
-    override_jwt: Option<String>,
-) -> Result<(), Error> {
-    let secret_api: Api<Secret> = Api::namespaced(client, namespace);
-    let existing = secret_api.get(STORAGE_AUTH_SECRET_NAME).await.ok();
-    let secret_value = existing
-        .as_ref()
-        .and_then(|secret| read_secret_field(secret, STORAGE_AUTH_SECRET_KEY))
-        .or(override_jwt)
-        .unwrap_or_else(random_token);
-
-    let secret_manifest = json!({
-        "apiVersion": "v1",
-        "kind": "Secret",
-        "metadata": {
-            "name": STORAGE_AUTH_SECRET_NAME,
-            "namespace": namespace
-        },
-        "stringData": {
-            STORAGE_AUTH_SECRET_KEY: secret_value
-        }
-    });
-
-    secret_api
-        .patch(
-            STORAGE_AUTH_SECRET_NAME,
-            &PatchParams::apply(crate::MANAGER).force(),
-            &Patch::Apply(secret_manifest),
-        )
-        .await?;
 
     Ok(())
 }

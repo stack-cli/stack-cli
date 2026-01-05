@@ -72,6 +72,21 @@ server {{
         proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/oidc/$1;
     }}
 
+    location = /storage {{
+        return 301 /storage/;
+    }}
+
+    location ^~ /storage/ {{
+        proxy_pass http://storage:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
+    }}
+
     location / {{
         proxy_pass http://oauth2-proxy:7900;
         proxy_set_header Host $host;
@@ -96,6 +111,21 @@ server {{
     proxy_buffer_size   128k;
     proxy_buffers       4 256k;
     proxy_busy_buffers_size 256k;
+
+    location = /storage {{
+        return 301 /storage/;
+    }}
+
+    location ^~ /storage/ {{
+        proxy_pass http://storage:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
+    }}
 
     location / {{
         proxy_pass http://{app}:{port};

@@ -1,0 +1,108 @@
+use crate::error::Error;
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use k8s_openapi::api::core::v1::Secret;
+use kube::api::{Patch, PatchParams};
+use kube::{Api, Client};
+use rand::{distributions::Alphanumeric, Rng};
+use serde::Serialize;
+
+pub const JWT_AUTH_SECRET_NAME: &str = "jwt-auth";
+pub const JWT_SECRET_KEY: &str = "jwt-secret";
+pub const JWT_ANON_TOKEN_KEY: &str = "anon-jwt";
+pub const JWT_SERVICE_ROLE_TOKEN_KEY: &str = "service-role-jwt";
+
+#[derive(Serialize)]
+struct JwtClaims {
+    role: String,
+}
+
+pub async fn ensure_secret(
+    client: Client,
+    namespace: &str,
+    override_jwt: Option<String>,
+) -> Result<(), Error> {
+    let secret_api: Api<Secret> = Api::namespaced(client, namespace);
+    let existing = secret_api.get(JWT_AUTH_SECRET_NAME).await.ok();
+
+    let jwt_secret = existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, JWT_SECRET_KEY))
+        .or(override_jwt)
+        .unwrap_or_else(random_token);
+
+    let anon_jwt = match existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, JWT_ANON_TOKEN_KEY))
+    {
+        Some(value) => value,
+        None => build_jwt(&jwt_secret, "anon")?,
+    };
+
+    let service_role_jwt = match existing
+        .as_ref()
+        .and_then(|secret| read_secret_field(secret, JWT_SERVICE_ROLE_TOKEN_KEY))
+    {
+        Some(value) => value,
+        None => build_jwt(&jwt_secret, "service_role")?,
+    };
+
+    let secret_manifest = serde_json::json!({
+        "apiVersion": "v1",
+        "kind": "Secret",
+        "metadata": {
+            "name": JWT_AUTH_SECRET_NAME,
+            "namespace": namespace
+        },
+        "stringData": {
+            JWT_SECRET_KEY: jwt_secret,
+            JWT_ANON_TOKEN_KEY: anon_jwt,
+            JWT_SERVICE_ROLE_TOKEN_KEY: service_role_jwt
+        }
+    });
+
+    secret_api
+        .patch(
+            JWT_AUTH_SECRET_NAME,
+            &PatchParams::apply(crate::MANAGER).force(),
+            &Patch::Apply(secret_manifest),
+        )
+        .await?;
+
+    Ok(())
+}
+
+fn build_jwt(secret: &str, role: &str) -> Result<String, Error> {
+    let claims = JwtClaims {
+        role: role.to_string(),
+    };
+
+    encode(
+        &Header::new(Algorithm::HS256),
+        &claims,
+        &EncodingKey::from_secret(secret.as_bytes()),
+    )
+    .map_err(|err| Error::Other(err.to_string()))
+}
+
+fn random_token() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect()
+}
+
+fn read_secret_field(secret: &Secret, key: &str) -> Option<String> {
+    if let Some(data) = &secret.data {
+        if let Some(value) = data.get(key) {
+            if let Ok(val) = String::from_utf8(value.0.clone()) {
+                return Some(val);
+            }
+        }
+    }
+
+    secret
+        .string_data
+        .as_ref()
+        .and_then(|map| map.get(key).cloned())
+}
