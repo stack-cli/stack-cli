@@ -30,6 +30,7 @@ pub struct Components {
     pub db: Option<DbConfig>,
     pub auth: Option<AuthConfig>,
     pub storage: Option<StorageConfig>,
+    pub cloudflare: Option<CloudflareConfig>,
     pub ingress: Option<IngressConfig>,
     pub rest: Option<RestConfig>,
 }
@@ -128,6 +129,13 @@ pub struct StorageConfig {
 pub struct IngressConfig {
     /// Optional NodePort number to expose nginx.
     pub port: Option<u16>,
+}
+
+/// Optional Cloudflare tunnel configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct CloudflareConfig {
+    /// Optional secret name with tunnel configuration; omit for quick tunnels.
+    pub secret_name: Option<String>,
 }
 
 /// Optional PostgREST configuration.

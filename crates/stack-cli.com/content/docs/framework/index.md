@@ -71,7 +71,7 @@ Stack will ensure the namespace exists, provision a CloudNativePG database clust
 Run a quick tunnel while testing:
 
 ```bash
-stack cloudflare --manifest rails-stack-app.yaml --name rails-demo
+Add `components.cloudflare: {}` to `rails-stack-app.yaml` and re-run `stack install` to start a quick tunnel.
 stack status --manifest rails-stack-app.yaml
 ```
 

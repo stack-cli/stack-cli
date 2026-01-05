@@ -1,33 +1,62 @@
 # Cloudflare Tunnels
 
-Stack includes an opinionated Cloudflare deployment so you can expose namespaces without writing additional manifests. Both commands only need the same `StackApp` manifest you already apply for your workload, which keeps namespace selection consistent everywhere.
+Stack includes an opinionated Cloudflare deployment so you can expose namespaces without writing additional manifests. Configure it directly on your `StackApp` so the namespace and ingress target stay aligned.
 
 ## Quick tunnels (no Cloudflare account)
 
-```bash
-stack cloudflare \
-  --manifest demo-stack-app.yaml \
-  --name stack
+```yaml
+apiVersion: stack-cli.dev/v1
+kind: StackApp
+metadata:
+  name: stack-app
+  namespace: stack-demo
+spec:
+  components:
+    cloudflare: {}
+  services:
+    web:
+      image: ghcr.io/stack/demo-app:latest
+      port: 7903
 ```
 
-- Omitting `--token` tells Stack to start a temporary tunnel.  
-- The CLI reads `metadata.namespace` from your manifest, installs `cloudflared` into that namespace, and points it at the nginx service Stack created earlier.  
+- Omitting `components.cloudflare.secret_name` tells Stack to start a temporary tunnel.  
+- The operator installs `cloudflared` into the same namespace and points it at the nginx service Stack created earlier.  
 - Run `stack status --manifest demo-stack-app.yaml` to print the generated HTTPS URL.
 
 Temporary tunnels are great for demos, development sessions, and any workflow where you just need to share access for a few minutes.
 
 ## Authenticated tunnels (bring your Cloudflare account)
 
-When you want a long-lived hostname, create a Cloudflare tunnel token and run:
+When you want a long-lived hostname, create a Cloudflare tunnel token and a secret that also includes the tunnel name. The operator reads the secret and configures the tunnel.
 
-```bash
-stack cloudflare \
-  --manifest demo-stack-app.yaml \
-  --token "$CLOUDFLARE_TUNNEL_TOKEN" \
-  --name stack
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-tunnel
+  namespace: stack-demo
+stringData:
+  token: "$CLOUDFLARE_TUNNEL_TOKEN"
+  tunnel_name: "stack"
+  # Optional: override the target URL (defaults to nginx in the namespace)
+  # ingress_target: "http://nginx.stack-demo.svc.cluster.local:80"
+---
+apiVersion: stack-cli.dev/v1
+kind: StackApp
+metadata:
+  name: stack-app
+  namespace: stack-demo
+spec:
+  components:
+    cloudflare:
+      secret_name: cloudflare-tunnel
+  services:
+    web:
+      image: ghcr.io/stack/demo-app:latest
+      port: 7903
 ```
 
-The CLI injects the token into the bundled deployment and reuses the same nginx target as the quick tunnel. Because everything comes from your manifest:
+The operator reuses the same nginx target as the quick tunnel. Because everything comes from your manifest:
 
 - The namespace always matches your application.
 - Switching environments (dev/staging/prod) is as simple as pointing to a different manifest.

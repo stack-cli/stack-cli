@@ -3,7 +3,8 @@ use super::finalizer;
 use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
 use crate::services::{
-    database, deployment, jwt_secrets, keycloak, nginx, oauth2_proxy, postgrest, storage,
+    cloudflare, database, deployment, jwt_secrets, keycloak, nginx, oauth2_proxy, postgrest,
+    storage,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
@@ -22,7 +23,6 @@ const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
 const STACK_DB_CLUSTER_NAME: &str = "stack-db-cluster";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
-const CLOUDFLARE_SECRET_NAME: &str = "cloudflare-credentials";
 const CLOUDFLARE_CONFIG_NAME: &str = "cloudflared";
 
 /// Context injected with each `reconcile` and `on_error` method invocation.
@@ -148,6 +148,17 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             include_rest,
         )
         .await?;
+    }
+
+    if let Some(cloudflare_config) = app.spec.components.cloudflare.as_ref() {
+        cloudflare::deploy(
+            &client,
+            &namespace,
+            cloudflare_config.secret_name.as_deref(),
+        )
+        .await?;
+    } else {
+        delete_cloudflare_resources(&client, &namespace).await?;
     }
 
     deploy_web_app(&client, &namespace, &app.spec).await?;
@@ -341,13 +352,6 @@ async fn delete_cloudflare_resources(client: &Client, namespace: &str) -> Result
     if deployments.get(CLOUDFLARE_DEPLOYMENT_NAME).await.is_ok() {
         deployments
             .delete(CLOUDFLARE_DEPLOYMENT_NAME, &DeleteParams::default())
-            .await?;
-    }
-
-    let secrets: Api<Secret> = Api::namespaced(client.clone(), namespace);
-    if secrets.get(CLOUDFLARE_SECRET_NAME).await.is_ok() {
-        secrets
-            .delete(CLOUDFLARE_SECRET_NAME, &DeleteParams::default())
             .await?;
     }
 

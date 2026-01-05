@@ -15,18 +15,6 @@ pub struct Cli {
 }
 
 #[derive(Parser)]
-pub struct CloudflareInstaller {
-    /// Path to a StackApp manifest to read namespace from
-    #[arg(long)]
-    pub manifest: PathBuf,
-    /// The cloudflare tunnel token (omit to create a temporary tunnel)
-    #[arg(long)]
-    pub token: Option<String>,
-    /// The tunnel name
-    #[arg(long, default_value = "stack")]
-    pub name: String,
-}
-
 #[derive(Parser)]
 pub struct Initializer {
     /// Install ingress
@@ -82,8 +70,6 @@ pub enum Commands {
     Init(Initializer),
     /// Run the Stack Kubernetes Operator
     Operator(OperatorArgs),
-    /// Install Cloudflare Tunnel
-    Cloudflare(CloudflareInstaller),
     /// Show platform connection details (Keycloak credentials, Cloudflare URL)
     Status(StatusArgs),
     /// Print namespace secrets as KEY=VALUE lines for .env files

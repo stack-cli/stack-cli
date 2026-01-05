@@ -21,9 +21,6 @@ async fn main() -> Result<()> {
         cli::Commands::Operator(args) => {
             operator::operator(args.once).await?;
         }
-        cli::Commands::Cloudflare(installer) => {
-            services::cloudflare::install(installer).await?;
-        }
         cli::Commands::Status(args) => {
             cli::status::status(args).await?;
         }
