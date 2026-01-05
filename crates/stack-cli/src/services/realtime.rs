@@ -15,6 +15,8 @@ pub const REALTIME_PORT: u16 = 4000;
 const REALTIME_SECRET_NAME: &str = "realtime-secrets";
 const REALTIME_SECRET_KEY_BASE_KEY: &str = "secret-key-base";
 const REALTIME_DB_ENC_KEY: &str = "db-enc-key";
+const DB_ENC_KEY_LEN: usize = 16;
+const REALTIME_INIT_IMAGE: &str = "postgres:16-alpine";
 
 pub async fn deploy(
     client: Client,
@@ -76,7 +78,7 @@ pub async fn deploy(
             }
         }),
         json!({"name": "ERL_AFLAGS", "value": "-proto_dist inet_tcp"}),
-        json!({"name": "RLIMIT_NOFILE", "value": "1000000"}),
+        json!({"name": "RLIMIT_NOFILE", "value": "1048576"}),
         json!({"name": "DNS_NODES", "value": "''"}),
         json!({"name": "APP_NAME", "value": "realtime"}),
         json!({"name": "RUN_JANITOR", "value": "true"}),
@@ -84,6 +86,40 @@ pub async fn deploy(
         json!({"name": "LOG_LEVEL", "value": "info"}),
         json!({"name": "SEED_SELF_HOST", "value": "true"}),
     ];
+
+    let init_container = deployment::InitContainer {
+        image_name: REALTIME_INIT_IMAGE.to_string(),
+        env: vec![
+            json!({"name": "PGHOST", "value": "stack-db-cluster-rw"}),
+            json!({"name": "PGPORT", "value": "5432"}),
+            json!({"name": "PGDATABASE", "value": "stack-app"}),
+            json!({
+                "name": "PGUSER",
+                "valueFrom": {
+                    "secretKeyRef": {
+                        "name": "db-owner",
+                        "key": "username"
+                    }
+                }
+            }),
+            json!({
+                "name": "PGPASSWORD",
+                "valueFrom": {
+                    "secretKeyRef": {
+                        "name": "db-owner",
+                        "key": "password"
+                    }
+                }
+            }),
+        ],
+        command: Some(deployment::Command {
+            command: vec!["/bin/sh".to_string(), "-c".to_string()],
+            args: vec![
+                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";'"
+                    .to_string(),
+            ],
+        }),
+    };
 
     deployment::deployment(
         client,
@@ -93,7 +129,7 @@ pub async fn deploy(
             replicas: 1,
             port: REALTIME_PORT,
             env,
-            init_container: None,
+            init_container: Some(init_container),
             command: None,
             volume_mounts: vec![],
             volumes: vec![],
@@ -141,7 +177,8 @@ async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
     let db_enc_key = existing
         .as_ref()
         .and_then(|secret| read_secret_field(secret, REALTIME_DB_ENC_KEY))
-        .unwrap_or_else(random_token);
+        .filter(|value| value.len() == DB_ENC_KEY_LEN)
+        .unwrap_or_else(|| random_token_len(DB_ENC_KEY_LEN));
 
     let secret_manifest = json!({
         "apiVersion": "v1",
@@ -168,9 +205,13 @@ async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
 }
 
 fn random_token() -> String {
+    random_token_len(32)
+}
+
+fn random_token_len(len: usize) -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(32)
+        .take(len)
         .map(char::from)
         .collect()
 }

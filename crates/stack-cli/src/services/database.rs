@@ -96,6 +96,8 @@ pub async fn deploy(
                     ]),
                     post_init_sql: Some(vec![
                         "ALTER ROLE \"db-owner\" WITH SUPERUSER CREATEROLE CREATEDB".to_string(),
+                        "CREATE SCHEMA IF NOT EXISTS _realtime".to_string(),
+                        "ALTER SCHEMA _realtime OWNER TO \"db-owner\"".to_string(),
                         format!(
                             "CREATE ROLE application_user LOGIN ENCRYPTED PASSWORD '{}'",
                             app_database_password
@@ -104,7 +106,9 @@ pub async fn deploy(
                             "CREATE ROLE application_readonly LOGIN ENCRYPTED PASSWORD '{}'",
                             readonly_database_password
                         ),
+                        "CREATE ROLE authenticated NOLOGIN".to_string(),
                         "CREATE ROLE anon NOLOGIN".to_string(),
+                        "CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS".to_string(),
                         format!(
                             "CREATE ROLE authenticator LOGIN ENCRYPTED PASSWORD '{}'",
                             authenticator_password
