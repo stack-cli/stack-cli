@@ -28,10 +28,10 @@ const OPERATOR_IMAGE: &str = "ghcr.io/stack-cli/stack-operator";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const CNPG_YAML: &str = include_str!("../../config/cnpg-1.22.1.yaml");
 const NGINX_YAML: &str = include_str!("../../config/nginx-ingress.yaml");
-const KEYCLOAK_CRD_KEYCLOAKS: &str = include_str!("../../config/keycloak-crd-keycloaks.yaml");
+const KEYCLOAK_CRD_KEYCLOAKS: &str = include_str!("../../keycloak/keycloak-crd-keycloaks.yaml");
 const KEYCLOAK_CRD_REALM_IMPORTS: &str =
-    include_str!("../../config/keycloak-crd-keycloakrealmimports.yaml");
-const KEYCLOAK_OPERATOR_YAML: &str = include_str!("../../config/keycloak-operator.yaml");
+    include_str!("../../keycloak/keycloak-crd-keycloakrealmimports.yaml");
+const KEYCLOAK_OPERATOR_YAML: &str = include_str!("../../keycloak/keycloak-operator.yaml");
 const KEYCLOAK_DB_SIZE_GIB: i32 = 10;
 
 pub async fn init(initializer: &crate::cli::Initializer) -> Result<()> {
