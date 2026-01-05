@@ -1,14 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640">
   <defs>
     <style>
       .title { font: 700 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; letter-spacing: 2px; fill: #111; }
       .subtitle { font: 600 22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; fill: #111; }
       .pillText { font: 700 22px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; fill: #fff; }
       .boxText { font: 650 24px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; fill: #111; }
+      .k8sLabel { font: 700 22px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill: #111; }
       .stroke { stroke: #111; stroke-width: 2.5; fill: none; }
       .box { fill: #fff; stroke: #cfd6de; stroke-width: 2; }
       .topBox { fill: #fff; stroke: #d7dee7; stroke-width: 2; }
       .pill { fill: #1a1a1a; }
+      .k8sBorder { fill: none; stroke: #b9c2cc; stroke-width: 2.5; }
     </style>
 
     <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
@@ -16,59 +18,72 @@
     </marker>
   </defs>
 
-  <!-- Top: NGINX -->
-  <rect x="70" y="30" rx="22" ry="22" width="960" height="110" class="topBox"/>
-  <text x="550" y="82" text-anchor="middle" class="title">NGINX</text>
-  <text x="550" y="115" text-anchor="middle" class="subtitle">nginx.org</text>
+  <!-- Kubernetes outer box -->
+  <rect x="30" y="30" rx="18" ry="18" width="1140" height="580" class="k8sBorder"/>
+  <rect x="52" y="18" rx="10" ry="10" width="150" height="34" fill="#fff"/>
+  <text x="62" y="42" class="k8sLabel">Kubernetes</text>
 
-  <!-- Column centers -->
-  <!-- c1=170, c2=410, c3=650, c4=890 -->
+  <!-- Top: NGINX -->
+  <rect x="120" y="70" rx="22" ry="22" width="960" height="110" class="topBox"/>
+  <text x="600" y="122" text-anchor="middle" class="title">NGINX</text>
+  <text x="600" y="155" text-anchor="middle" class="subtitle">nginx.org</text>
+
+  <!-- Column centers: 200, 400, 600, 800, 1000 -->
   <!-- Vertical stems from top box -->
-  <line x1="170" y1="140" x2="170" y2="180" class="stroke"/>
-  <line x1="410" y1="140" x2="410" y2="180" class="stroke"/>
-  <line x1="650" y1="140" x2="650" y2="180" class="stroke"/>
-  <line x1="890" y1="140" x2="890" y2="180" class="stroke"/>
+  <line x1="200" y1="180" x2="200" y2="220" class="stroke"/>
+  <line x1="400" y1="180" x2="400" y2="220" class="stroke"/>
+  <line x1="600" y1="180" x2="600" y2="220" class="stroke"/>
+  <line x1="800" y1="180" x2="800" y2="220" class="stroke"/>
+  <line x1="1000" y1="180" x2="1000" y2="220" class="stroke"/>
 
   <!-- Pills -->
-  <rect x="120" y="180" rx="18" ry="18" width="100" height="46" class="pill"/>
-  <text x="170" y="210" text-anchor="middle" class="pillText">/auth</text>
+  <rect x="145" y="220" rx="18" ry="18" width="110" height="46" class="pill"/>
+  <text x="200" y="250" text-anchor="middle" class="pillText">/oidc</text>
 
-  <rect x="360" y="180" rx="18" ry="18" width="100" height="46" class="pill"/>
-  <text x="410" y="210" text-anchor="middle" class="pillText">/rest</text>
+  <rect x="350" y="220" rx="18" ry="18" width="100" height="46" class="pill"/>
+  <text x="400" y="250" text-anchor="middle" class="pillText">/rest</text>
 
-  <rect x="575" y="180" rx="18" ry="18" width="150" height="46" class="pill"/>
-  <text x="650" y="210" text-anchor="middle" class="pillText">/realtime</text>
+  <rect x="525" y="220" rx="18" ry="18" width="150" height="46" class="pill"/>
+  <text x="600" y="250" text-anchor="middle" class="pillText">/realtime</text>
 
-  <rect x="820" y="180" rx="18" ry="18" width="140" height="46" class="pill"/>
-  <text x="890" y="210" text-anchor="middle" class="pillText">/storage</text>
+  <rect x="730" y="220" rx="18" ry="18" width="140" height="46" class="pill"/>
+  <text x="800" y="250" text-anchor="middle" class="pillText">/storage</text>
+
+  <rect x="975" y="220" rx="18" ry="18" width="50" height="46" class="pill"/>
+  <text x="1000" y="250" text-anchor="middle" class="pillText">/</text>
 
   <!-- Arrows from pills to service boxes -->
-  <line x1="170" y1="226" x2="170" y2="255" class="stroke" marker-end="url(#arrow)"/>
-  <line x1="410" y1="226" x2="410" y2="255" class="stroke" marker-end="url(#arrow)"/>
-  <line x1="650" y1="226" x2="650" y2="255" class="stroke" marker-end="url(#arrow)"/>
-  <line x1="890" y1="226" x2="890" y2="255" class="stroke" marker-end="url(#arrow)"/>
+  <line x1="200" y1="266" x2="200" y2="295" class="stroke" marker-end="url(#arrow)"/>
+  <line x1="400" y1="266" x2="400" y2="295" class="stroke" marker-end="url(#arrow)"/>
+  <line x1="600" y1="266" x2="600" y2="295" class="stroke" marker-end="url(#arrow)"/>
+  <line x1="800" y1="266" x2="800" y2="295" class="stroke" marker-end="url(#arrow)"/>
+  <line x1="1000" y1="266" x2="1000" y2="295" class="stroke" marker-end="url(#arrow)"/>
 
   <!-- Service boxes -->
-  <rect x="95" y="265" rx="16" ry="16" width="150" height="76" class="box"/>
-  <text x="170" y="312" text-anchor="middle" class="boxText">Keycloak</text>
+  <rect x="125" y="305" rx="16" ry="16" width="150" height="76" class="box"/>
+  <text x="200" y="352" text-anchor="middle" class="boxText">Keycloak</text>
 
-  <rect x="335" y="265" rx="16" ry="16" width="150" height="76" class="box"/>
-  <text x="410" y="312" text-anchor="middle" class="boxText">PostgREST</text>
+  <rect x="325" y="305" rx="16" ry="16" width="150" height="76" class="box"/>
+  <text x="400" y="352" text-anchor="middle" class="boxText">PostgREST</text>
 
-  <rect x="575" y="265" rx="16" ry="16" width="150" height="76" class="box"/>
-  <text x="650" y="312" text-anchor="middle" class="boxText">Realtime</text>
+  <rect x="525" y="305" rx="16" ry="16" width="150" height="76" class="box"/>
+  <text x="600" y="352" text-anchor="middle" class="boxText">Realtime</text>
 
-  <rect x="815" y="265" rx="16" ry="16" width="150" height="76" class="box"/>
-  <text x="890" y="312" text-anchor="middle" class="boxText">Storage</text>
+  <rect x="725" y="305" rx="16" ry="16" width="150" height="76" class="box"/>
+  <text x="800" y="352" text-anchor="middle" class="boxText">Storage</text>
+
+  <rect x="900" y="305" rx="16" ry="16" width="200" height="76" class="box"/>
+  <text x="1000" y="352" text-anchor="middle" class="boxText">Your App</text>
 
   <!-- Stems from service boxes to bottom -->
-  <line x1="170" y1="341" x2="170" y2="385" class="stroke"/>
-  <line x1="410" y1="341" x2="410" y2="385" class="stroke"/>
-  <line x1="650" y1="341" x2="650" y2="385" class="stroke"/>
-  <line x1="890" y1="341" x2="890" y2="385" class="stroke"/>
+  <line x1="200" y1="381" x2="200" y2="425" class="stroke"/>
+  <line x1="400" y1="381" x2="400" y2="425" class="stroke"/>
+  <line x1="600" y1="381" x2="600" y2="425" class="stroke"/>
+  <line x1="800" y1="381" x2="800" y2="425" class="stroke"/>
+  <line x1="1000" y1="381" x2="1000" y2="425" class="stroke"/>
 
   <!-- Bottom: PostgreSQL -->
-  <rect x="70" y="385" rx="22" ry="22" width="960" height="110" class="topBox"/>
-  <text x="550" y="440" text-anchor="middle" class="title">POSTGRESQL</text>
-  <text x="550" y="472" text-anchor="middle" class="subtitle">postgresql.org</text>
+  <rect x="120" y="425" rx="22" ry="22" width="960" height="110" class="topBox"/>
+  <text x="600" y="480" text-anchor="middle" class="title">POSTGRESQL</text>
+  <text x="600" y="512" text-anchor="middle" class="subtitle">postgresql.org</text>
 </svg>
