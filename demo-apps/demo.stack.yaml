@@ -5,20 +5,20 @@ metadata:
   namespace: stack-demo
 spec:
   components:
+    ingress:
+      port: 30010
     db:
       danger_override_password: testpassword
       expose_db_port: 30011
-    rest:
+    rest: {}
     auth:
       danger_override_jwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJnaXZlbl9uYW1lIjoiSWFuIiwiZW1haWwiOiJlbWFpbEBlbWFpbC5jb20iLCJmYW1pbGl5X25hbWUiOiJQdXJ0b24iLCJzdWIiOjEyMzR9.Yy-3FDWm70X9tQkzeO3CBQl-Sg2CZm2GBIKvS3zSj8U"
     storage:
-      expose_storage_port: 30012
       install_minio: true
   services:
     web:
       image: mendhak/http-https-echo:latest
       port: 8080
-      expose_app_port: 30010
       database_url: DATABASE_URL
       env:
         - name: ECHO_INCLUDE_ENV_VARS

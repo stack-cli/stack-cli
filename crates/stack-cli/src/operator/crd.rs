@@ -30,6 +30,7 @@ pub struct Components {
     pub db: Option<DbConfig>,
     pub auth: Option<AuthConfig>,
     pub storage: Option<StorageConfig>,
+    pub ingress: Option<IngressConfig>,
     pub rest: Option<RestConfig>,
 }
 
@@ -55,8 +56,6 @@ pub struct WebService {
     pub image: String,
     /// Container port exposed by the application (e.g. 7903)
     pub port: u16,
-    /// Optional NodePort number to expose the app (nginx) service.
-    pub expose_app_port: Option<u16>,
     /// Optional list of plaintext environment variables injected into the web pod.
     #[serde(default)]
     pub env: Vec<EnvVar>,
@@ -118,14 +117,19 @@ pub struct AuthConfig {
 /// Optional Supabase storage configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 pub struct StorageConfig {
-    /// Optional NodePort number to expose the storage service.
-    pub expose_storage_port: Option<u16>,
     /// If set, storage will read S3 credentials and settings from this secret instead of the default.
     /// Expected keys: STORAGE_S3_BUCKET, STORAGE_S3_ENDPOINT, STORAGE_S3_REGION, STORAGE_S3_FORCE_PATH_STYLE,
     /// AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_PROTOCOL_ACCESS_KEY_ID, S3_PROTOCOL_ACCESS_KEY_SECRET.
     pub s3_secret_name: Option<String>,
     /// When true, deploy the bundled MinIO instance; defaults to true when no s3_secret_name is provided.
     pub install_minio: Option<bool>,
+}
+
+/// Optional ingress configuration for exposing nginx via NodePort.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct IngressConfig {
+    /// Optional NodePort number to expose nginx.
+    pub port: Option<u16>,
 }
 
 /// Optional PostgREST configuration.

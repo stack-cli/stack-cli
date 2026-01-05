@@ -18,7 +18,6 @@ use std::{sync::Arc, time::Duration};
 const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
 const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
-const STORAGE_NODEPORT_SERVICE_NAME: &str = "storage-development";
 const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
 const STACK_DB_CLUSTER_NAME: &str = "stack-db-cluster";
 const WEB_APP_REPLICAS: i32 = 1;
@@ -232,7 +231,7 @@ async fn deploy_web_app(
             volumes: vec![],
         },
         namespace,
-        spec.services.web.expose_app_port.is_some(),
+        spec.components.ingress.is_some(),
     )
     .await
 }
@@ -268,9 +267,23 @@ async fn ensure_optional_nodeports(
         .components
         .auth
         .as_ref()
-        .and_then(|auth_config| auth_config.expose_auth_port)
-        .or(spec.services.web.expose_app_port);
+        .and_then(|auth_config| auth_config.expose_auth_port);
     if let Some(node_port) = auth_node_port {
+        ensure_nodeport_service(
+            client,
+            namespace,
+            APP_NODEPORT_SERVICE_NAME,
+            json!({ "app": nginx::NGINX_NAME }),
+            nginx::NGINX_PORT,
+            node_port,
+        )
+        .await?;
+    } else if let Some(node_port) = spec
+        .components
+        .ingress
+        .as_ref()
+        .and_then(|ingress_config| ingress_config.port)
+    {
         ensure_nodeport_service(
             client,
             namespace,
@@ -282,25 +295,6 @@ async fn ensure_optional_nodeports(
         .await?;
     } else {
         delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
-    }
-
-    if let Some(node_port) = spec
-        .components
-        .storage
-        .as_ref()
-        .and_then(|storage_config| storage_config.expose_storage_port)
-    {
-        ensure_nodeport_service(
-            client,
-            namespace,
-            STORAGE_NODEPORT_SERVICE_NAME,
-            json!({ "app": storage::STORAGE_NAME }),
-            storage::DEFAULT_STORAGE_PORT,
-            node_port,
-        )
-        .await?;
-    } else {
-        delete_service_if_exists(client, namespace, STORAGE_NODEPORT_SERVICE_NAME).await?;
     }
 
     if let Some(node_port) = spec
@@ -336,7 +330,6 @@ async fn delete_application_resources(client: &Client, namespace: &str) -> Resul
     delete_service_if_exists(client, namespace, APPLICATION_NAME).await?;
     delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
-    delete_service_if_exists(client, namespace, STORAGE_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
 
     Ok(())
