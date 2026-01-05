@@ -85,6 +85,19 @@ pub fn summary() -> Summary {
                 }],
             },
             Category {
+                name: "Deploy Anywhere".to_string(),
+                pages: vec![Page {
+                    date: "",
+                    title: "Hetzner Dedicated Servers",
+                    description: "Install k3s on a dedicated box and run multiple StackApps",
+                    folder: "docs/deploy-anywhere/hetzner/",
+                    markdown: include_str!("../content/docs/deploy-anywhere/hetzner/index.md"),
+                    image: None,
+                    author_image: None,
+                    author: None,
+                }],
+            },
+            Category {
                 name: "Frameworks".to_string(),
                 pages: vec![
                     Page {
