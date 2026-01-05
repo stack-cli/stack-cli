@@ -107,4 +107,4 @@ Each StackApp gets its own namespace, database, and auth service, all on the sam
 ## Next steps
 
 - Add storage with the [Storage](../../storage/) guide.
-- Add a real identity provider via the [Keycloak operator](../../keycloak-operator/) overview.
+- Add a real identity provider via the [Authentication](../../authentication/) overview.

@@ -1,73 +1,22 @@
-# Quick Start
+# Stack: Kubernetes + BaaS
 
-Stack is a self-hosted deployment platform that layers identity, networking, databases, and tooling on top of any Kubernetes cluster. Instead of wiring together operators, CRDs, and manifests by hand, you install Stack once and immediately get a PaaS-like workflow for your applications.
+Stack is a Kubernetes-first deployment platform with built-in backend services, so you can ship apps and infrastructure together.
 
-## k3s for local setup
-
-For quick local setup, [k3s](https://k3s.io/) is the fastest path: it is a lightweight Kubernetes distribution that runs on a single machine while keeping the same APIs you will use in production.
+- **Kubernetes-first**: runs on any cluster (k3s, k3d, managed, bare metal).
+- **Deployment + platform**: one manifest defines app services and platform components.
+- **Backend as a service**: Postgres, Auth, REST, Realtime, and Storage are available per namespace.
+- **Secrets managed**: Stack generates and wires secrets automatically.
+- **Production parity**: the same CRDs and operator flow from dev to prod.
 
 Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) to see how the operator, CRDs, and supporting services interact.
 
-## Install Stack
+## Other platforms
 
-1. **Grab the CLI.**
+Other services that solve adjacent parts of the problem:
 
-   ```bash
-   export STACK_VERSION=v1.1.1
-   curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-linux \
-   && chmod +x ./stack-linux \
-   && sudo mv ./stack-linux /usr/local/bin/stack
-   ```
-
-2. **Bootstrap the platform operators into your cluster.**
-
-   ```bash
-   stack init
-   ```
-
-   This command installs CloudNativePG, Keycloak, ingress, the Stack controller, and custom resource definitions that describe your applications.
-
-3. **Apply a StackApp manifest.**
-
-   ```bash
-   stack install --manifest demo-stack-app.yaml
-   ```
-
-## Example Config 
-   
-A minimal `StackApp` looks like this:
-
-```yaml
-apiVersion: stack-cli.dev/v1
-kind: StackApp
-metadata:
-  name: stack-app
-  namespace: stack-demo
-spec:
-  components:
-    ingress:
-      port: 30010
-    db:
-      danger_override_password: testpassword
-      expose_db_port: 30011
-    rest: {}
-    auth: {}
-    realtime: {}
-    storage:
-      install_minio: true
-  services:
-    web:
-      image: mendhak/http-https-echo:latest
-      port: 8080
-      database_url: DATABASE_URL
-      env:
-        - name: ECHO_INCLUDE_ENV_VARS
-          value: "1"
-        - name: JWT_HEADER
-          value: Authorization
-      init:
-        image: alpine:3.18
-        env:
-          - name: INIT_MESSAGE
-            value: "warming up"
-```
+- [Supabase](https://supabase.com/)
+- [Canine](https://docs.canine.sh/)
+- [Disco](https://disco.cloud/)
+- [Uncloud](https://uncloud.run/)
+- [Kamal](https://kamal-deploy.org/)
+- [Dokploy](https://dokploy.com/)

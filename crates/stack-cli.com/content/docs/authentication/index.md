@@ -1,4 +1,4 @@
-# Keycloak Operator
+# Authentication
 
 Stack relies on Keycloak for OAuth2 and OpenID Connect flows. When you run `stack init`, the CLI installs everything required to run a shared Keycloak control plane inside your cluster.
 
