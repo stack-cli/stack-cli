@@ -60,6 +60,26 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
+                        title: "REST (PostgREST)",
+                        description: "Enable PostgREST and query your database over HTTP",
+                        folder: "docs/rest/",
+                        markdown: include_str!("../content/docs/rest/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
+                        title: "Realtime",
+                        description: "Enable Supabase Realtime and test the endpoint",
+                        folder: "docs/realtime/",
+                        markdown: include_str!("../content/docs/realtime/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Secrets",
                         description:
                             "Use Kubernetes Secrets with Stack services via env and secret_env",
