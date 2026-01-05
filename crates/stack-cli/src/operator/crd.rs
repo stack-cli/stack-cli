@@ -30,6 +30,7 @@ pub struct Components {
     pub db: Option<DbConfig>,
     pub auth: Option<AuthConfig>,
     pub storage: Option<StorageConfig>,
+    pub rest: Option<RestConfig>,
 }
 
 /// User-defined environment variable sourced from plaintext.
@@ -125,6 +126,15 @@ pub struct StorageConfig {
     pub s3_secret_name: Option<String>,
     /// When true, deploy the bundled MinIO instance; defaults to true when no s3_secret_name is provided.
     pub install_minio: Option<bool>,
-    /// Danger: override the generated AUTH_JWT_SECRET; intended only for tests.
-    pub danger_override_jwt_secret: Option<String>,
+}
+
+/// Optional PostgREST configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct RestConfig {
+    /// Comma-separated DB schemas that PostgREST exposes.
+    pub db_schemas: Option<String>,
+    /// Optional NodePort number to expose the PostgREST service.
+    pub expose_rest_port: Option<u16>,
+    /// Optional JWT expiry to set in app settings (seconds).
+    pub jwt_expiry: Option<String>,
 }

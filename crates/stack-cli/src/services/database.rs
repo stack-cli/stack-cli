@@ -73,6 +73,8 @@ pub async fn deploy(
     let readonly_database_password: String =
         insecure_override_passwords.clone().unwrap_or(rand_hex());
     let dbowner_password: String = insecure_override_passwords.clone().unwrap_or(rand_hex());
+    let authenticator_password: String =
+        insecure_override_passwords.clone().unwrap_or(rand_hex());
 
     let cluster = Cluster {
         metadata: ObjectMeta {
@@ -102,6 +104,12 @@ pub async fn deploy(
                             "CREATE ROLE application_readonly LOGIN ENCRYPTED PASSWORD '{}'",
                             readonly_database_password
                         ),
+                        "CREATE ROLE anon NOLOGIN".to_string(),
+                        format!(
+                            "CREATE ROLE authenticator LOGIN ENCRYPTED PASSWORD '{}'",
+                            authenticator_password
+                        ),
+                        "GRANT anon TO authenticator".to_string(),
                     ]),
                 },
             },
@@ -141,6 +149,13 @@ pub async fn deploy(
             readonly_database_password
         ),
     );
+    secret_data.insert(
+        "authenticator-url".to_string(),
+        format!(
+            "postgres://authenticator:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
+            authenticator_password
+        ),
+    );
 
     let db_urls_secret = Secret {
         metadata: ObjectMeta {
@@ -166,9 +181,26 @@ pub async fn deploy(
         ..Default::default()
     };
 
+    let mut secret_data = BTreeMap::new();
+    secret_data.insert("username".to_string(), "authenticator".to_string());
+    secret_data.insert("password".to_string(), authenticator_password);
+
+    let authenticator_secret = Secret {
+        metadata: ObjectMeta {
+            name: Some("db-authenticator".to_string()),
+            namespace: Some(namespace.to_string()),
+            ..ObjectMeta::default()
+        },
+        string_data: Some(secret_data),
+        ..Default::default()
+    };
+
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
     secret_api
         .create(&PostParams::default(), &dbowner_secret)
+        .await?;
+    secret_api
+        .create(&PostParams::default(), &authenticator_secret)
         .await?;
     secret_api
         .create(&PostParams::default(), &db_urls_secret)
@@ -191,14 +223,19 @@ pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
     }
 
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
-    if api.get("database-urls").await.is_ok() {
+    if secret_api.get("database-urls").await.is_ok() {
         secret_api
             .delete("database-urls", &DeleteParams::default())
             .await?;
     }
-    if api.get("db-owner").await.is_ok() {
+    if secret_api.get("db-owner").await.is_ok() {
         secret_api
             .delete("db-owner", &DeleteParams::default())
+            .await?;
+    }
+    if secret_api.get("db-authenticator").await.is_ok() {
+        secret_api
+            .delete("db-authenticator", &DeleteParams::default())
             .await?;
     }
 

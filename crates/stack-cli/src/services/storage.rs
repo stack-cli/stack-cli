@@ -44,8 +44,7 @@ pub async fn deploy(
         c.install_minio.unwrap_or(c.s3_secret_name.is_none())
     });
 
-    let override_jwt = config.and_then(|c| c.danger_override_jwt_secret.clone());
-    jwt_secrets::ensure_secret(client.clone(), namespace, override_jwt).await?;
+    jwt_secrets::ensure_secret(client.clone(), namespace).await?;
     if config.is_none() || config.and_then(|c| c.s3_secret_name.as_ref()).is_none() {
         ensure_s3_secret(client.clone(), namespace, &secret_name).await?;
     }
@@ -267,15 +266,6 @@ pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
     }
 
     let secrets: Api<Secret> = Api::namespaced(client, namespace);
-    if secrets
-        .get(jwt_secrets::JWT_AUTH_SECRET_NAME)
-        .await
-        .is_ok()
-    {
-        secrets
-            .delete(jwt_secrets::JWT_AUTH_SECRET_NAME, &DeleteParams::default())
-            .await?;
-    }
     if secrets.get(STORAGE_S3_SECRET_NAME).await.is_ok() {
         secrets
             .delete(STORAGE_S3_SECRET_NAME, &DeleteParams::default())

@@ -19,16 +19,54 @@ pub enum NginxMode {
     StaticJwt { token: String },
 }
 
+fn proxy_block(path: &str, service: &str, port: u16, proto_var: &str) -> String {
+    format!(
+        r#"
+    location = {path} {{
+        return 301 {path}/;
+    }}
+
+    location ^~ {path}/ {{
+        proxy_pass http://{service}:{port}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto {proto_var};
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
+    }}
+"#,
+        path = path,
+        service = service,
+        port = port,
+        proto_var = proto_var
+    )
+}
+
 // The web user interface
 pub async fn deploy_nginx(
     client: &Client,
     namespace: &str,
     mode: NginxMode,
     upstream_port: u16,
+    include_storage: bool,
+    include_rest: bool,
 ) -> Result<(), Error> {
     let env = vec![];
 
     let image_name = "nginx:1.27.2".to_string();
+
+    let storage_block = if include_storage {
+        proxy_block("/storage", "storage", 5000, "$forwarded_proto")
+    } else {
+        String::new()
+    };
+    let rest_block = if include_rest {
+        proxy_block("/rest", "rest", 3000, "$forwarded_proto")
+    } else {
+        String::new()
+    };
 
     let config_body = match mode {
         NginxMode::Oidc { allow_admin } => {
@@ -72,20 +110,8 @@ server {{
         proxy_redirect ~^http://keycloak-service\.keycloak\.svc\.cluster\.local:8080/(.*)$ $scheme://$host/oidc/$1;
     }}
 
-    location = /storage {{
-        return 301 /storage/;
-    }}
-
-    location ^~ /storage/ {{
-        proxy_pass http://storage:5000/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $forwarded_proto;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header Authorization $http_authorization;
-        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
-    }}
+{storage_block}
+{rest_block}
 
     location / {{
         proxy_pass http://oauth2-proxy:7900;
@@ -99,10 +125,22 @@ server {{
 }}
 "#,
                 admin_block = admin_block
+                , storage_block = storage_block
+                , rest_block = rest_block
             )
         }
         NginxMode::StaticJwt { token } => {
             let escaped_token = token.replace('"', "\\\"");
+            let storage_block = if include_storage {
+                proxy_block("/storage", "storage", 5000, "$scheme")
+            } else {
+                String::new()
+            };
+            let rest_block = if include_rest {
+                proxy_block("/rest", "rest", 3000, "$scheme")
+            } else {
+                String::new()
+            };
             format!(
                 r#"
 server {{
@@ -112,20 +150,8 @@ server {{
     proxy_buffers       4 256k;
     proxy_busy_buffers_size 256k;
 
-    location = /storage {{
-        return 301 /storage/;
-    }}
-
-    location ^~ /storage/ {{
-        proxy_pass http://storage:5000/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header Authorization $http_authorization;
-        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
-    }}
+{storage_block}
+{rest_block}
 
     location / {{
         proxy_pass http://{app}:{port};
@@ -142,6 +168,8 @@ server {{
                 app = APPLICATION_NAME,
                 port = upstream_port,
                 token = escaped_token
+                , storage_block = storage_block
+                , rest_block = rest_block
             )
         }
     };

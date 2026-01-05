@@ -8,12 +8,12 @@ spec:
     db:
       danger_override_password: testpassword
       expose_db_port: 30011
+    rest:
     auth:
       danger_override_jwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJnaXZlbl9uYW1lIjoiSWFuIiwiZW1haWwiOiJlbWFpbEBlbWFpbC5jb20iLCJmYW1pbGl5X25hbWUiOiJQdXJ0b24iLCJzdWIiOjEyMzR9.Yy-3FDWm70X9tQkzeO3CBQl-Sg2CZm2GBIKvS3zSj8U"
     storage:
       expose_storage_port: 30012
       install_minio: true
-      danger_override_jwt_secret: f023d3db-39dc-4ac9-87b2-b2be72e9162b
   services:
     web:
       image: mendhak/http-https-echo:latest

@@ -6,6 +6,7 @@ metadata:
 spec:
   components:
     db:
+    rest:
     auth:
       # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
       hostname-url: http://localhost:30013

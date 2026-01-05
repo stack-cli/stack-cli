@@ -1,7 +1,7 @@
 use crate::error::Error;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use k8s_openapi::api::core::v1::Secret;
-use kube::api::{Patch, PatchParams};
+use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::Serialize;
@@ -19,7 +19,6 @@ struct JwtClaims {
 pub async fn ensure_secret(
     client: Client,
     namespace: &str,
-    override_jwt: Option<String>,
 ) -> Result<(), Error> {
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
     let existing = secret_api.get(JWT_AUTH_SECRET_NAME).await.ok();
@@ -27,7 +26,6 @@ pub async fn ensure_secret(
     let jwt_secret = existing
         .as_ref()
         .and_then(|secret| read_secret_field(secret, JWT_SECRET_KEY))
-        .or(override_jwt)
         .unwrap_or_else(random_token);
 
     let anon_jwt = match existing
@@ -67,6 +65,17 @@ pub async fn ensure_secret(
             &Patch::Apply(secret_manifest),
         )
         .await?;
+
+    Ok(())
+}
+
+pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
+    let secret_api: Api<Secret> = Api::namespaced(client, namespace);
+    if secret_api.get(JWT_AUTH_SECRET_NAME).await.is_ok() {
+        secret_api
+            .delete(JWT_AUTH_SECRET_NAME, &DeleteParams::default())
+            .await?;
+    }
 
     Ok(())
 }

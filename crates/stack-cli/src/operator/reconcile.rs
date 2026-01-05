@@ -2,7 +2,9 @@ use super::crd::{EnvVar, SecretEnvVar, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
-use crate::services::{database, deployment, keycloak, nginx, oauth2_proxy, storage};
+use crate::services::{
+    database, deployment, jwt_secrets, keycloak, nginx, oauth2_proxy, postgrest, storage,
+};
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
     core::v1::{ConfigMap, Secret, Service},
@@ -17,6 +19,7 @@ const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
 const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
 const STORAGE_NODEPORT_SERVICE_NAME: &str = "storage-development";
+const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
 const STACK_DB_CLUSTER_NAME: &str = "stack-db-cluster";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
@@ -52,6 +55,8 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         nginx::delete_nginx(client.clone(), &namespace).await?;
         keycloak::delete(client.clone(), &namespace).await?;
         storage::delete(client.clone(), &namespace).await?;
+        postgrest::delete(client.clone(), &namespace).await?;
+        jwt_secrets::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace).await?;
         finalizer::delete(client, &name, &namespace).await?;
@@ -80,6 +85,12 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         storage::delete(client.clone(), &namespace).await?;
     }
 
+    if let Some(rest_spec) = app.spec.components.rest.as_ref() {
+        postgrest::deploy(client.clone(), &namespace, Some(rest_spec)).await?;
+    } else {
+        postgrest::delete(client.clone(), &namespace).await?;
+    }
+
     let auth_hostname = app
         .spec
         .components
@@ -93,6 +104,9 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .as_ref()
         .and_then(|auth| auth.danger_override_jwt.clone())
         .unwrap_or_else(|| "1".to_string());
+
+    let include_storage = app.spec.components.storage.is_some();
+    let include_rest = app.spec.components.rest.is_some();
 
     if let Some(hostname_url) = auth_hostname {
         let realm_config =
@@ -117,6 +131,8 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &namespace,
             nginx::NginxMode::Oidc { allow_admin },
             app.spec.services.web.port,
+            include_storage,
+            include_rest,
         )
         .await?;
     } else {
@@ -128,6 +144,8 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
                 token: jwt_value.clone(),
             },
             app.spec.services.web.port,
+            include_storage,
+            include_rest,
         )
         .await?;
     }
@@ -285,6 +303,25 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, STORAGE_NODEPORT_SERVICE_NAME).await?;
     }
 
+    if let Some(node_port) = spec
+        .components
+        .rest
+        .as_ref()
+        .and_then(|rest_config| rest_config.expose_rest_port)
+    {
+        ensure_nodeport_service(
+            client,
+            namespace,
+            REST_NODEPORT_SERVICE_NAME,
+            json!({ "app": postgrest::REST_NAME }),
+            postgrest::DEFAULT_REST_PORT,
+            node_port,
+        )
+        .await?;
+    } else {
+        delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
+    }
+
     Ok(())
 }
 
@@ -300,6 +337,7 @@ async fn delete_application_resources(client: &Client, namespace: &str) -> Resul
     delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, STORAGE_NODEPORT_SERVICE_NAME).await?;
+    delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
 
     Ok(())
 }
