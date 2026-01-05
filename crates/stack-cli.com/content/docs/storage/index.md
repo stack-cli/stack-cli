@@ -55,7 +55,7 @@ Then set `s3_secret_name` to that secret and `install_minio: false` if you donâ€
 
 ## Quick local test (demo manifest)
 
-With the demo manifest (`spec.components.storage.expose_storage_port: 30012` and `spec.components.storage.danger_override_jwt_secret` set), you can hit the Storage API directly:
+With the demo manifest, you can hit the Storage API via the nginx gateway at `/storage` (see `stack status` for the JWTs to use).
 
 ```bash
 curl --location --request POST 'http://host.docker.internal:30012/bucket' \

@@ -106,8 +106,6 @@ pub struct AuthConfig {
     /// Public hostname that Cloudflare/Keycloak should use for redirects.
     #[serde(rename = "hostname-url")]
     pub hostname_url: Option<String>,
-    /// Static JWT token forwarded by nginx when OIDC is disabled.
-    pub danger_override_jwt: Option<String>,
     /// Optional NodePort number to expose the auth (nginx) service.
     pub expose_auth_port: Option<u16>,
     /// When true, allow the Keycloak admin console to be proxied via /oidc/admin.

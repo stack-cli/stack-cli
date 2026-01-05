@@ -41,8 +41,7 @@ Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) 
      namespace: stack-demo
    spec:
      components:
-       auth:
-         danger_override_jwt: "1"
+      auth: {}
      services:
        web:
          image: ghcr.io/stack/demo-app:latest

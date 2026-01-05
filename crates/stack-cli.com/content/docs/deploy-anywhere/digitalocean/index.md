@@ -59,8 +59,7 @@ metadata:
   namespace: frontend
 spec:
   components:
-    auth:
-      danger_override_jwt: "1"
+    auth: {}
   services:
     web:
       image: ghcr.io/stack/demo-app:latest
@@ -77,8 +76,7 @@ metadata:
   namespace: api
 spec:
   components:
-    auth:
-      danger_override_jwt: "1"
+    auth: {}
   services:
     web:
       image: ghcr.io/stack/demo-app:latest

@@ -80,6 +80,19 @@ pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
     Ok(())
 }
 
+pub async fn get_token(
+    client: Client,
+    namespace: &str,
+    key: &str,
+) -> Result<Option<String>, Error> {
+    let secret_api: Api<Secret> = Api::namespaced(client, namespace);
+    match secret_api.get(JWT_AUTH_SECRET_NAME).await {
+        Ok(secret) => Ok(read_secret_field(&secret, key)),
+        Err(kube::Error::Api(err)) if err.code == 404 => Ok(None),
+        Err(err) => Err(Error::from(err)),
+    }
+}
+
 fn build_jwt(secret: &str, role: &str) -> Result<String, Error> {
     let claims = JwtClaims {
         role: role.to_string(),

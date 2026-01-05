@@ -96,13 +96,6 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .auth
         .as_ref()
         .and_then(|auth| auth.hostname_url.clone());
-    let jwt_value = app
-        .spec
-        .components
-        .auth
-        .as_ref()
-        .and_then(|auth| auth.danger_override_jwt.clone())
-        .unwrap_or_else(|| "1".to_string());
 
     let include_storage = app.spec.components.storage.is_some();
     let include_rest = app.spec.components.rest.is_some();
@@ -136,6 +129,14 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .await?;
     } else {
         cleanup_auth_resources(client.clone(), &namespace).await?;
+        jwt_secrets::ensure_secret(client.clone(), &namespace).await?;
+        let jwt_value = jwt_secrets::get_token(
+            client.clone(),
+            &namespace,
+            jwt_secrets::JWT_ANON_TOKEN_KEY,
+        )
+        .await?
+        .unwrap_or_else(|| "1".to_string());
         nginx::deploy_nginx(
             &client,
             &namespace,

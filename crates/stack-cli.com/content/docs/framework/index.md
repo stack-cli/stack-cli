@@ -51,8 +51,7 @@ metadata:
   namespace: rails-demo
 spec:
   components:
-    auth:
-      danger_override_jwt: "development-token"
+    auth: {}
   services:
     web:
       image: ghcr.io/acme/rails-app:latest

@@ -39,8 +39,7 @@ metadata:
   namespace: flask-demo
 spec:
   components:
-    auth:
-      danger_override_jwt: "local-dev-token"
+    auth: {}
   services:
     web:
       image: ghcr.io/acme/flask-app:latest
