@@ -27,6 +27,9 @@ async fn main() -> Result<()> {
         cli::Commands::Status(args) => {
             cli::status::status(args).await?;
         }
+        cli::Commands::Secrets(args) => {
+            cli::secrets::secrets(args).await?;
+        }
     }
 
     Ok(())

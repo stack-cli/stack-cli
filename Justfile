@@ -11,6 +11,9 @@ dev-setup:
     cargo run --bin stack-cli -- install --manifest demo-apps/demo.stack.yaml
     cargo run --bin stack-cli -- operator --once
 
+dev-secrets:
+    cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml > .env
+
 bionic-setup:
     cargo run --bin stack-cli -- install --manifest demo-apps/bionic.stack.yaml
     cargo run --bin stack-cli -- operator --once

@@ -1,6 +1,7 @@
 pub mod apply;
 pub mod init;
 pub mod install;
+pub mod secrets;
 pub mod status;
 
 use clap::{Parser, Subcommand};
@@ -66,6 +67,13 @@ pub struct StatusArgs {
     pub keycloak_namespace: String,
 }
 
+#[derive(Parser)]
+pub struct SecretsArgs {
+    /// Path to a StackApp manifest to read namespace from
+    #[arg(long)]
+    pub manifest: PathBuf,
+}
+
 #[derive(Subcommand)]
 pub enum Commands {
     /// Install an application into Kubernetes
@@ -78,4 +86,6 @@ pub enum Commands {
     Cloudflare(CloudflareInstaller),
     /// Show platform connection details (Keycloak credentials, Cloudflare URL)
     Status(StatusArgs),
+    /// Print namespace secrets as KEY=VALUE lines for .env files
+    Secrets(SecretsArgs),
 }
