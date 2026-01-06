@@ -80,6 +80,16 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
+                        title: "Application Deployment",
+                        description: "Configure web services, env vars, and secrets",
+                        folder: "docs/app-deploy/",
+                        markdown: include_str!("../content/docs/app-deploy/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Authentication",
                         description: "How Stack wires Keycloak and OAuth2 for your apps",
                         folder: "docs/authentication/",
