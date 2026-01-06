@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 
 pub fn home_page() -> String {
     let install_script =
-        r#"curl -fsSL https://stack-cli.com/assets/install.sh | bash"#;
+        r#"curl -fsSL https://stack-cli.com/install.sh | bash"#;
 
     let features = vec![
         (

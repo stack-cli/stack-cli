@@ -9,7 +9,7 @@ For quick local setup, [k3s](https://k3s.io/) is the fastest path: it is a light
 1. **Grab the CLI.**
 
    ```bash
-   curl -fsSL https://stack-cli.com/assets/install.sh | bash
+   curl -fsSL https://stack-cli.com/install.sh | bash
    ```
 
 2. **Bootstrap the platform operators into your cluster.**
