@@ -9,10 +9,7 @@ For quick local setup, [k3s](https://k3s.io/) is the fastest path: it is a light
 1. **Grab the CLI.**
 
    ```bash
-   export STACK_VERSION=v1.1.1
-   curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-linux \
-   && chmod +x ./stack-linux \
-   && sudo mv ./stack-linux /usr/local/bin/stack
+   curl -fsSL https://stack-cli.com/assets/install.sh | bash
    ```
 
 2. **Bootstrap the platform operators into your cluster.**

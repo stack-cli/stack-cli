@@ -5,18 +5,8 @@ use crate::layouts::layout::Layout;
 use dioxus::prelude::*;
 
 pub fn home_page() -> String {
-    let install_script = r#"export STACK_VERSION=v1.1.2
-curl -OL https://github.com/stack-cli/stack-cli/releases/download/${STACK_VERSION}/stack-cli-linux \
-  && chmod +x ./stack-cli-linux \
-  && sudo mv ./stack-cli-linux /usr/local/bin/stack"#;
-
-    let release_candidate_script = r#"RC_TAG=$(
-  curl -s https://api.github.com/repos/stack-cli/stack-cli/releases \
-    | awk -F '\"' '/"tag_name":/ {tag=$4} /"prerelease": true/ {print tag; exit}'
-)
-curl -OL https://github.com/stack-cli/stack-cli/releases/download/${RC_TAG}/stack-cli-linux \
-  && chmod +x ./stack-cli-linux \
-  && sudo mv ./stack-cli-linux /usr/local/bin/stack"#;
+    let install_script =
+        r#"curl -fsSL https://stack-cli.com/assets/install.sh | bash"#;
 
     let features = vec![
         (
@@ -87,41 +77,12 @@ curl -OL https://github.com/stack-cli/stack-cli/releases/download/${RC_TAG}/stac
                         "Download the CLI and bring the Stack platform into any Kubernetes cluster with a single command."
                     }
                     div {
-                        class: "mt-10 grid grid-cols-1 gap-6",
-                        div {
-                            class: "border border-base-300 rounded-xl bg-base-100 p-6",
-                            h3 {
-                                class: "text-xl font-semibold",
-                                "Pinned release"
-                            }
-                            p {
-                                class: "mt-2 text-base-content/80",
-                                "Lock to a specific version for reproducible installs."
-                            }
-                            pre {
-                                class: "mt-4 bg-black text-white text-sm rounded-xl p-5 overflow-x-auto",
-                                code {
-                                    class: "language-bash",
-                                    "{install_script}"
-                                }
-                            }
-                        }
-                        div {
-                            class: "border border-primary/30 border-dashed rounded-xl bg-base-100 p-6",
-                            h3 {
-                                class: "text-xl font-semibold",
-                                "Latest release candidate"
-                            }
-                            p {
-                                class: "mt-2 text-base-content/80",
-                                "Grab the freshest prerelease build produced by our release-candidate workflow."
-                            }
-                            pre {
-                                class: "mt-4 bg-black text-white text-sm rounded-xl p-5 overflow-x-auto",
-                                code {
-                                    class: "language-bash",
-                                    "{release_candidate_script}"
-                                }
+                        class: "mt-10",
+                        pre {
+                            class: "bg-black text-white text-sm rounded-xl p-5 overflow-x-auto",
+                            code {
+                                class: "language-bash",
+                                "{install_script}"
                             }
                         }
                     }
