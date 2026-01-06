@@ -8,6 +8,9 @@ Stack is a Kubernetes-first deployment platform with built-in backend services, 
 - **Secrets managed**: Stack generates and wires secrets automatically.
 - **Production parity**: the same CRDs and operator flow from dev to prod.
 
+
+![Alt text](k9s.png "A stack application running in kubernetes")
+
 Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) to see how the operator, CRDs, and supporting services interact.
 
 ## Other platforms
