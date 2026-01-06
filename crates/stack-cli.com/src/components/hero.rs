@@ -6,11 +6,11 @@ pub fn Hero() -> Element {
         section {
             h1 {
                 class: "text-6xl max-w-3xl mx-auto text-center pb-6 font-semibold capitalize",
-                "Supabase-like developer experience. Kubernetes-native under the hood."
+                "Supabase-style backend, simpler Kubernetes."
             }
             h2 {
                 class: "subtitle max-w-3xl mx-auto text-center text-lg",
-                "Stack CLI gives you an opinionated backend stack—Postgres, auth, storage, and services—deployed as a single application unit on Kubernetes. It’s designed for local development and VM-based clusters, without managed cloud lock-in or platform sprawl."
+                "Stack turns a Kubernetes cluster into a backend platform: Postgres, auth, storage, REST, and realtime per app. You keep the simplicity of compose, get production parity, and avoid the cost curve of managed PaaS."
             }
         }
     }

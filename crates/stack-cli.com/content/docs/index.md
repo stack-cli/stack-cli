@@ -1,12 +1,10 @@
 # Stack: Kubernetes + BaaS
 
-Stack is a Kubernetes-first deployment platform with built-in backend services, so you can ship apps and infrastructure together.
+Stack is a Kubernetes-first backend platform. It gives you three big wins from day one:
 
-- **Kubernetes-first**: runs on any cluster (k3s, k3d, managed, bare metal).
-- **Deployment + platform**: one manifest defines app services and platform components.
-- **Backend as a service**: Postgres, Auth, REST, Realtime, and Storage are available per namespace.
-- **Secrets managed**: Stack generates and wires secrets automatically.
-- **Production parity**: the same CRDs and operator flow from dev to prod.
+- **One manifest, full backend**: define your app and the backend services you need in a single `StackApp`.
+- **Dev equals prod**: the same CRDs and operator workflow run everywhere Kubernetes runs.
+- **No glue work**: Stack creates secrets and wires services automatically.
 
 
 ![Alt text](k9s.png "A stack application running in kubernetes")

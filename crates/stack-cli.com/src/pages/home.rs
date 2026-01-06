@@ -10,43 +10,43 @@ pub fn home_page() -> String {
 
     let features = vec![
         (
-            "Managed PostgreSQL",
-            "Provision CloudNativePG with dedicated storage, secure credentials, and separate roles for applications, migrations, and read-only traffic.",
+            "Just build the app",
+            "Define your backend stack once and focus on product work instead of wiring services.",
         ),
         (
-            "Identity & Access Control",
-            "Deploy Keycloak with dedicated storage, wire it to OAuth2 Proxy, and enforce single sign-on across your apps.",
+            "Local dev that matches prod",
+            "Run the same stack on your laptop and in production, without separate compose or staging setups.",
         ),
         (
-            "Ingress & Connectivity",
-            "Bootstrap NGINX ingress, lock it down with network policies, and expose services safely through Cloudflare tunnels.",
+            "Architecture decided for you",
+            "Postgres, auth, REST, realtime, storage, and ingress are ready per app namespace.",
         ),
         (
-            "Secure Namespace Defaults",
-            "Apply OAuth2 Proxy plus NetworkPolicies so every namespace starts with locked-down ingress and hardened traffic paths.",
+            "Deployments without the YAML maze",
+            "One manifest declares everything; the operator reconciles it safely.",
         ),
         (
-            "Developer Tooling",
-            "Ship PGAdmin, MailHog, and other helper services to inspect data, test email flows, and unblock your team instantly.",
+            "No surprise platform bills",
+            "Run on your own VMs or clusters and scale up only when needed.",
         ),
     ];
 
     let benefits = vec![
         (
-            "Accelerate platform setup",
-            "Import a battle-tested set of operators with one command instead of stitching together manifests by hand.",
+            "Supabase-style workflow on Kubernetes",
+            "Get Postgres, auth, REST, realtime, and storage per app without managing a SaaS platform.",
         ),
         (
-            "Stay secure by default",
-            "Stack templates secrets, OAuth flows, and network policies so every environment starts hardened.",
+            "Simpler than hand-rolled K8s",
+            "One manifest defines your app and backend services, so you skip bespoke Helm charts and wiring.",
         ),
         (
-            "Standardise every cluster",
-            "Roll the same blueprint into dev, staging, and production to reduce snowflake drift and unexpected outages.",
+            "Lower cost than managed PaaS",
+            "Run on your own VMs or clusters and scale only when you need it.",
         ),
         (
-            "Focus on your applications",
-            "Let Stack own the infrastructure glue so your team can ship business features instead of wrangling YAML.",
+            "Dev equals prod",
+            "The same CRDs and operator reconcile flow across local and production clusters.",
         ),
     ];
 
