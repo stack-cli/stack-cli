@@ -20,6 +20,8 @@ How you reach this baseline depends on your operating system and experience leve
 
 ### Path A — Recommended (most users)
 
+![Alt text](docker-kubernetes.png "Docker Desktop kubernetes")
+
 Docker Desktop with Kubernetes enabled.
 
 This is the easiest and most reliable option for:

@@ -5,7 +5,7 @@ pub fn summary() -> Summary {
         source_folder: "docs",
         categories: vec![
             Category {
-                name: "Setting Up".to_string(),
+                name: "Stack Tutorial".to_string(),
                 pages: vec![
                     Page {
                         date: "",
