@@ -1,8 +1,6 @@
 # Quick Start
 
-## k3s for local setup
-
-For quick local setup, [k3s](https://k3s.io/) is the fastest path: it is a lightweight Kubernetes distribution that runs on a single machine while keeping the same APIs you will use in production.
+Before you begin, set up a local Kubernetes cluster. See the [Local Kubernetes](../local-kubernetes/) guide for Docker Desktop and k3s options.
 
 ## Install Stack
 
