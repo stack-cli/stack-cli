@@ -19,7 +19,7 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
-                        title: "Local Kubernetes",
+                        title: "Kubernetes Already?",
                         description: "Set up a single-node cluster for local development",
                         folder: "docs/local-kubernetes/",
                         markdown: include_str!("../content/docs/local-kubernetes/index.md"),
@@ -29,10 +29,10 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
-                        title: "Quick Start",
+                        title: "Kubernetes Setup",
                         description: "Install Stack and apply your first StackApp",
-                        folder: "docs/quick-start/",
-                        markdown: include_str!("../content/docs/quick-start/index.md"),
+                        folder: "docs/kubernetes-setup/",
+                        markdown: include_str!("../content/docs/kubernetes-setup/index.md"),
                         image: None,
                         author_image: None,
                         author: None,
