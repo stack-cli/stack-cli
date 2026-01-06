@@ -67,4 +67,23 @@ spec:
 
 ## Multiple services
 
-Stack currently manages a single `web` service per `StackApp`. If you need extra containers or workers, deploy standard Kubernetes resources alongside your `StackApp` in the same namespace and reuse the same secrets and database URLs, or split them into separate StackApps.
+You can add extra services alongside `web` by naming them directly under `services`. These are deployed as ClusterIP services (no nginx routing).
+
+```yaml
+spec:
+  services:
+    web:
+      image: ghcr.io/stack/demo-app:latest
+      port: 7903
+    llm:
+      image: ghcr.io/stack/demo-llm:latest
+      port: 9100
+      env:
+        - name: MODEL
+          value: llama3
+    embeddings:
+      image: ghcr.io/stack/demo-embeddings:latest
+      port: 9200
+```
+
+If you need public routing for an extra service, add your own ingress or use a separate `StackApp`.

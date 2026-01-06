@@ -1,4 +1,4 @@
-use super::crd::{EnvVar, SecretEnvVar, StackApp, StackAppSpec};
+use super::crd::{EnvVar, ExtraService, SecretEnvVar, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
@@ -49,6 +49,16 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     let name = app.name_any();
 
     if app.meta().deletion_timestamp.is_some() {
+        for name in app.spec.services.extra.keys() {
+            let deployments: Api<KubeDeployment> =
+                Api::namespaced(client.clone(), namespace.as_str());
+            if deployments.get(name).await.is_ok() {
+                deployments
+                    .delete(name, &DeleteParams::default())
+                    .await?;
+            }
+            delete_service_if_exists(&client, &namespace, name).await?;
+        }
         delete_application_resources(&client, &namespace).await?;
         oauth2_proxy::delete(client.clone(), &namespace).await?;
         nginx::delete_nginx(client.clone(), &namespace).await?;
@@ -172,6 +182,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     }
 
     deploy_web_app(&client, &namespace, &app.spec).await?;
+    deploy_extra_services(&client, &namespace, &app.spec.services.extra).await?;
     ensure_optional_nodeports(&client, &namespace, &app.spec).await?;
 
     Ok(Action::requeue(Duration::from_secs(10)))
@@ -256,6 +267,90 @@ async fn deploy_web_app(
         spec.components.ingress.is_some(),
     )
     .await
+}
+
+async fn deploy_extra_services(
+    client: &Client,
+    namespace: &str,
+    services: &std::collections::BTreeMap<String, ExtraService>,
+) -> Result<(), Error> {
+    let reserved = [
+        APPLICATION_NAME,
+        nginx::NGINX_NAME,
+        postgrest::REST_NAME,
+        realtime::REALTIME_NAME,
+        storage::STORAGE_NAME,
+        "oauth2-proxy",
+        "cloudflared",
+        "minio",
+    ];
+    let mut seen = std::collections::HashSet::new();
+
+    for (name, service) in services {
+        if name.trim().is_empty() {
+            return Err(Error::Other("extra service name cannot be empty".to_string()));
+        }
+        if reserved.contains(&name.as_str()) {
+            return Err(Error::Other(format!(
+                "extra service name '{}' is reserved",
+                name
+            )));
+        }
+        if !seen.insert(name.as_str()) {
+            return Err(Error::Other(format!(
+                "duplicate extra service name '{}'",
+                name
+            )));
+        }
+
+        let mut env = Vec::new();
+
+        append_db_envs(
+            &mut env,
+            &service.database_url,
+            &service.migrations_database_url,
+            &service.readonly_database_url,
+        );
+
+        append_env_from_spec(&mut env, &service.env, &service.secret_env);
+
+        let init_container = service.init.as_ref().map(|init| {
+            let mut init_env = Vec::new();
+            append_db_envs(
+                &mut init_env,
+                &init.database_url,
+                &init.migrations_database_url,
+                &init.readonly_database_url,
+            );
+            append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
+
+            deployment::InitContainer {
+                image_name: init.image.clone(),
+                env: init_env,
+                command: None,
+            }
+        });
+
+        deployment::deployment(
+            client.clone(),
+            deployment::ServiceDeployment {
+                name: name.clone(),
+                image_name: service.image.clone(),
+                replicas: WEB_APP_REPLICAS,
+                port: service.port,
+                env,
+                init_container,
+                command: None,
+                volume_mounts: vec![],
+                volumes: vec![],
+            },
+            namespace,
+            false,
+        )
+        .await?;
+    }
+
+    Ok(())
 }
 
 async fn ensure_optional_nodeports(

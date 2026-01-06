@@ -18,10 +18,12 @@ pub struct StackAppSpec {
     pub components: Components,
 }
 
-/// Services to deploy into the namespace (web and future helpers).
+/// Services to deploy into the namespace (web and optional helpers).
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 pub struct Services {
     pub web: WebService,
+    #[serde(flatten, default)]
+    pub extra: std::collections::BTreeMap<String, ExtraService>,
 }
 
 /// Optional platform components.
@@ -71,6 +73,29 @@ pub struct WebService {
     /// Optional environment variable name to receive the migrations/superuser URL (from `database-urls/migrations-url`).
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
+    pub readonly_database_url: Option<String>,
+}
+
+/// Additional application service (cluster-internal, no nginx routing).
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct ExtraService {
+    /// Fully-qualified container image reference (e.g. ghcr.io/org/app:tag)
+    pub image: String,
+    /// Container port exposed by the service.
+    pub port: u16,
+    /// Optional list of plaintext environment variables injected into the pod.
+    #[serde(default)]
+    pub env: Vec<EnvVar>,
+    /// Optional list of secret-backed environment variables injected into the pod.
+    #[serde(default)]
+    pub secret_env: Vec<SecretEnvVar>,
+    /// Optional init container to run before the main container starts.
+    pub init: Option<WebInit>,
+    /// Optional environment variable name to receive the application DATABASE_URL.
+    pub database_url: Option<String>,
+    /// Optional environment variable name to receive the migrations/superuser URL.
+    pub migrations_database_url: Option<String>,
+    /// Optional environment variable name to receive the readonly URL.
     pub readonly_database_url: Option<String>,
 }
 
