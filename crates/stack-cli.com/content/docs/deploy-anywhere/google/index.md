@@ -101,7 +101,7 @@ Each StackApp gets its own namespace, database, and auth service, all on the sam
 
 ## 5) Expose apps to the internet
 
-- For quick exposure, use the [Cloudflare Tunnels](../../cloudflare/) guide to add a tunnel per StackApp.
+- For quick exposure, use the [Ingress](../../ingress/) guide to add a tunnel per StackApp.
 - For production ingress, point your DNS at the VM and configure an ingress controller or load balancer.
 
 ## Next steps

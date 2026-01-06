@@ -49,16 +49,6 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
-                        title: "Authentication",
-                        description: "How Stack wires Keycloak and OAuth2 for your apps",
-                        folder: "docs/authentication/",
-                        markdown: include_str!("../content/docs/authentication/index.md"),
-                        image: None,
-                        author_image: None,
-                        author: None,
-                    },
-                    Page {
-                        date: "",
                         title: "Database",
                         description: "How CloudNativePG powers Stack databases",
                         folder: "docs/database/",
@@ -100,6 +90,26 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
+                        title: "Authentication",
+                        description: "How Stack wires Keycloak and OAuth2 for your apps",
+                        folder: "docs/authentication/",
+                        markdown: include_str!("../content/docs/authentication/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
+                        title: "Ingress",
+                        description: "Expose namespaces via Cloudflare tunnels",
+                        folder: "docs/ingress/",
+                        markdown: include_str!("../content/docs/ingress/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Secrets",
                         description:
                             "Use Kubernetes Secrets with Stack services via env and secret_env",
@@ -110,19 +120,6 @@ pub fn summary() -> Summary {
                         author: None,
                     },
                 ],
-            },
-            Category {
-                name: "Connectivity".to_string(),
-                pages: vec![Page {
-                    date: "",
-                    title: "Cloudflare Tunnels",
-                    description: "Expose Stack namespaces via quick or authenticated tunnels",
-                    folder: "docs/cloudflare/",
-                    markdown: include_str!("../content/docs/cloudflare/index.md"),
-                    image: None,
-                    author_image: None,
-                    author: None,
-                }],
             },
             Category {
                 name: "Deploy Anywhere".to_string(),

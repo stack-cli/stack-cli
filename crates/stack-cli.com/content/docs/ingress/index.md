@@ -1,4 +1,4 @@
-# Cloudflare Tunnels
+# Ingress
 
 Stack includes an opinionated Cloudflare deployment so you can expose namespaces without writing additional manifests. Configure it directly on your `StackApp` so the namespace and ingress target stay aligned.
 
