@@ -4,24 +4,22 @@ Every Stack namespace gets its own Postgres cluster via CloudNativePG. You inter
 
 ## Connect with kubectl + psql
 
-The demo manifest (`demo-apps/demo.stack.yaml`) creates a database in the `stack-demo` namespace. If you try to connect as `db-owner` directly you may see a peer auth error:
+The demo manifest (`demo-apps/demo.stack.yaml`) creates a database in the `stack-demo` namespace.
+
+Open a psql session as the default user, then connect to `stack-app`:
 
 ```bash
-$ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-app
-Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
-psql: error: connection to server on socket "/controller/run/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "db-owner"
-command terminated with exit code 2
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql
 ```
 
-Instead, open a psql session as the default `postgres` user, then connect to `stack-app`:
+What you'll see, something like below, next type `\l` to list the datbases.
 
 ```bash
-$ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql
 Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
 psql (16.1 (Debian 16.1-1.pgdg110+1), server 16.2 (Debian 16.2-1.pgdg110+2))
 Type "help" for help.
 
-postgres=# \\l
+postgres=# \l
                                                   List of databases
    Name    |  Owner   | Encoding | Locale Provider | Collate | Ctype | ICU Locale | ICU Rules |   Access privileges
 -----------+----------+----------+-----------------+---------+-------+------------+-----------+-----------------------
@@ -37,7 +35,7 @@ postgres=# \\l
 Then connect:
 
 ```sql
-\\c stack-app
+\c stack-app
 ```
 
 ## Create a table and insert data
@@ -57,6 +55,19 @@ values
 select * from instruments;
 ```
 
+You should see
+
+```bash
+CREATE TABLE
+INSERT 0 3
+ id |  name  
+----+--------
+  1 | violin
+  2 | viola
+  3 | cello
+(3 rows)
+```
+
 ## Roles Stack creates for you
 
 Stack bootstraps several roles so different services can connect safely:
@@ -74,10 +85,4 @@ Connection strings live in the `database-urls` secret and are wired into your ap
 ```bash
 kubectl -n stack-demo get pods
 kubectl -n stack-demo get secret database-urls -o yaml
-```
-
-If you want a long-lived CLI experience, install the CloudNativePG plugin and run:
-
-```bash
-kubectl cnpg status stack-db-cluster -n stack-demo
 ```
