@@ -18,12 +18,43 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
 
    This command installs CloudNativePG, Keycloak, ingress, the Stack controller, and custom resource definitions that describe your applications.
 
+   ```bash
+   🔌 Connecting to the cluster...
+   ✅ Connected
+   🐘 Installing Cloud Native Postgres Operator (CNPG)
+   ⏳ Waiting for Cloud Native Postgres Controller Manager
+   🛡️ Installing Keycloak Operator
+   📦 Creating namespace keycloak
+   ⏳ Waiting for Keycloak Operator to be Available
+   🌐 Installing Nginx Ingress Operator
+   ⏳ Waiting for Nginx Operator to be Available
+   📦 Creating namespace stack-system
+   📜 Installing StackApp CRD
+   ⏳ Waiting for StackApp CRD
+   🔐 Setting up roles
+   🤖 Installing the operator into stack-system
+   🗄️ Ensuring Keycloak database in namespace keycloak
+   ✅ Keycloak database created.
+   🛡️ Ensuring Keycloak instance in namespace keycloak
+   ```
+
 3. **Apply the demo StackApp manifest.**
 
    ```bash
    curl -fsSL https://raw.githubusercontent.com/stack-cli/stack-cli/main/demo-apps/demo.stack.yaml \
      -o demo.stack.yaml
    stack install --manifest demo.stack.yaml
+   ```
+
+   You should see
+
+   ```bash
+   🔌 Connecting to the cluster...
+   ✅ Connected
+   📜 Installing StackApp CRD
+   ⏳ Waiting for StackApp CRD
+   📦 Creating namespace stack-demo
+   🚀 Applied StackApp `stack-app` in namespace `stack-demo`
    ```
 
 ## What just happened?
@@ -46,3 +77,10 @@ brew install k9s
 ```
 
 On Linux, follow the install guide in the k9s docs.
+
+## Watching Startup
+
+With `k9s` you can see the demo applications pods downlaoding and starting
+
+![Alt text](k9s-setup.png "K9s Stack")
+
