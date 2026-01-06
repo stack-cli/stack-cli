@@ -1,40 +1,83 @@
-# PostgreSQL Operator
+# Database
 
-Every Stack namespace receives its own managed PostgreSQL cluster powered by [CloudNativePG](https://cloudnative-pg.io/). The operator is installed automatically when you run `stack init`, and the Stack controller drives it for each `StackApp`.
+Every Stack namespace gets its own Postgres cluster via CloudNativePG. You interact with it the same way you would any Postgres server.
 
-## Bootstrapping CloudNativePG
+## Connect with kubectl + psql
 
-`stack init` applies:
-
-1. The CloudNativePG CRDs (`clusters.postgresql.cnpg.io`, etc.).
-2. The CloudNativePG operator deployment in the `stack-system` namespace (or whatever you pass with `--operator-namespace`).
-3. Supporting RBAC so the Stack controller can create `Cluster` resources.
-
-You can verify the installation with:
+The demo manifest (`demo-apps/demo.stack.yaml`) creates a database in the `stack-demo` namespace. If you try to connect as `db-owner` directly you may see a peer auth error:
 
 ```bash
-kubectl get pods -n stack-system -l app.kubernetes.io/name=cloudnative-pg
-kubectl get crd | grep postgresql.cnpg.io
+$ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-app
+Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
+psql: error: connection to server on socket "/controller/run/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "db-owner"
+command terminated with exit code 2
 ```
 
-## What happens per StackApp
+Instead, open a psql session as the default `postgres` user, then connect to `stack-app`:
 
-When you run `stack install --manifest app.yaml`, the controller:
+```bash
+$ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql
+Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
+psql (16.1 (Debian 16.1-1.pgdg110+1), server 16.2 (Debian 16.2-1.pgdg110+2))
+Type "help" for help.
 
-1. Creates a `Cluster` (e.g. `stack-db-cluster`) inside your application namespace.
-2. Generates unique credentials for application, readonly, migrations, and owner roles.
-3. Stores connection strings in `database-urls` and `db-owner` secrets.
-4. Wires those secrets into your Deployment’s environment variables so the app, migrations, and helper services can connect securely.
+postgres=# \\l
+                                                  List of databases
+   Name    |  Owner   | Encoding | Locale Provider | Collate | Ctype | ICU Locale | ICU Rules |   Access privileges
+-----------+----------+----------+-----------------+---------+-------+------------+-----------+-----------------------
+ postgres  | postgres | UTF8     | libc            | C       | C     |            |           |
+ stack-app | db-owner | UTF8     | libc            | C       | C     |            |           |
+ template0 | postgres | UTF8     | libc            | C       | C     |            |           | =c/postgres          +
+           |          |          |                 |         |       |            |           | postgres=CTc/postgres
+ template1 | postgres | UTF8     | libc            | C       | C     |            |           | =c/postgres          +
+           |          |          |                 |         |       |            |           | postgres=CTc/postgres
+(4 rows)
+```
 
-The cluster includes streaming replicas and can enable extensions like `pgvector` so you’re ready for advanced search or embedding workloads when you need them.
+Then connect:
 
-## Development shortcuts
+```sql
+\\c stack-app
+```
 
-- During local testing you can expose the database via NodePort by applying the `postgres-service-dev.yaml` manifest included in the repo.
-- If you need deterministic credentials, the controller accepts overrides via the manifest’s `spec.database.insecurePasswords` field (intended only for tests).
+## Create a table and insert data
 
-## Maintenance tips
+```sql
+create table instruments (
+  id bigint primary key generated always as identity,
+  name text not null
+);
 
-- Use `kubectl cnpg status <cluster>` (from the CloudNativePG plugin) to view backups, replicas, and failover readiness.
-- `stack operator --once` is useful after editing a manifest so you can confirm the database reconciliation succeeds.
-- For disaster recovery, pair CloudNativePG’s backup CRDs with your preferred object storage bucket; Stack’s defaults focus on day-one experience but the operator supports full PITR configurations.
+insert into instruments (name)
+values
+  ('violin'),
+  ('viola'),
+  ('cello');
+
+select * from instruments;
+```
+
+## Roles Stack creates for you
+
+Stack bootstraps several roles so different services can connect safely:
+
+- `db-owner` for migrations and admin tasks.
+- `application_user` for your app runtime.
+- `application_readonly` for read-only access.
+- `authenticator` and `anon` for PostgREST.
+- `service_role` and `authenticated` for auth-aware workloads.
+
+Connection strings live in the `database-urls` secret and are wired into your app when you set `database_url`, `migrations_database_url`, or `readonly_database_url` in your manifest.
+
+## Quick checks
+
+```bash
+kubectl -n stack-demo get pods
+kubectl -n stack-demo get secret database-urls -o yaml
+```
+
+If you want a long-lived CLI experience, install the CloudNativePG plugin and run:
+
+```bash
+kubectl cnpg status stack-db-cluster -n stack-demo
+```

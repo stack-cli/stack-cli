@@ -1,55 +1,15 @@
 # REST (PostgREST)
 
-Stack can run PostgREST for your namespace so you can query your database over HTTP.
+This page assumes you have already created the `instruments` table in the [Database](../database/) guide and applied the demo manifest.
 
-## Enable the REST component
+## Configure RLS for PostgREST
 
-```yaml
-apiVersion: stack-cli.dev/v1
-kind: StackApp
-metadata:
-  name: stack-app
-  namespace: stack-demo
-spec:
-  components:
-    rest: {}
-  services:
-    web:
-      image: ghcr.io/stack/demo-app:latest
-      port: 7903
-```
+PostgREST uses the `anon` role from your JWT. You need to enable RLS and grant access to the table.
 
-Apply the manifest, then run a reconciliation:
-
-```bash
-stack install --manifest demo-stack-app.yaml
-stack operator --once
-```
-
-## Create a table with RLS
-
-Connect to the database and run:
+Connect to Postgres with the same steps as the database guide, then run:
 
 ```sql
--- Create the table
-create table instruments (
-  id bigint primary key generated always as identity,
-  name text not null
-);
-
--- Insert some sample data into the table
-insert into instruments (name)
-values
-  ('violin'),
-  ('viola'),
-  ('cello');
-
 alter table instruments enable row level security;
-```
-
-If you are using RLS, you still need to grant table access to the `anon` role:
-
-```sql
 grant usage on schema public to anon;
 grant select on table public.instruments to anon;
 ```
@@ -62,6 +22,20 @@ Use the status command to print the anon JWT:
 stack status --manifest demo-stack-app.yaml
 ```
 
+Example output:
+
+```text
+🔌 Connecting to the cluster...
+✅ Connected
+🛡️ Keycloak Admin
+   Username: temp-admin
+   Password: ec74684fb30140ee994bfb5599dbbd37
+☁️ Cloudflare deployment not found in namespace 'stack-demo'
+🔑 JWTs
+   Anon: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.E_2RkS5WSHEdZ_nxVMzTQQo-NLFLVFF8YXthl1IQk5g
+   Service role: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.vAnalcvp1tM4s94Qa5CHc3ZhT8_OaCmDaukhbkotcMs
+```
+
 Look for the `JWTs` section and copy the `Anon` token.
 
 ## Query with curl
@@ -71,4 +45,9 @@ curl host.docker.internal:30010/rest/instruments \
   -H "Authorization: Bearer <ANON_JWT>"
 ```
 
-You should see the three rows returned.
+If you created the table in the database guide, you should see the rows returned. If you receive a permission error, grant access to the `anon` role:
+
+```sql
+grant usage on schema public to anon;
+grant select on table public.instruments to anon;
+```

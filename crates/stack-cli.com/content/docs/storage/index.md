@@ -2,27 +2,57 @@
 
 Stack ships a Supabase Storage API deployment so your app can serve and store files without wiring S3 by hand. By default the controller deploys MinIO in your namespace, generates credentials, and injects them plus a JWT secret into the storage pod.
 
+This page continues the demo flow from the [Database](../database/) and [REST](../rest/) guides.
+
+## Quick local test (demo manifest)
+
+With the demo manifest, you can hit the Storage API via the nginx gateway at `/storage` (see `stack status` for the JWTs to use).
+
+First grab the service role JWT from `stack status`:
+
+```bash
+stack status --manifest demo-stack-app.yaml
+```
+
+Then create a bucket:
+
+```bash
+curl --location --request POST 'http://host.docker.internal:30010/storage/v1/bucket' \
+  --header 'Authorization: Bearer <SERVICE_ROLE_JWT>' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"name": "avatars"}'
+```
+
+Verify in Postgres:
+
+```bash
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-app \
+  -c 'select * from storage.buckets;'
+```
+
+### Upload a file
+
+```bash
+echo "hello storage" > hello.txt
+curl -X POST 'http://host.docker.internal:30010/storage/v1/object/avatars/hello.txt' \
+  -H 'Authorization: Bearer <SERVICE_ROLE_JWT>' \
+  -H 'Content-Type: text/plain' \
+  --data-binary @hello.txt
+```
+
+Then check the DB:
+
+```bash
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-app \
+  -c 'select id, name, bucket_id, version from storage.objects;'
+```
+
 ## What the controller creates
 
 - A `storage` Deployment using `supabase/storage-api` on port `5000`.
 - A `storage-s3` Secret with generated AWS-compat credentials and endpoint/bucket settings.
-- A `storage-auth` Secret with a random `AUTH_JWT_SECRET` (HS256).
+- A `jwt-auth` Secret with a random JWT secret (shared with REST and Realtime).
 - A MinIO Deployment/Service when you have not provided your own S3 secret.
-
-## Customising with the CRD
-
-Add a storage block to your `StackApp`:
-
-```yaml
-spec:
-  components:
-    storage:
-      # Optional: expose storage via NodePort for local testing
-      expose_storage_port: 30012
-      # Optional: point at your own S3 secret and skip MinIO
-      s3_secret_name: my-s3-secret
-      install_minio: false
-```
 
 ### Using the default MinIO
 
@@ -49,50 +79,19 @@ Then set `s3_secret_name` to that secret and `install_minio: false` if you don�
 
 ## Database wiring
 
-- Storage uses the `migrations-url` from the `database-urls` secret so it can run migrations and manage roles (`DB_INSTALL_ROLES=true`).
-- JWT auth uses the generated `storage-auth` secret and HS256; override by patching that secret if you need to share a token across services.
+- Storage uses the `migrations-url` from the `database-urls` secret so it can run migrations.
+- JWT auth uses the shared `jwt-auth` secret and HS256.
 - Supabase Storage keeps metadata in your app’s Postgres database under the `storage` schema (tables like `buckets`, `objects`, and policies). Plan migrations/backups accordingly—metadata and object store must stay in sync.
 
-## Quick local test (demo manifest)
+## Customising with the CRD
 
-With the demo manifest, you can hit the Storage API via the nginx gateway at `/storage` (see `stack status` for the JWTs to use).
+Add a storage block to your `StackApp`:
 
-```bash
-curl --location --request POST 'http://host.docker.internal:30012/bucket' \
-  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjEzNTMxOTg1LCJleHAiOjE5MjkxMDc5ODV9.th84OKK0Iz8QchDyXZRrojmKSEZ-OuitQm_5DvLiSIc' \
-  --header 'Content-Type: application/json' \
-  --data-raw '{"name": "avatars"}'
-```
-
-Then verify in Postgres (inside the CNPG primary pod):
-
-```bash
-psql -U db-owner -d stack-app -c 'select * from storage.buckets;'
-```
-
-You should see the `avatars` bucket row. The locale warnings from the container shell are harmless.
-
-### Upload a file
-
-Create a bucket and upload a file using the demo manifest (NodePort 30012) and the demo JWT:
-
-```bash
-# Create bucket (if not already present)
-curl -X POST 'http://host.docker.internal:30012/bucket' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjEzNTMxOTg1LCJleHAiOjE5MjkxMDc5ODV9.th84OKK0Iz8QchDyXZRrojmKSEZ-OuitQm_5DvLiSIc' \
-  -H 'Content-Type: application/json' \
-  -d '{"name": "avatars"}'
-
-# Upload a small file
-echo "hello storage" > hello.txt
-curl -X POST 'http://host.docker.internal:30012/object/avatars/hello.txt' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjEzNTMxOTg1LCJleHAiOjE5MjkxMDc5ODV9.th84OKK0Iz8QchDyXZRrojmKSEZ-OuitQm_5DvLiSIc' \
-  -H 'Content-Type: text/plain' \
-  --data-binary @hello.txt
-```
-
-Then check the DB:
-
-```bash
-psql -U db-owner -d stack-app -c 'select id, name, bucket_id, version from storage.objects;'
+```yaml
+spec:
+  components:
+    storage:
+      # Optional: point at your own S3 secret and skip MinIO
+      s3_secret_name: my-s3-secret
+      install_minio: false
 ```

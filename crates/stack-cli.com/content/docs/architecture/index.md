@@ -1,33 +1,40 @@
 # Stack Architecture
 
-Stack is delivered as a Kubernetes operator plus a set of curated operators that your clusters rarely ship out of the box. Understanding how those pieces fit together helps you diagnose issues or extend the platform.
+Stack is delivered as a Kubernetes operator plus a set of curated operators that your clusters rarely ship out of the box.
 
 ![Alt text](architecture.svg "Stack Architecture")
 
-## Stack vs Supabase
+## Operators, CRDs, and escape hatches
 
-| Benefit | Stack | Supabase (self-hosted) |
-| --- | --- | --- |
-| Deploy anywhere | Kubernetes-first, runs on any cluster (k3s, k3d, managed, bare metal). | Docker Compose friendly, great for single-host setups. |
-| Production parity | Development matches production because it is the same operator, CRDs, and manifests. | Local dev is simple but can diverge from production Kubernetes. |
-| App definition | One `StackApp` manifest that declares services and components. | Multiple services wired in `docker-compose` plus project config. |
-| Secrets handling | Secrets are created and managed as Kubernetes Secrets. | You manage env files and compose secrets manually. |
-| Multi-app isolation | Namespaces, per-app DBs, per-app services. | Typically one project per compose stack. |
-| Extensibility | Add services and operators alongside Stack components. | Extend compose with extra services. |
-| Gateway routing | NGINX routes `/auth`, `/rest`, `/realtime`, `/storage` in one place. | Supabase API gateway handles its internal services. |
-| Operations model | Declarative, reconciled by the operator. | Imperative docker lifecycle. |
+**Operator**: a controller that watches resources and keeps them in the desired state.  
+**CRD**: a CustomResourceDefinition that adds new Kubernetes resource types.
 
-## When Stack is a good fit
+Stack is just:
 
-- You want a Kubernetes-first platform that runs the same way locally and in production.
-- You deploy multiple apps or namespaces and want repeatable isolation.
-- You want a single manifest that declares components and services.
-- You want Stack to generate and manage secrets for you.
+- A CRD (`StackApp`)
+- An operator that reconciles it into Postgres, auth, REST, realtime, storage, and ingress services
 
-## When Supabase is a good fit
+Why this is good:
 
-- You want the fastest possible single-host setup with docker-compose.
-- You want Supabase UI and built-in workflows with minimal Kubernetes knowledge.
-- You are experimenting locally and do not need production parity yet.
+- **Declarative**: one manifest describes your app and its platform services.
+- **Repeatable**: the same CRD works from dev to prod.
+- **Composable**: add your own services alongside Stack.
 
-If you want a quick migration path, Stack can run Postgres, Auth, REST, Storage, and Realtime equivalents while you keep your application code unchanged.
+Escape hatch:
+
+- It is all Kubernetes, so you can inspect or edit resources with `kubectl` anytime.
+
+Links:
+
+- [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+- [CustomResourceDefinition](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
+
+## Stack is BaaS + deployment
+
+Stack combines backend-as-a-service and deployment into one Kubernetes-native workflow. You can run it on a single VM or a full cluster, and the operator will provision the database, auth, storage, REST, and realtime services for each app namespace.
+
+## Multiple Applications
+
+Running multiple applications on one cluster keeps each app isolated with its own namespace, secrets, and database while sharing the same platform services. That means you can deploy, scale, and upgrade apps independently without cross-talk, and keep staging/production setups consistent across teams.
+
+![Alt text](namespaces.svg "Application per Namespace")

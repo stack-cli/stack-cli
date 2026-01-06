@@ -40,6 +40,28 @@ spec:
       readonly_database_url: DATABASE_READONLY_URL
 ```
 
+## Stack-generated secrets
+
+Use `stack status` to view the secrets Stack generates, including JWTs and Keycloak admin credentials:
+
+```bash
+stack status --manifest demo-stack-app.yaml
+```
+
+Example output:
+
+```text
+🔌 Connecting to the cluster...
+✅ Connected
+🛡️ Keycloak Admin
+   Username: temp-admin
+   Password: ec74684fb30140ee994bfb5599dbbd37
+☁️ Cloudflare deployment not found in namespace 'stack-demo'
+🔑 JWTs
+   Anon: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.E_2RkS5WSHEdZ_nxVMzTQQo-NLFLVFF8YXthl1IQk5g
+   Service role: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.vAnalcvp1tM4s94Qa5CHc3ZhT8_OaCmDaukhbkotcMs
+```
+
 ## Tips
 
 - Keep secrets small and scoped to a single app namespace.

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="760" viewBox="0 0 1300 760">
+  <defs>
+    <style>
+      .h1 { font: 800 26px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill: #111; letter-spacing: 1px; }
+      .h2 { font: 750 20px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill: #111; }
+      .mono { font: 650 18px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; fill: #111; }
+      .label { font: 700 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill: #111; }
+
+      .borderVM { fill: none; stroke: #9aa6b2; stroke-width: 2.5; }
+      .borderK8s { fill: none; stroke: #b9c2cc; stroke-width: 2.5; }
+      .borderNS { fill: #fff; stroke: #cfd6de; stroke-width: 2; }
+      .borderPods { fill: #fff; stroke: #d7dee7; stroke-width: 2; stroke-dasharray: 6 6; }
+      .box { fill: #fff; stroke: #cfd6de; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <!-- VM -->
+  <rect x="30" y="30" rx="18" ry="18" width="1240" height="700" class="borderVM"/>
+  <rect x="52" y="18" rx="10" ry="10" width="80" height="34" fill="#fff"/>
+  <text x="62" y="42" class="h2">VM</text>
+
+  <!-- Kubernetes -->
+  <rect x="70" y="80" rx="18" ry="18" width="1160" height="620" class="borderK8s"/>
+  <rect x="92" y="68" rx="10" ry="10" width="150" height="34" fill="#fff"/>
+  <text x="102" y="92" class="h2">Kubernetes</text>
+
+  <!-- Namespaces (with gap) -->
+  <rect x="110" y="130" rx="16" ry="16" width="520" height="530" class="borderNS"/>
+  <rect x="670" y="130" rx="16" ry="16" width="520" height="530" class="borderNS"/>
+
+  <text x="140" y="168" class="h2">Namespace: app1</text>
+  <text x="700" y="168" class="h2">Namespace: app2</text>
+
+  <!-- Pods group -->
+  <rect x="140" y="190" rx="14" ry="14" width="460" height="430" class="borderPods"/>
+  <text x="165" y="222" class="label">Pods</text>
+
+  <rect x="700" y="190" rx="14" ry="14" width="460" height="430" class="borderPods"/>
+  <text x="725" y="222" class="label">Pods</text>
+
+  <!-- app1 pods -->
+  <rect x="165" y="245" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="265" y="284" text-anchor="middle" class="mono">Application</text>
+
+  <rect x="380" y="245" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="480" y="284" text-anchor="middle" class="mono">PostgREST</text>
+
+  <rect x="165" y="325" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="265" y="364" text-anchor="middle" class="mono">Realtime</text>
+
+  <rect x="380" y="325" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="480" y="364" text-anchor="middle" class="mono">Storage</text>
+
+  <rect x="165" y="405" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="265" y="444" text-anchor="middle" class="mono">PostgreSQL</text>
+
+  <!-- app2 pods -->
+  <rect x="725" y="245" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="825" y="284" text-anchor="middle" class="mono">Application</text>
+
+  <rect x="940" y="245" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="1040" y="284" text-anchor="middle" class="mono">PostgREST</text>
+
+  <rect x="725" y="325" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="825" y="364" text-anchor="middle" class="mono">Realtime</text>
+
+  <rect x="940" y="325" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="1040" y="364" text-anchor="middle" class="mono">Storage</text>
+
+  <rect x="725" y="405" rx="14" ry="14" width="200" height="62" class="box"/>
+  <text x="825" y="444" text-anchor="middle" class="mono">PostgreSQL</text>
+
+  <!-- Caption -->
+  <text x="650" y="715" text-anchor="middle" class="mono">
+    Multiple isolated application stacks deployed into separate namespaces on a single Kubernetes VM
+  </text>
+</svg>

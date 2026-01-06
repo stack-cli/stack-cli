@@ -11,6 +11,9 @@ dev-setup:
     cargo run --bin stack-cli -- install --manifest demo-apps/demo.stack.yaml
     cargo run --bin stack-cli -- operator --once
 
+dev-status:
+    cargo run --bin stack-cli -- status --manifest demo-apps/demo.stack.yaml
+
 dev-secrets:
     cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml > .env
 

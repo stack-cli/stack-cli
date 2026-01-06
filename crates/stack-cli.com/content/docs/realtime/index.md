@@ -2,39 +2,7 @@
 
 Stack can run Supabase Realtime for your namespace so you can subscribe to database changes over WebSockets.
 
-## Enable the Realtime component
-
-```yaml
-apiVersion: stack-cli.dev/v1
-kind: StackApp
-metadata:
-  name: stack-app
-  namespace: stack-demo
-spec:
-  components:
-    realtime: {}
-  services:
-    web:
-      image: ghcr.io/stack/demo-app:latest
-      port: 7903
-```
-
-Apply the manifest, then run a reconciliation:
-
-```bash
-stack install --manifest demo-stack-app.yaml
-stack operator --once
-```
-
-## Get the JWT
-
-Use the status command to print the anon JWT:
-
-```bash
-stack status --manifest demo-stack-app.yaml
-```
-
-Look for the `JWTs` section and copy the `Anon` token.
+This page continues the demo flow from the [Database](../database/) and [REST](../rest/) guides.
 
 ## Quick curl check
 
@@ -46,3 +14,33 @@ curl -i host.docker.internal:30010/realtime/v1/health \
 ```
 
 If Realtime is running, you should see a 200 response.
+
+## Get the JWT
+
+Use the status command to print the anon JWT:
+
+```bash
+stack status --manifest demo-stack-app.yaml
+```
+
+Example output:
+
+```text
+🔌 Connecting to the cluster...
+✅ Connected
+🛡️ Keycloak Admin
+   Username: temp-admin
+   Password: ec74684fb30140ee994bfb5599dbbd37
+☁️ Cloudflare deployment not found in namespace 'stack-demo'
+🔑 JWTs
+   Anon: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.E_2RkS5WSHEdZ_nxVMzTQQo-NLFLVFF8YXthl1IQk5g
+   Service role: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.vAnalcvp1tM4s94Qa5CHc3ZhT8_OaCmDaukhbkotcMs
+```
+
+Look for the `JWTs` section and copy the `Anon` token.
+
+## Technical notes
+
+- Realtime runs as a separate deployment in your namespace.
+- It uses the shared `jwt-auth` secret for API JWT validation.
+- The nginx gateway exposes it under `/realtime`.
