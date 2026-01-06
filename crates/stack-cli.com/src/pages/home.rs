@@ -95,11 +95,11 @@ pub fn home_page() -> String {
                     class: "max-w-6xl mx-auto",
                     h2 {
                         class: "text-3xl font-semibold text-center",
-                        "Everything a delivery team needs"
+                        "Everything a web developer needs"
                     }
                     p {
                         class: "mt-4 text-center text-base-content/80",
-                        "Stack installs a curated set of services so your applications are ready for production from day one."
+                        "Stack sets up the database, auth, and backend services you would install anyway, then wires deployment for you."
                     }
                     div {
                         class: "mt-10 grid grid-cols-1 md:grid-cols-2 gap-6",
