@@ -1,0 +1,90 @@
+<svg
+  viewBox="0 0 960 420"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="Same Stack configuration runs locally and in production"
+  preserveAspectRatio="xMidYMid meet"
+  class="w-full h-auto"
+>
+  <defs>
+    <style>
+      .box { fill: none; stroke: currentColor; stroke-width: 3; }
+      .dash { fill: none; stroke: currentColor; stroke-width: 3; stroke-dasharray: 10 8; }
+      .txt {
+        fill: currentColor;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      }
+      .title { font-size: 20px; font-weight: 700; }
+      .label { font-size: 16px; font-weight: 600; }
+      .small { font-size: 14px; }
+      .arrow { stroke: currentColor; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+    </style>
+
+    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto">
+      <polygon points="0 0, 12 5, 0 10" fill="currentColor" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="480" y="32" text-anchor="middle" class="txt title">
+    Same configuration. Anywhere.
+  </text>
+
+  <!-- Local -->
+  <rect x="60" y="70" width="280" height="90" rx="16" class="box" />
+  <text x="200" y="108" text-anchor="middle" class="txt label">
+    Local development
+  </text>
+  <text x="200" y="134" text-anchor="middle" class="txt small">
+    Docker Desktop (Kubernetes)
+  </text>
+
+  <!-- StackApp -->
+  <rect x="370" y="62" width="220" height="106" rx="18" class="box" />
+  <text x="480" y="104" text-anchor="middle" class="txt label">
+    StackApp
+  </text>
+  <text x="480" y="130" text-anchor="middle" class="txt small">
+    One file defines the stack
+  </text>
+
+  <!-- Arrow: local → stack -->
+  <path d="M340 115 L370 115" class="arrow" />
+
+  <!-- Production container -->
+  <rect x="60" y="200" width="840" height="170" rx="20" class="dash" />
+  <text x="480" y="232" text-anchor="middle" class="txt label">
+    Production
+  </text>
+  <text x="480" y="256" text-anchor="middle" class="txt small">
+    No config rewrites
+  </text>
+
+  <!-- Arrow: stack → production -->
+  <path d="M480 168 L480 200" class="arrow" />
+
+  <!-- Production targets -->
+  <rect x="110" y="275" width="220" height="78" rx="16" class="box" />
+  <text x="220" y="308" text-anchor="middle" class="txt label">
+    Single VM
+  </text>
+  <text x="220" y="334" text-anchor="middle" class="txt small">
+    k3s
+  </text>
+
+  <rect x="370" y="275" width="220" height="78" rx="16" class="box" />
+  <text x="480" y="308" text-anchor="middle" class="txt label">
+    Any cloud
+  </text>
+  <text x="480" y="334" text-anchor="middle" class="txt small">
+    Managed Kubernetes
+  </text>
+
+  <rect x="630" y="275" width="220" height="78" rx="16" class="box" />
+  <text x="740" y="308" text-anchor="middle" class="txt label">
+    Bare metal
+  </text>
+  <text x="740" y="334" text-anchor="middle" class="txt small">
+    On-prem
+  </text>
+</svg>
