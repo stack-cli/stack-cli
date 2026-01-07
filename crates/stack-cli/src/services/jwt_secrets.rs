@@ -3,7 +3,7 @@ use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, Rng};
 use serde::Serialize;
 
 pub const JWT_AUTH_SECRET_NAME: &str = "jwt-auth";
@@ -103,12 +103,12 @@ fn build_jwt(secret: &str, role: &str) -> Result<String, Error> {
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
     )
-    .map_err(|err| Error::Other(err.to_string()))
+    .map_err(|err: jsonwebtoken::errors::Error| Error::Other(err.to_string()))
 }
 
 fn random_token() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+    rand::rng()
+        .sample_iter(Alphanumeric)
         .take(32)
         .map(char::from)
         .collect()

@@ -122,10 +122,6 @@ pub async fn deployment(
         )
         .await?;
 
-    // If this is an update to an existing deployment then we want it to rollout
-    // see https://github.com/kube-rs/kube/pull/635
-    deployment_api.restart(&service_deployment.name).await?;
-
     service(
         client.clone(),
         &service_deployment.name,

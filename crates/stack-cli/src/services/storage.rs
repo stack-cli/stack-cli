@@ -6,7 +6,7 @@ use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, Rng};
 use serde_json::json;
 
 pub const STORAGE_NAME: &str = "storage";
@@ -405,8 +405,8 @@ async fn deploy_minio(client: Client, namespace: &str, secret_name: &str) -> Res
 }
 
 fn random_token() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+    rand::rng()
+        .sample_iter(Alphanumeric)
         .take(32)
         .map(char::from)
         .collect()

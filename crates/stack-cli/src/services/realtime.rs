@@ -6,7 +6,7 @@ use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, Rng};
 use serde_json::json;
 
 pub const REALTIME_NAME: &str = "realtime";
@@ -209,8 +209,8 @@ fn random_token() -> String {
 }
 
 fn random_token_len(len: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+    rand::rng()
+        .sample_iter(Alphanumeric)
         .take(len)
         .map(char::from)
         .collect()

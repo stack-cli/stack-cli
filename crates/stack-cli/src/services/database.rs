@@ -9,7 +9,6 @@ use kube::{
     api::{Api, PostParams},
     Client,
 };
-use rand::Rng;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -214,8 +213,7 @@ pub async fn deploy(
 }
 
 pub fn rand_hex() -> String {
-    let mut rng = rand::thread_rng();
-    (0..5).map(|_| rng.gen::<u8>().to_string()).collect()
+    (0..5).map(|_| rand::random::<u8>().to_string()).collect()
 }
 
 pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {

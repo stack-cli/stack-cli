@@ -6,8 +6,6 @@ use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
-use rand::rngs::OsRng;
-use rand::RngCore;
 use serde_json::json;
 use url::Url;
 
@@ -208,12 +206,7 @@ pub async fn ensure_secret(
 }
 
 pub fn rand_base64() -> String {
-    // Generate random bytes
-    let mut rng = OsRng;
-    let mut random_bytes = [0u8; 32];
-    rng.fill_bytes(&mut random_bytes);
-
-    // Encode random bytes to Base64
+    let random_bytes: [u8; 32] = rand::random();
     base64::encode_config(random_bytes, base64::URL_SAFE_NO_PAD)
 }
 

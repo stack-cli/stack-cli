@@ -41,6 +41,11 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
    ```bash
    curl -fsSL https://raw.githubusercontent.com/stack-cli/stack-cli/main/demo-apps/demo.stack.yaml \
      -o demo.stack.yaml
+   ```
+
+   And then
+
+   ```
    stack install --manifest demo.stack.yaml
    ```
 
