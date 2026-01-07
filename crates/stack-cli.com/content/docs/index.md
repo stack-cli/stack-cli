@@ -11,13 +11,17 @@ Stack is a Kubernetes-first backend platform. It gives you three big wins from d
 
 Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) to see how the operator, CRDs, and supporting services interact.
 
-## Other platforms
+## How Stack compares to related tools
 
-Other services that solve adjacent parts of the problem:
+Other platforms and services that solve adjacent parts of the problem.
 
-- [Supabase](https://supabase.com/)
-- [Canine](https://docs.canine.sh/)
-- [Disco](https://disco.cloud/)
-- [Uncloud](https://uncloud.run/)
-- [Kamal](https://kamal-deploy.org/)
-- [Dokploy](https://dokploy.com/)
+| Tool                               | Primary focus                             | Backend services (DB, auth, APIs) | Deployment model         | Uses Kubernetes |
+| ---------------------------------- | ----------------------------------------- | --------------------------------- | ------------------------ | --------------- |
+| **Stack**                          | Full application stack (backend + deploy) | Yes                               | Declarative config (CRD) | Yes             |
+| [Supabase](https://supabase.com/)  | Backend as a service                      | Yes                               | Managed service or DIY   | Optional        |
+| [Canine](https://docs.canine.sh/)  | PaaS-style app hosting                    | No                                | Git-based deploys        | Yes             |
+| [Disco](https://disco.cloud/)      | PaaS-style app hosting                    | No                                | Git push deploys         | No              |
+| [Uncloud](https://uncloud.run/)    | Container deployment                      | No                                | Docker Compose           | No              |
+| [Kamal](https://kamal-deploy.org/) | Application deployment                    | No                                | SSH-based                | No              |
+| [Dokploy](https://dokploy.com/)    | App deployment & hosting                  | No                                | Docker / Docker Compose  | No              |
+

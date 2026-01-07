@@ -26,8 +26,6 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
    🛡️ Installing Keycloak Operator
    📦 Creating namespace keycloak
    ⏳ Waiting for Keycloak Operator to be Available
-   🌐 Installing Nginx Ingress Operator
-   ⏳ Waiting for Nginx Operator to be Available
    📦 Creating namespace stack-system
    📜 Installing StackApp CRD
    ⏳ Waiting for StackApp CRD
