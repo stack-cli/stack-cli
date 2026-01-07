@@ -1,4 +1,4 @@
-# Kubernetes Setup
+# Stack Init
 
 Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already?](../local-kubernetes/) guide for Docker Desktop and k3s options.
 
@@ -83,4 +83,3 @@ On Linux, follow the install guide in the k9s docs.
 With `k9s` you can see the demo applications pods downlaoding and starting
 
 ![Alt text](k9s-setup.png "K9s Stack")
-

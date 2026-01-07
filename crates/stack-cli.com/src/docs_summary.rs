@@ -29,10 +29,10 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
-                        title: "Kubernetes Setup",
+                        title: "Stack Init",
                         description: "Install Stack and apply your first StackApp",
-                        folder: "docs/kubernetes-setup/",
-                        markdown: include_str!("../content/docs/kubernetes-setup/index.md"),
+                        folder: "docs/stack-init/",
+                        markdown: include_str!("../content/docs/stack-init/index.md"),
                         image: None,
                         author_image: None,
                         author: None,
