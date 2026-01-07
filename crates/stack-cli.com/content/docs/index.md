@@ -7,7 +7,7 @@ Stack is a Kubernetes-first backend platform. It gives you three big wins from d
 - **No glue work**: Stack creates secrets and wires services automatically.
 
 
-![Alt text](k9s.png "A stack application running in kubernetes")
+![Alt text](k8s-vs-stack.jpeg "A stack application running in kubernetes")
 
 Looking for a deeper dive? Read the [Stack architecture guide](./architecture/) to see how the operator, CRDs, and supporting services interact.
 
