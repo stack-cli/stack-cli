@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::operator::crd::StackApp;
 use crate::services::{keycloak, keycloak_db};
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Namespace;
 use k8s_openapi::api::core::v1::ServiceAccount;
@@ -307,7 +307,7 @@ pub(crate) async fn ensure_namespace(client: &Client, namespace: &str) -> Result
     loop {
         attempt += 1;
         match try_ensure_namespace(client, namespace).await {
-            Ok(ns) => return Ok(ns),
+            Ok(ns) => return wait_for_namespace_active(client, namespace, ns).await,
             Err(err) if attempt < MAX_ATTEMPTS && is_transient_namespace_error(&err) => {
                 println!(
                     "⏳ Namespace {} not ready yet (attempt {}/{}). Retrying...",
@@ -345,6 +345,38 @@ async fn try_ensure_namespace(client: &Client, namespace: &str) -> Result<Namesp
             }
         }
         Err(err) => Err(err.into()),
+    }
+}
+
+async fn wait_for_namespace_active(
+    client: &Client,
+    namespace: &str,
+    mut ns: Namespace,
+) -> Result<Namespace> {
+    if ns.status.as_ref().and_then(|status| status.phase.as_deref()) == Some("Active") {
+        return Ok(ns);
+    }
+
+    println!("⏳ Waiting for namespace {} to be Active", namespace);
+    const MAX_WAIT_SECS: u64 = 30;
+    const POLL_DELAY_SECS: u64 = 1;
+    let namespaces: Api<Namespace> = Api::all(client.clone());
+
+    let start = std::time::Instant::now();
+    loop {
+        if start.elapsed().as_secs() >= MAX_WAIT_SECS {
+            return Err(anyhow!(
+                "namespace {} did not become Active within {}s",
+                namespace,
+                MAX_WAIT_SECS
+            ));
+        }
+
+        tokio::time::sleep(std::time::Duration::from_secs(POLL_DELAY_SECS)).await;
+        ns = namespaces.get(namespace).await?;
+        if ns.status.as_ref().and_then(|status| status.phase.as_deref()) == Some("Active") {
+            return Ok(ns);
+        }
     }
 }
 
