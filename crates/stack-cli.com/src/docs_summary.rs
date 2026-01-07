@@ -146,6 +146,18 @@ pub fn summary() -> Summary {
                 pages: vec![
                     Page {
                         date: "",
+                        title: "Home Server or VM",
+                        description: "Run Stack against a remote k3s node with your local CLI",
+                        folder: "docs/deploy-anywhere/home-server/",
+                        markdown: include_str!(
+                            "../content/docs/deploy-anywhere/home-server/index.md"
+                        ),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Hetzner Dedicated Servers",
                         description: "Install k3s on a dedicated box and run multiple StackApps",
                         folder: "docs/deploy-anywhere/hetzner/",
