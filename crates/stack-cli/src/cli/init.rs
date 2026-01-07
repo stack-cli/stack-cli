@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::operator::crd::StackApp;
 use crate::services::{keycloak, keycloak_db};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Namespace;
 use k8s_openapi::api::core::v1::ServiceAccount;
@@ -38,11 +38,15 @@ pub async fn init(initializer: &crate::cli::Initializer) -> Result<()> {
     let client = Client::try_default().await?;
     println!("✅ Connected");
 
+    ensure_namespace(&client, &initializer.operator_namespace).await?;
+    if initializer.install_keycloak {
+        ensure_namespace(&client, keycloak::KEYCLOAK_NAMESPACE).await?;
+    }
+
     install_postgres_operator(&client).await?;
     if initializer.install_keycloak {
         install_keycloak_operator(&client).await?;
     }
-    ensure_namespace(&client, &initializer.operator_namespace).await?;
     ensure_stackapp_crd(&client).await?;
     create_roles(&client, &initializer.operator_namespace).await?;
     if !initializer.no_operator {
@@ -300,92 +304,18 @@ pub(crate) async fn ensure_stackapp_crd(client: &Client) -> Result<(), Error> {
 
 pub(crate) async fn ensure_namespace(client: &Client, namespace: &str) -> Result<Namespace> {
     println!("📦 Creating namespace {}", namespace);
-    const MAX_ATTEMPTS: usize = 5;
-    const RETRY_DELAY_SECS: u64 = 2;
-
-    let mut attempt = 0;
-    loop {
-        attempt += 1;
-        match try_ensure_namespace(client, namespace).await {
-            Ok(ns) => return wait_for_namespace_active(client, namespace, ns).await,
-            Err(err) if attempt < MAX_ATTEMPTS && is_transient_namespace_error(&err) => {
-                println!(
-                    "⏳ Namespace {} not ready yet (attempt {}/{}). Retrying...",
-                    namespace, attempt, MAX_ATTEMPTS
-                );
-                tokio::time::sleep(std::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
-            }
-            Err(err) => return Err(err),
-        }
-    }
-}
-
-async fn try_ensure_namespace(client: &Client, namespace: &str) -> Result<Namespace> {
     let namespaces: Api<Namespace> = Api::all(client.clone());
-    match namespaces.get(namespace).await {
-        Ok(ns) => Ok(ns),
-        Err(KubeError::Api(err)) if err.code == 404 => {
-            let new_namespace = Namespace {
-                metadata: ObjectMeta {
-                    name: Some(namespace.to_string()),
-                    ..Default::default()
-                },
-                ..Default::default()
-            };
+    let new_namespace = Namespace {
+        metadata: ObjectMeta {
+            name: Some(namespace.to_string()),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
 
-            match namespaces
-                .create(&PostParams::default(), &new_namespace)
-                .await
-            {
-                Ok(ns) => Ok(ns),
-                Err(KubeError::Api(err)) if err.code == 409 => {
-                    Ok(namespaces.get(namespace).await?)
-                }
-                Err(err) => Err(err.into()),
-            }
-        }
+    match namespaces.create(&PostParams::default(), &new_namespace).await {
+        Ok(ns) => Ok(ns),
+        Err(KubeError::Api(err)) if err.code == 409 => Ok(new_namespace),
         Err(err) => Err(err.into()),
     }
-}
-
-async fn wait_for_namespace_active(
-    client: &Client,
-    namespace: &str,
-    mut ns: Namespace,
-) -> Result<Namespace> {
-    if ns.status.as_ref().and_then(|status| status.phase.as_deref()) == Some("Active") {
-        return Ok(ns);
-    }
-
-    println!("⏳ Waiting for namespace {} to be Active", namespace);
-    const MAX_WAIT_SECS: u64 = 30;
-    const POLL_DELAY_SECS: u64 = 1;
-    let namespaces: Api<Namespace> = Api::all(client.clone());
-
-    let start = std::time::Instant::now();
-    loop {
-        if start.elapsed().as_secs() >= MAX_WAIT_SECS {
-            return Err(anyhow!(
-                "namespace {} did not become Active within {}s",
-                namespace,
-                MAX_WAIT_SECS
-            ));
-        }
-
-        tokio::time::sleep(std::time::Duration::from_secs(POLL_DELAY_SECS)).await;
-        ns = namespaces.get(namespace).await?;
-        if ns.status.as_ref().and_then(|status| status.phase.as_deref()) == Some("Active") {
-            return Ok(ns);
-        }
-    }
-}
-
-fn is_transient_namespace_error(err: &anyhow::Error) -> bool {
-    if let Some(kube_err) = err.downcast_ref::<KubeError>() {
-        return matches!(kube_err, KubeError::HyperError(_))
-            || matches!(kube_err, KubeError::Api(error_response)
-                if error_response.code == 404
-                    && error_response.reason == "Failed to parse error data");
-    }
-    false
 }
