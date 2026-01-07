@@ -118,8 +118,6 @@ async fn install_postgres_operator(client: &Client) -> Result<()> {
 
 async fn install_keycloak_operator(client: &Client) -> Result<()> {
     println!("🛡️ Installing Keycloak Operator");
-    ensure_namespace(client, keycloak::KEYCLOAK_NAMESPACE).await?;
-
     super::apply::apply(client, KEYCLOAK_CRD_KEYCLOAKS, None).await?;
     super::apply::apply(client, KEYCLOAK_CRD_REALM_IMPORTS, None).await?;
 

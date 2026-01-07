@@ -1,4 +1,4 @@
-use super::crd::{EnvVar, ExtraService, SecretEnvVar, StackApp, StackAppSpec};
+use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::application::APPLICATION_NAME;
@@ -272,7 +272,7 @@ async fn deploy_web_app(
 async fn deploy_extra_services(
     client: &Client,
     namespace: &str,
-    services: &std::collections::BTreeMap<String, ExtraService>,
+    services: &std::collections::BTreeMap<String, ServiceSpec>,
 ) -> Result<(), Error> {
     let reserved = [
         APPLICATION_NAME,

@@ -1,5 +1,5 @@
 use kube::CustomResource;
-use schemars::JsonSchema;
+use schemars::{json_schema, Schema, SchemaGenerator, JsonSchema};
 use serde::{Deserialize, Serialize};
 
 /// Stack application custom resource specification.
@@ -20,10 +20,18 @@ pub struct StackAppSpec {
 
 /// Services to deploy into the namespace (web and optional helpers).
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+#[schemars(schema_with = "services_schema")]
 pub struct Services {
-    pub web: WebService,
+    pub web: ServiceSpec,
     #[serde(flatten, default)]
-    pub extra: std::collections::BTreeMap<String, ExtraService>,
+    pub extra: std::collections::BTreeMap<String, ServiceSpec>,
+}
+
+fn services_schema(_gen: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "object",
+        "x-kubernetes-preserve-unknown-fields": true
+    })
 }
 
 /// Optional platform components.
@@ -53,9 +61,9 @@ pub struct SecretEnvVar {
     pub secret_key: String,
 }
 
-/// Web application container reference.
+/// Application service container reference.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
-pub struct WebService {
+pub struct ServiceSpec {
     /// Fully-qualified container image reference (e.g. ghcr.io/org/app:tag)
     pub image: String,
     /// Container port exposed by the application (e.g. 7903)
@@ -76,28 +84,7 @@ pub struct WebService {
     pub readonly_database_url: Option<String>,
 }
 
-/// Additional application service (cluster-internal, no nginx routing).
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
-pub struct ExtraService {
-    /// Fully-qualified container image reference (e.g. ghcr.io/org/app:tag)
-    pub image: String,
-    /// Container port exposed by the service.
-    pub port: u16,
-    /// Optional list of plaintext environment variables injected into the pod.
-    #[serde(default)]
-    pub env: Vec<EnvVar>,
-    /// Optional list of secret-backed environment variables injected into the pod.
-    #[serde(default)]
-    pub secret_env: Vec<SecretEnvVar>,
-    /// Optional init container to run before the main container starts.
-    pub init: Option<WebInit>,
-    /// Optional environment variable name to receive the application DATABASE_URL.
-    pub database_url: Option<String>,
-    /// Optional environment variable name to receive the migrations/superuser URL.
-    pub migrations_database_url: Option<String>,
-    /// Optional environment variable name to receive the readonly URL.
-    pub readonly_database_url: Option<String>,
-}
+// Extra services use the same schema as the primary web service.
 
 /// Optional init container configuration for the web service.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
