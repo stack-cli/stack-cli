@@ -16,23 +16,14 @@ pub async fn default_deny(
 ) -> Result<(), Error> {
     let policy_name = format!("{}-network-policy", name);
 
-    // Ingress: allow from same namespace + ingress-nginx + optional 0.0.0.0/0 (for NodePort exposure)
-    let mut ingress_sources = vec![
-        json!({
-            "namespaceSelector": {
-                "matchLabels": {
-                    "kubernetes.io/metadata.name": namespace
-                }
+    // Ingress: allow from same namespace + optional 0.0.0.0/0 (for NodePort exposure)
+    let mut ingress_sources = vec![json!({
+        "namespaceSelector": {
+            "matchLabels": {
+                "kubernetes.io/metadata.name": namespace
             }
-        }),
-        json!({
-            "namespaceSelector": {
-                "matchLabels": {
-                    "kubernetes.io/metadata.name": "ingress-nginx"
-                }
-            }
-        }),
-    ];
+        }
+    })];
 
     if allow_from_anywhere {
         ingress_sources.push(json!({

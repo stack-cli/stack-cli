@@ -27,7 +27,6 @@ use serde_json::json;
 const OPERATOR_IMAGE: &str = "ghcr.io/stack-cli/stack-operator";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const CNPG_YAML: &str = include_str!("../../config/cnpg-1.22.1.yaml");
-const NGINX_YAML: &str = include_str!("../../config/nginx-ingress.yaml");
 const KEYCLOAK_CRD_KEYCLOAKS: &str = include_str!("../../keycloak/keycloak-crd-keycloaks.yaml");
 const KEYCLOAK_CRD_REALM_IMPORTS: &str =
     include_str!("../../keycloak/keycloak-crd-keycloakrealmimports.yaml");
@@ -43,9 +42,6 @@ pub async fn init(initializer: &crate::cli::Initializer) -> Result<()> {
     if initializer.install_keycloak {
         install_keycloak_operator(&client).await?;
     }
-    if !initializer.disable_ingress {
-        install_nginx_operator(&client).await?;
-    }
     ensure_namespace(&client, &initializer.operator_namespace).await?;
     ensure_stackapp_crd(&client).await?;
     create_roles(&client, &initializer.operator_namespace).await?;
@@ -56,37 +52,6 @@ pub async fn init(initializer: &crate::cli::Initializer) -> Result<()> {
     if initializer.install_keycloak {
         bootstrap_keycloak_namespace(&client).await?;
     }
-
-    Ok(())
-}
-
-async fn install_nginx_operator(client: &Client) -> Result<()> {
-    println!("🌐 Installing Nginx Ingress Operator");
-    super::apply::apply(client, NGINX_YAML, None).await?;
-
-    fn is_deployment_available() -> impl Condition<Deployment> {
-        |obj: Option<&Deployment>| {
-            if let Some(deployment) = &obj {
-                if let Some(status) = &deployment.status {
-                    if let Some(phase) = &status.available_replicas {
-                        return phase >= &1;
-                    }
-                }
-            }
-            false
-        }
-    }
-
-    println!("⏳ Waiting for Nginx Operator to be Available");
-    let deploys: Api<Deployment> = Api::namespaced(client.clone(), "ingress-nginx");
-    let establish = await_condition(
-        deploys,
-        "ingress-nginx-controller",
-        is_deployment_available(),
-    );
-    let _ = tokio::time::timeout(std::time::Duration::from_secs(120), establish)
-        .await
-        .unwrap();
 
     Ok(())
 }

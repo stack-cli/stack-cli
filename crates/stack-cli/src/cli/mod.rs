@@ -16,9 +16,6 @@ pub struct Cli {
 
 #[derive(Parser)]
 pub struct Initializer {
-    /// Install ingress
-    #[arg(long, default_value_t = false)]
-    pub disable_ingress: bool,
     /// Install Keycloak operator and shared realm
     #[arg(long, default_value_t = true)]
     pub install_keycloak: bool,
