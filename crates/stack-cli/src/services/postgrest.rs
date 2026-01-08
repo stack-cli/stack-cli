@@ -78,7 +78,7 @@ pub async fn deploy(
             replicas: 1,
             port: DEFAULT_REST_PORT,
             env,
-            init_container: None,
+            init_containers: vec![],
             command: Some(command),
             volume_mounts: vec![],
             volumes: vec![],

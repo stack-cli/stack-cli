@@ -117,7 +117,7 @@ pub async fn deploy(
                 json!({"name": "OAUTH2_PROXY_SKIP_AUTH_ROUTES", "value": "^/v1*"}),
                 json!({"name": "OAUTH2_PROXY_SCOPE", "value": "openid email profile"})
             ],
-            init_container: None,
+            init_containers: vec![],
             command: Some(deployment::Command {
                 command: vec![],
                 args: vec![],

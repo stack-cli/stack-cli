@@ -233,7 +233,7 @@ async fn deploy_web_app(
         &spec.services.web.secret_env,
     );
 
-    let init_container = spec.services.web.init.as_ref().map(|init| {
+    let init_containers = spec.services.web.init.as_ref().map(|init| {
         let mut init_env = Vec::new();
         append_db_envs(
             &mut init_env,
@@ -258,7 +258,7 @@ async fn deploy_web_app(
             replicas: WEB_APP_REPLICAS,
             port: spec.services.web.port,
             env,
-            init_container,
+            init_containers: init_containers.into_iter().collect(),
             command: None,
             volume_mounts: vec![],
             volumes: vec![],
@@ -314,7 +314,7 @@ async fn deploy_extra_services(
 
         append_env_from_spec(&mut env, &service.env, &service.secret_env);
 
-        let init_container = service.init.as_ref().map(|init| {
+        let init_containers = service.init.as_ref().map(|init| {
             let mut init_env = Vec::new();
             append_db_envs(
                 &mut init_env,
@@ -339,7 +339,7 @@ async fn deploy_extra_services(
                 replicas: WEB_APP_REPLICAS,
                 port: service.port,
                 env,
-                init_container,
+                init_containers: init_containers.into_iter().collect(),
                 command: None,
                 volume_mounts: vec![],
                 volumes: vec![],

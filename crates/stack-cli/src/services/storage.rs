@@ -29,6 +29,7 @@ const MINIO_NAME: &str = "minio";
 const MINIO_IMAGE: &str = "minio/minio:latest";
 const MINIO_PORT: u16 = 9000;
 const MINIO_MC_IMAGE: &str = "minio/mc:latest";
+const STORAGE_DB_INIT_IMAGE: &str = "postgres:16-alpine";
 
 pub async fn deploy(
     client: Client,
@@ -108,6 +109,92 @@ mc anonymous set download supa-minio/warehouse--table-s3 || true
     } else {
         None
     };
+
+    let storage_db_init = deployment::InitContainer {
+        image_name: STORAGE_DB_INIT_IMAGE.to_string(),
+        env: vec![
+            json!({"name": "PGHOST", "value": "stack-db-cluster-rw"}),
+            json!({"name": "PGPORT", "value": "5432"}),
+            json!({"name": "PGDATABASE", "value": "stack-app"}),
+            json!({
+                "name": "PGUSER",
+                "valueFrom": {
+                    "secretKeyRef": {
+                        "name": "db-owner",
+                        "key": "username"
+                    }
+                }
+            }),
+            json!({
+                "name": "PGPASSWORD",
+                "valueFrom": {
+                    "secretKeyRef": {
+                        "name": "db-owner",
+                        "key": "password"
+                    }
+                }
+            }),
+        ],
+        command: Some(deployment::Command {
+            command: vec!["/bin/sh".to_string(), "-c".to_string()],
+            args: vec![r#"psql -v ON_ERROR_STOP=1 <<'SQL'
+CREATE SCHEMA IF NOT EXISTS storage;
+DO $do$
+DECLARE
+  anon_role           name := 'anon';
+  authenticated_role  name := 'authenticated';
+  service_role        name := 'service_role';
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = anon_role) THEN
+    EXECUTE format('CREATE ROLE %I NOLOGIN NOINHERIT', anon_role);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = authenticated_role) THEN
+    EXECUTE format('CREATE ROLE %I NOLOGIN NOINHERIT', authenticated_role);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = service_role) THEN
+    EXECUTE format('CREATE ROLE %I NOLOGIN NOINHERIT BYPASSRLS', service_role);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticator') THEN
+    EXECUTE 'CREATE ROLE authenticator NOINHERIT LOGIN';
+  END IF;
+
+  EXECUTE format('GRANT %I TO authenticator', anon_role);
+  EXECUTE format('GRANT %I TO authenticator', authenticated_role);
+  EXECUTE format('GRANT %I TO authenticator', service_role);
+
+  EXECUTE 'GRANT postgres TO authenticator';
+
+  EXECUTE format(
+    'GRANT USAGE ON SCHEMA storage TO %I, %I, %I, %I',
+    'db-owner', anon_role, authenticated_role, service_role
+  );
+
+  EXECUTE format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA storage GRANT ALL ON TABLES TO %I, %I, %I, %I',
+    'db-owner', anon_role, authenticated_role, service_role
+  );
+
+  EXECUTE format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA storage GRANT ALL ON FUNCTIONS TO %I, %I, %I, %I',
+    'db-owner', anon_role, authenticated_role, service_role
+  );
+
+  EXECUTE format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA storage GRANT ALL ON SEQUENCES TO %I, %I, %I, %I',
+    'db-owner', anon_role, authenticated_role, service_role
+  );
+END $do$;
+SQL"#.to_string()],
+        }),
+    };
+
+    let mut init_containers = vec![storage_db_init];
+    if let Some(minio_init) = minio_init {
+        init_containers.push(minio_init);
+    }
 
     let env = vec![
         json!({
@@ -229,7 +316,7 @@ mc anonymous set download supa-minio/warehouse--table-s3 || true
             replicas: 1,
             port: DEFAULT_STORAGE_PORT,
             env,
-            init_container: minio_init,
+            init_containers,
             command: None,
             volume_mounts,
             volumes,
@@ -393,7 +480,7 @@ async fn deploy_minio(client: Client, namespace: &str, secret_name: &str) -> Res
             replicas: 1,
             port: MINIO_PORT,
             env,
-            init_container: None,
+            init_containers: vec![],
             command: Some(command),
             volume_mounts,
             volumes,

@@ -129,7 +129,7 @@ pub async fn deploy(
             replicas: 1,
             port: REALTIME_PORT,
             env,
-            init_container: Some(init_container),
+            init_containers: vec![init_container],
             command: None,
             volume_mounts: vec![],
             volumes: vec![],

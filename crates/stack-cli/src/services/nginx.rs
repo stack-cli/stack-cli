@@ -258,7 +258,7 @@ server {{
             port: NGINX_PORT,
             env,
             command: None,
-            init_container: None,
+            init_containers: vec![],
             volume_mounts: vec![json!({"name": NGINX_NAME, "mountPath": "/etc/nginx/conf.d"})],
             volumes: vec![json!({"name": NGINX_NAME,
                 "configMap": {

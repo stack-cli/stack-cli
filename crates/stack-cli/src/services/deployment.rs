@@ -22,7 +22,7 @@ pub struct ServiceDeployment {
     pub image_name: String,
     pub port: u16,
     pub env: Vec<Value>,
-    pub init_container: Option<InitContainer>,
+    pub init_containers: Vec<InitContainer>,
     pub command: Option<Command>,
     pub volume_mounts: Vec<Value>,
     pub volumes: Vec<Value>,
@@ -41,10 +41,13 @@ pub async fn deployment(
         "component": service_deployment.name
     });
 
-    let init_containers: Vec<Value> =
-        if let Some(init_container) = service_deployment.init_container {
+    let init_containers: Vec<Value> = service_deployment
+        .init_containers
+        .into_iter()
+        .enumerate()
+        .map(|(index, init_container)| {
             let mut container = json!({
-                "name": "init",
+                "name": format!("init-{}", index + 1),
                 "image": init_container.image_name,
                 "imagePullPolicy": "IfNotPresent",
                 "env": init_container.env
@@ -55,10 +58,9 @@ pub async fn deployment(
                 container["args"] = serde_json::to_value(command.args).unwrap_or_default();
             }
 
-            vec![container]
-        } else {
-            vec![]
-        };
+            container
+        })
+        .collect();
 
     let containers = if let Some(command) = service_deployment.command {
         json!([{
