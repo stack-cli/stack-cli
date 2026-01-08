@@ -53,9 +53,6 @@ curl http://localhost:30090/rest/instruments \
   -H "Authorization: Bearer <ANON_JWT>"
 ```
 
-If you created the table in the database guide, you should see the rows returned. If you receive a permission error, grant access to the `anon` role:
+If you created the table in the database guide, you should see the rows returned.
 
-```sql
-grant usage on schema public to anon;
-grant select on table public.instruments to anon;
-```
+
