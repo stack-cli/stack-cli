@@ -18,8 +18,13 @@ then run:
 alter table instruments enable row level security;
 grant usage on schema public to anon;
 grant select on table public.instruments to anon;
-alter table public.instruments enable row level security;
-  create policy "read instruments" on public.instruments for select using (true);
+create policy "read instruments" on public.instruments for select using (true);
+```
+
+PostgREST caches schema metadata. After creating tables or changing policies, reload the cache:
+
+```bash
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app -c "NOTIFY pgrst, 'reload schema';"
 ```
 
 ## Get the JWT
@@ -54,5 +59,3 @@ curl http://localhost:30090/rest/instruments \
 ```
 
 If you created the table in the database guide, you should see the rows returned.
-
-
