@@ -90,6 +90,16 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
+                        title: "Profiles",
+                        description: "Keep one manifest and apply environment-specific overrides",
+                        folder: "docs/profiles/",
+                        markdown: include_str!("../content/docs/profiles/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Authentication",
                         description: "How Stack wires Keycloak and OAuth2 for your apps",
                         folder: "docs/authentication/",
