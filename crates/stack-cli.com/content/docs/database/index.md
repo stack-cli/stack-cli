@@ -9,33 +9,7 @@ The demo manifest (`demo-apps/demo.stack.yaml`) creates a database in the `stack
 Open a psql session as the default user, then connect to `stack-app`:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql
-```
-
-What you'll see, something like below, next type `\l` to list the datbases.
-
-```bash
-Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
-psql (16.1 (Debian 16.1-1.pgdg110+1), server 16.2 (Debian 16.2-1.pgdg110+2))
-Type "help" for help.
-
-postgres=# \l
-                                                  List of databases
-   Name    |  Owner   | Encoding | Locale Provider | Collate | Ctype | ICU Locale | ICU Rules |   Access privileges
------------+----------+----------+-----------------+---------+-------+------------+-----------+-----------------------
- postgres  | postgres | UTF8     | libc            | C       | C     |            |           |
- stack-app | db-owner | UTF8     | libc            | C       | C     |            |           |
- template0 | postgres | UTF8     | libc            | C       | C     |            |           | =c/postgres          +
-           |          |          |                 |         |       |            |           | postgres=CTc/postgres
- template1 | postgres | UTF8     | libc            | C       | C     |            |           | =c/postgres          +
-           |          |          |                 |         |       |            |           | postgres=CTc/postgres
-(4 rows)
-```
-
-Then connect:
-
-```sql
-\c stack-app
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app
 ```
 
 ## Create a table and insert data

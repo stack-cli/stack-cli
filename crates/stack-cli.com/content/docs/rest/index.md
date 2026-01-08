@@ -6,12 +6,20 @@ This page assumes you have already created the `instruments` table in the [Datab
 
 PostgREST uses the `anon` role from your JWT. You need to enable RLS and grant access to the table.
 
-Connect to Postgres with the same steps as the database guide, then run:
+Connect to Postgres
+
+```bash
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app
+```
+
+then run:
 
 ```sql
 alter table instruments enable row level security;
 grant usage on schema public to anon;
 grant select on table public.instruments to anon;
+alter table public.instruments enable row level security;
+  create policy "read instruments" on public.instruments for select using (true);
 ```
 
 ## Get the JWT
@@ -19,7 +27,7 @@ grant select on table public.instruments to anon;
 Use the status command to print the anon JWT:
 
 ```bash
-stack status --manifest demo-stack-app.yaml
+stack status --manifest demo.stack.yaml
 ```
 
 Example output:
@@ -41,7 +49,7 @@ Look for the `JWTs` section and copy the `Anon` token.
 ## Query with curl
 
 ```bash
-curl host.docker.internal:30010/rest/instruments \
+curl http://localhost:30090/rest/instruments \
   -H "Authorization: Bearer <ANON_JWT>"
 ```
 
