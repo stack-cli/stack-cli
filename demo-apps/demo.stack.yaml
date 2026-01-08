@@ -5,16 +5,20 @@ metadata:
   namespace: stack-demo
 spec:
   components:
-    ingress:
-      port: 30010
     db:
       danger_override_password: testpassword
-      expose_db_port: 30011
     rest: {}
     auth: {}
     realtime: {}
     storage:
       install_minio: true
+  profiles:
+    dev:
+      components:
+        ingress:
+          port: 30010
+        db:
+          expose_db_port: 30011
   services:
     web:
       image: mendhak/http-https-echo:latest
