@@ -1,26 +1,18 @@
 use super::{
     apply,
     init::{ensure_namespace, ensure_stackapp_crd},
+    manifest,
 };
-use crate::operator::crd::StackApp;
 use anyhow::{anyhow, Context, Result};
 use kube::{Client, ResourceExt};
-use std::fs;
 
-pub async fn install(installer: &crate::cli::Installer) -> Result<()> {
+pub async fn deploy(deployer: &crate::cli::Deployer) -> Result<()> {
     println!("🔌 Connecting to the cluster...");
     let client = Client::try_default().await?;
     println!("✅ Connected");
 
-    let manifest_raw = fs::read_to_string(&installer.manifest).with_context(|| {
-        format!(
-            "Failed to read manifest at {}",
-            installer.manifest.display()
-        )
-    })?;
-
-    let stack_app: StackApp =
-        serde_yaml::from_str(&manifest_raw).context("Failed to parse StackApp manifest")?;
+    let (stack_app, manifest_raw) =
+        manifest::load_stackapp(&deployer.manifest, deployer.profile.as_deref())?;
 
     let namespace = stack_app
         .namespace()

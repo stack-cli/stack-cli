@@ -29,13 +29,13 @@ Most flows start with a local k3d cluster:
 ```bash
 just dev-init          # delete/recreate the k3d-stack cluster
 just get-config        # merge the kubeconfig and rewrite endpoints to host.docker.internal
-just dev-setup         # run stack-cli init/install/operator once against the cluster
+just dev-setup         # run stack-cli init/deploy/operator once against the cluster
 ```
 
 `just dev-setup` maps to:
 
 1. `cargo run --bin stack-cli -- init --no-operator`
-2. `cargo run --bin stack-cli -- install --manifest demo-stack-app.yaml`
+2. `cargo run --bin stack-cli -- deploy --manifest demo-stack-app.yaml`
 3. `cargo run --bin stack-cli -- operator --once`
 
 Feel free to run those commands individually when iterating on specific areas.
@@ -43,7 +43,7 @@ Feel free to run those commands individually when iterating on specific areas.
 ## Developing `stack-cli`
 
 - `cargo run --bin stack-cli -- -h` to inspect the CLI.
-- `cargo run --bin stack-cli -- init` / `install` / `operator` for real workflows.
+- `cargo run --bin stack-cli -- init` / `deploy` / `operator` for real workflows.
 - `cargo fmt`, `cargo clippy -- -D warnings`, and `cargo test` must pass before merging.
 - The operator uses kube-rs; logs go through `tracing`. Use `RUST_LOG=debug cargo run --bin stack-cli -- operator` for verbose output.
 - Kubernetes manifests live under `crates/stack-cli/config/`. Regenerate or edit them there and keep CRDs/operators in sync.

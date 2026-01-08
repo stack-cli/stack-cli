@@ -38,7 +38,7 @@ Then run
 
 ```sh
 cargo run --bin stack-cli -- init
-cargo run --bin stack-cli -- install --manifest ../../demo-stack-app.yaml
+cargo run --bin stack-cli -- deploy --manifest ../../demo-stack-app.yaml
 ```
 
 ## Testing the Operator
@@ -47,7 +47,7 @@ Install the manifests without the in-cluster controller so you can iterate on th
 
 ```sh
 cargo run --bin stack-cli -- init --no-operator
-cargo run --bin stack-cli -- install --manifest ../../demo-stack-app.yaml --development
+cargo run --bin stack-cli -- deploy --manifest ../../demo-stack-app.yaml
 ```
 
 Then run the operator locally and confirm it reconciles `StackApp` objects:

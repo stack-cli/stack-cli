@@ -86,8 +86,8 @@ spec:
 Apply both:
 
 ```bash
-stack install --manifest frontend.yaml
-stack install --manifest api.yaml
+stack deploy --manifest frontend.yaml
+stack deploy --manifest api.yaml
 ```
 
 Check status:

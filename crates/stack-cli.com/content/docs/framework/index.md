@@ -61,7 +61,7 @@ spec:
 Deploy it:
 
 ```bash
-stack install --manifest rails-stack-app.yaml
+stack deploy --manifest rails-stack-app.yaml
 ```
 
 Stack will ensure the namespace exists, provision a CloudNativePG database cluster, inject credentials into `rails-app`, and run any database migrations via the migration container specified in future versions of the manifest.
@@ -71,7 +71,7 @@ Stack will ensure the namespace exists, provision a CloudNativePG database clust
 Run a quick tunnel while testing:
 
 ```bash
-Add `components.cloudflare: {}` to `rails-stack-app.yaml` and re-run `stack install` to start a quick tunnel.
+Add `components.cloudflare: {}` to `rails-stack-app.yaml` and re-run `stack deploy` to start a quick tunnel.
 stack status --manifest rails-stack-app.yaml
 ```
 

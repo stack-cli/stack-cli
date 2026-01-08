@@ -49,8 +49,8 @@ spec:
 Apply it with:
 
 ```bash
-stack install --manifest flask-stack-app.yaml
-Add `components.cloudflare: {}` to `flask-stack-app.yaml` and re-run `stack install` to start a quick tunnel.
+stack deploy --manifest flask-stack-app.yaml
+Add `components.cloudflare: {}` to `flask-stack-app.yaml` and re-run `stack deploy` to start a quick tunnel.
 ```
 
 Once you have a stable Cloudflare hostname, set `components.auth.hostname-url` so Keycloak/OAuth2 Proxy can enforce proper redirects.

@@ -12,8 +12,8 @@ async fn main() -> Result<()> {
     let cli = cli::Cli::parse();
 
     match &cli.command {
-        cli::Commands::Install(installer) => {
-            cli::install::install(installer).await?;
+        cli::Commands::Deploy(deployer) => {
+            cli::deploy::deploy(deployer).await?;
         }
         cli::Commands::Init(initializer) => {
             cli::init::init(initializer).await?;

@@ -46,7 +46,7 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
    And then
 
    ```
-   stack install --manifest demo.stack.yaml
+   stack deploy --manifest demo.stack.yaml
    ```
 
    You should see

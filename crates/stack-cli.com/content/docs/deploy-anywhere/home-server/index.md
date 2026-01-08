@@ -155,7 +155,7 @@ spec:
 Apply it from your laptop:
 
 ```bash
-stack install --manifest app.yaml
+stack deploy --manifest app.yaml
 ```
 
 Check status:

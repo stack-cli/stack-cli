@@ -28,12 +28,12 @@ Those steps copy the cluster credentials into your default kubeconfig, rewrite t
 
 ```bash
 stack init --no-operator
-stack install --manifest demo-stack-app.yaml
+stack deploy --manifest demo-stack-app.yaml
 stack operator --once
 ```
 
 - `stack init --no-operator` installs CloudNativePG, Keycloak, nginx, and the StackApp CRD without leaving a controller running in the cluster.
-- `stack install ...` applies the demo workload so you have something to inspect.
+- `stack deploy ...` applies the demo workload so you have something to inspect.
 - `stack operator --once` reconciles locally for a single tick; remove `--once` to keep it running.
 
 ## 4. Iterate

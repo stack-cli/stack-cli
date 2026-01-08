@@ -1,6 +1,7 @@
 pub mod apply;
 pub mod init;
-pub mod install;
+pub mod deploy;
+pub mod manifest;
 pub mod secrets;
 pub mod status;
 
@@ -28,10 +29,13 @@ pub struct Initializer {
 }
 
 #[derive(Parser)]
-pub struct Installer {
+pub struct Deployer {
     /// Path to a StackApp manifest to apply
     #[arg(long)]
     manifest: PathBuf,
+    /// Optional profile name to merge from spec.profiles
+    #[arg(long)]
+    pub profile: Option<String>,
 }
 
 #[derive(Parser)]
@@ -46,6 +50,9 @@ pub struct StatusArgs {
     /// Path to a StackApp manifest to read namespace from
     #[arg(long)]
     pub manifest: PathBuf,
+    /// Optional profile name to merge from spec.profiles
+    #[arg(long)]
+    pub profile: Option<String>,
     /// Namespace where the shared Keycloak installation lives
     #[arg(long, default_value = "keycloak")]
     pub keycloak_namespace: String,
@@ -56,12 +63,15 @@ pub struct SecretsArgs {
     /// Path to a StackApp manifest to read namespace from
     #[arg(long)]
     pub manifest: PathBuf,
+    /// Optional profile name to merge from spec.profiles
+    #[arg(long)]
+    pub profile: Option<String>,
 }
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Install an application into Kubernetes
-    Install(Installer),
+    /// Deploy an application into Kubernetes
+    Deploy(Deployer),
     /// Install the required operators into Kubernetes
     Init(Initializer),
     /// Run the Stack Kubernetes Operator

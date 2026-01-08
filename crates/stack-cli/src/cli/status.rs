@@ -1,10 +1,9 @@
-use crate::operator::crd::StackApp;
 use crate::services::jwt_secrets;
+use crate::cli::manifest;
 use anyhow::{anyhow, Context, Result};
 use k8s_openapi::api::core::v1::{Pod, Secret};
 use kube::api::{ListParams, LogParams};
 use kube::{Api, Client, ResourceExt};
-use std::fs;
 
 fn decode_secret_field(secret: &Secret, key: &str) -> Option<String> {
     if let Some(data) = &secret.data {
@@ -53,11 +52,7 @@ pub async fn status(args: &crate::cli::StatusArgs) -> Result<()> {
     let client = Client::try_default().await?;
     println!("✅ Connected");
 
-    let manifest_raw = fs::read_to_string(&args.manifest)
-        .with_context(|| format!("Failed to read manifest at {}", args.manifest.display()))?;
-
-    let stack_app: StackApp =
-        serde_yaml::from_str(&manifest_raw).context("Failed to parse StackApp manifest")?;
+    let (stack_app, _) = manifest::load_stackapp(&args.manifest, args.profile.as_deref())?;
 
     let namespace = stack_app
         .namespace()
