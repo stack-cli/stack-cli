@@ -65,9 +65,13 @@ fn merge_into_spec(spec: &mut Mapping, overlay: &Mapping) {
 }
 
 fn merge_value(base: &mut Value, overlay: &Value) {
-    match (base, overlay) {
-        (Value::Mapping(base_map), Value::Mapping(overlay_map)) => {
-            merge_into_spec(base_map, overlay_map);
+    match overlay {
+        Value::Mapping(overlay_map) => {
+            if let Value::Mapping(base_map) = base {
+                merge_into_spec(base_map, overlay_map);
+            } else {
+                *base = Value::Mapping(overlay_map.clone());
+            }
         }
         _ => {
             *base = overlay.clone();

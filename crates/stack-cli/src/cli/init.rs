@@ -118,12 +118,12 @@ async fn install_postgres_operator(client: &Client) -> Result<()> {
 
 async fn install_keycloak_operator(client: &Client) -> Result<()> {
     println!("🛡️ Installing Keycloak Operator");
-    super::apply::apply(client, KEYCLOAK_CRD_KEYCLOAKS, None).await?;
-    super::apply::apply(client, KEYCLOAK_CRD_REALM_IMPORTS, None).await?;
+    retry_apply(client, KEYCLOAK_CRD_KEYCLOAKS, None).await?;
+    retry_apply(client, KEYCLOAK_CRD_REALM_IMPORTS, None).await?;
 
     wait_for_crd(client, "keycloaks.k8s.keycloak.org").await?;
     wait_for_crd(client, "keycloakrealmimports.k8s.keycloak.org").await?;
-    super::apply::apply(
+    retry_apply(
         client,
         KEYCLOAK_OPERATOR_YAML,
         Some(keycloak::KEYCLOAK_NAMESPACE),
@@ -160,6 +160,38 @@ async fn wait_for_crd(client: &Client, name: &str) -> Result<()> {
         .await
         .context(format!("Timed out waiting for CRD {}", name))??;
     Ok(())
+}
+
+async fn retry_apply(client: &Client, yaml: &str, namespace: Option<&str>) -> Result<()> {
+    const MAX_ATTEMPTS: usize = 6;
+    const RETRY_DELAY_SECS: u64 = 3;
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        match super::apply::apply(client, yaml, namespace).await {
+            Ok(()) => return Ok(()),
+            Err(err) if attempt < MAX_ATTEMPTS && is_transient_api_error(&err) => {
+                println!(
+                    "⏳ API not ready yet (attempt {}/{}). Retrying... ({})",
+                    attempt, MAX_ATTEMPTS, err
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
+            }
+            Err(err) => return Err(err),
+        }
+    }
+
+    Ok(())
+}
+
+fn is_transient_api_error(err: &anyhow::Error) -> bool {
+    if let Some(kube_err) = err.downcast_ref::<KubeError>() {
+        return matches!(kube_err, KubeError::HyperError(_))
+            || matches!(kube_err, KubeError::Api(error_response)
+                if error_response.code == 404
+                    || error_response.message.contains("page not found")
+                    || error_response.reason == "Failed to parse error data");
+    }
+    false
 }
 
 async fn create_operator(client: &Client, namespace: &str) -> Result<()> {

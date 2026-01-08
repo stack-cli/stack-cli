@@ -1,6 +1,6 @@
 use crate::cli::manifest;
 use crate::services::jwt_secrets;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Secret;
 use kube::{Api, Client, ResourceExt};
 use std::collections::BTreeMap;

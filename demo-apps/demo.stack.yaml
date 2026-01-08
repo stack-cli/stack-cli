@@ -5,8 +5,7 @@ metadata:
   namespace: stack-demo
 spec:
   components:
-    db:
-      danger_override_password: testpassword
+    db: {}
     rest: {}
     auth: {}
     realtime: {}
@@ -19,6 +18,11 @@ spec:
           port: 30010
         db:
           expose_db_port: 30011
+          danger_override_password: testpassword
+    staging:
+      components:
+        ingress:
+          port: 30090
   services:
     web:
       image: mendhak/http-https-echo:latest

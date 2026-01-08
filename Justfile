@@ -8,14 +8,14 @@ dev-init:
 
 dev-setup:
     cargo run --bin stack-cli -- init --no-operator
-    cargo run --bin stack-cli -- deploy --manifest demo-apps/demo.stack.yaml
+    cargo run --bin stack-cli -- deploy --manifest demo-apps/demo.stack.yaml --profile dev
     cargo run --bin stack-cli -- operator --once
 
 dev-status:
     cargo run --bin stack-cli -- status --manifest demo-apps/demo.stack.yaml
 
 dev-secrets:
-    cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml > .env
+    cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml
 
 bionic-setup:
     cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml
