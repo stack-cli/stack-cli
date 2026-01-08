@@ -17,7 +17,7 @@ export SERVICE_ROLE_JWT="$(stack secrets --manifest demo.stack.yaml | rg '^SERVI
 Then create a bucket:
 
 ```bash
-curl --location --request POST 'http://localhost:30090/storage/bucket' \
+curl --location --request POST 'http://localhost:30090/storage/v1/bucket' \
   --header "Authorization: Bearer ${SERVICE_ROLE_JWT}" \
   --header 'Content-Type: application/json' \
   --data-raw '{"name": "avatars"}'
@@ -34,7 +34,7 @@ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-a
 
 ```bash
 echo "hello storage" > hello.txt
-curl -X POST 'http://localhost:30090/storage/object/avatars/hello.txt' \
+curl -X POST 'http://localhost:30090/storage/v1/object/avatars/hello.txt' \
   -H "Authorization: Bearer ${SERVICE_ROLE_JWT}" \
   -H 'Content-Type: text/plain' \
   --data-binary @hello.txt

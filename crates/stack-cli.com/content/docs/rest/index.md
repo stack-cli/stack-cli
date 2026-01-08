@@ -38,7 +38,7 @@ export ANON_JWT="$(stack secrets --manifest demo.stack.yaml | rg '^ANON_JWT=' | 
 ## Query with curl
 
 ```bash
-curl http://localhost:30090/rest/instruments \
+curl http://localhost:30090/rest/v1/instruments \
   -H "Authorization: Bearer ${ANON_JWT}"
 ```
 
