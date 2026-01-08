@@ -291,7 +291,7 @@ spec:
                         }
                         img {
                             class: "block w-full px-4",
-                            src: "/docs/k9s.png",
+                            src: "/landing-page/k9s.png",
                             alt: "k9s showing Stack-managed services running in Docker Desktop Kubernetes"
                         }
                         figcaption {
