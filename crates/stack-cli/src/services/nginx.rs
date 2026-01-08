@@ -19,7 +19,13 @@ pub enum NginxMode {
     StaticJwt { token: String },
 }
 
-fn proxy_block(path: &str, service: &str, port: u16, proto_var: &str) -> String {
+fn proxy_block(
+    path: &str,
+    service: &str,
+    port: u16,
+    proto_var: &str,
+    upstream_path: &str,
+) -> String {
     format!(
         r#"
     location = {path} {{
@@ -27,7 +33,7 @@ fn proxy_block(path: &str, service: &str, port: u16, proto_var: &str) -> String 
     }}
 
     location ^~ {path}/ {{
-        proxy_pass http://{service}:{port}/;
+        proxy_pass http://{service}:{port}{upstream_path};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -40,11 +46,18 @@ fn proxy_block(path: &str, service: &str, port: u16, proto_var: &str) -> String 
         path = path,
         service = service,
         port = port,
-        proto_var = proto_var
+        proto_var = proto_var,
+        upstream_path = upstream_path
     )
 }
 
-fn websocket_block(path: &str, service: &str, port: u16, proto_var: &str) -> String {
+fn websocket_block(
+    path: &str,
+    service: &str,
+    port: u16,
+    proto_var: &str,
+    upstream_path: &str,
+) -> String {
     format!(
         r#"
     location = {path} {{
@@ -55,7 +68,7 @@ fn websocket_block(path: &str, service: &str, port: u16, proto_var: &str) -> Str
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_pass http://{service}:{port}/;
+        proxy_pass http://{service}:{port}{upstream_path};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -68,7 +81,8 @@ fn websocket_block(path: &str, service: &str, port: u16, proto_var: &str) -> Str
         path = path,
         service = service,
         port = port,
-        proto_var = proto_var
+        proto_var = proto_var,
+        upstream_path = upstream_path
     )
 }
 
@@ -87,17 +101,17 @@ pub async fn deploy_nginx(
     let image_name = "nginx:1.27.2".to_string();
 
     let storage_block = if include_storage {
-        proxy_block("/storage", "storage", 5000, "$forwarded_proto")
+        proxy_block("/storage/v1", "storage", 5000, "$forwarded_proto", "/")
     } else {
         String::new()
     };
     let rest_block = if include_rest {
-        proxy_block("/rest", "rest", 3000, "$forwarded_proto")
+        proxy_block("/rest/v1", "rest", 3000, "$forwarded_proto", "/")
     } else {
         String::new()
     };
     let realtime_block = if include_realtime {
-        websocket_block("/realtime", "realtime", 4000, "$forwarded_proto")
+        websocket_block("/realtime/v1", "realtime", 4000, "$forwarded_proto", "/")
     } else {
         String::new()
     };
@@ -168,17 +182,17 @@ server {{
         NginxMode::StaticJwt { token } => {
             let escaped_token = token.replace('"', "\\\"");
             let storage_block = if include_storage {
-                proxy_block("/storage", "storage", 5000, "$scheme")
+                proxy_block("/storage/v1", "storage", 5000, "$scheme", "/")
             } else {
                 String::new()
             };
             let rest_block = if include_rest {
-                proxy_block("/rest", "rest", 3000, "$scheme")
+                proxy_block("/rest/v1", "rest", 3000, "$scheme", "/")
             } else {
                 String::new()
             };
             let realtime_block = if include_realtime {
-                websocket_block("/realtime", "realtime", 4000, "$scheme")
+                websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/")
             } else {
                 String::new()
             };

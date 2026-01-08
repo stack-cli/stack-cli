@@ -9,7 +9,7 @@ This page continues the demo flow from the [Database](../database/) and [REST](.
 Realtime uses WebSockets, but you can confirm the endpoint responds with curl:
 
 ```bash
-curl -i host.docker.internal:30010/realtime/v1/health \
+curl -i localhost:30090/realtime/health \
   -H "Authorization: Bearer <ANON_JWT>"
 ```
 

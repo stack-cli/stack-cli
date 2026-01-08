@@ -6,19 +6,19 @@ This page continues the demo flow from the [Database](../database/) and [REST](.
 
 ## Quick local test (demo manifest)
 
-With the demo manifest, you can hit the Storage API via the nginx gateway at `/storage` (see `stack status` for the JWTs to use).
+With the demo manifest, you can hit the Storage API via the nginx gateway at `/storage`.
 
-First grab the service role JWT from `stack status`:
+First export the service role JWT from `stack secrets`:
 
 ```bash
-stack status --manifest demo-stack-app.yaml
+export SERVICE_ROLE_JWT="$(stack secrets --manifest demo.stack.yaml | rg '^SERVICE_ROLE_JWT=' | cut -d= -f2-)"
 ```
 
 Then create a bucket:
 
 ```bash
-curl --location --request POST 'http://host.docker.internal:30010/storage/v1/bucket' \
-  --header 'Authorization: Bearer <SERVICE_ROLE_JWT>' \
+curl --location --request POST 'http://localhost:30090/storage/bucket' \
+  --header "Authorization: Bearer ${SERVICE_ROLE_JWT}" \
   --header 'Content-Type: application/json' \
   --data-raw '{"name": "avatars"}'
 ```
@@ -34,8 +34,8 @@ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-a
 
 ```bash
 echo "hello storage" > hello.txt
-curl -X POST 'http://host.docker.internal:30010/storage/v1/object/avatars/hello.txt' \
-  -H 'Authorization: Bearer <SERVICE_ROLE_JWT>' \
+curl -X POST 'http://localhost:30090/storage/object/avatars/hello.txt' \
+  -H "Authorization: Bearer ${SERVICE_ROLE_JWT}" \
   -H 'Content-Type: text/plain' \
   --data-binary @hello.txt
 ```

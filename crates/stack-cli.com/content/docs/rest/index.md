@@ -29,33 +29,17 @@ kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app -c "NOTIF
 
 ## Get the JWT
 
-Use the status command to print the anon JWT:
+Export the anon token from `stack secrets`:
 
 ```bash
-stack status --manifest demo.stack.yaml
+export ANON_JWT="$(stack secrets --manifest demo.stack.yaml | rg '^ANON_JWT=' | cut -d= -f2-)"
 ```
-
-Example output:
-
-```text
-🔌 Connecting to the cluster...
-✅ Connected
-🛡️ Keycloak Admin
-   Username: temp-admin
-   Password: ec74684fb30140ee994bfb5599dbbd37
-☁️ Cloudflare deployment not found in namespace 'stack-demo'
-🔑 JWTs
-   Anon: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.E_2RkS5WSHEdZ_nxVMzTQQo-NLFLVFF8YXthl1IQk5g
-   Service role: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.vAnalcvp1tM4s94Qa5CHc3ZhT8_OaCmDaukhbkotcMs
-```
-
-Look for the `JWTs` section and copy the `Anon` token.
 
 ## Query with curl
 
 ```bash
 curl http://localhost:30090/rest/instruments \
-  -H "Authorization: Bearer <ANON_JWT>"
+  -H "Authorization: Bearer ${ANON_JWT}"
 ```
 
 If you created the table in the database guide, you should see the rows returned.
