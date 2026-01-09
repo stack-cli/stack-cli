@@ -116,7 +116,7 @@ pub async fn deploy_nginx(
             "realtime",
             4000,
             "$forwarded_proto",
-            "/socket",
+            "/",
         )
         .replace("proxy_set_header Host $host;", "proxy_set_header Host realtime-dev;")
         .replace(
@@ -203,7 +203,7 @@ server {{
                 String::new()
             };
             let realtime_block = if include_realtime {
-                websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/socket")
+                websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/")
                     .replace("proxy_set_header Host $host;", "proxy_set_header Host realtime-dev;")
                     .replace(
                         "proxy_set_header X-Forwarded-Host $host;",

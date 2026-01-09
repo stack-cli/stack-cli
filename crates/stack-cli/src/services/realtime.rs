@@ -10,7 +10,7 @@ use rand::{distr::Alphanumeric, Rng};
 use serde_json::json;
 
 pub const REALTIME_NAME: &str = "realtime";
-pub const REALTIME_IMAGE: &str = "supabase/realtime:v2.47.2";
+pub const REALTIME_IMAGE: &str = "supabase/realtime:v2.69.2";
 pub const REALTIME_PORT: u16 = 4000;
 const REALTIME_SECRET_NAME: &str = "realtime-secrets";
 const REALTIME_SECRET_KEY_BASE_KEY: &str = "secret-key-base";
@@ -204,10 +204,6 @@ async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
         .await?;
 
     Ok(())
-}
-
-fn random_token() -> String {
-    random_token_len(32)
 }
 
 fn random_token_len(len: usize) -> String {

@@ -123,3 +123,24 @@ values
 - Realtime runs as a separate deployment in your namespace.
 - It uses the shared `jwt-auth` secret for API JWT validation.
 - The nginx gateway exposes it under `/realtime/v1`.
+
+## Testing Locally
+
+Open the port
+
+```
+kubectl port-forward svc/realtime 4000:4000 -n stack-demo
+```
+
+Set the env var
+
+```
+SERVICE_ROLE_JWT="$(kubectl -n stack-demo get secret jwt-auth -o jsonpath='{.data.service-role-jwt}' | base64 -d | tr -d '\n')"
+echo $SERVICE_ROLE_JWT
+```
+
+And try `wscat`
+
+```
+wscat -c "ws://localhost:4000/socket/websocket?apikey=${SERVICE_ROLE_JWT}" -H "Host: realtime-dev"
+```
