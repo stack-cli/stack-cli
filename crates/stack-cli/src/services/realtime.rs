@@ -16,6 +16,7 @@ const REALTIME_SECRET_NAME: &str = "realtime-secrets";
 const REALTIME_SECRET_KEY_BASE_KEY: &str = "secret-key-base";
 const REALTIME_DB_ENC_KEY: &str = "db-enc-key";
 const DB_ENC_KEY_LEN: usize = 16;
+const REALTIME_SECRET_KEY_BASE_LEN: usize = 64;
 const REALTIME_INIT_IMAGE: &str = "postgres:16-alpine";
 
 pub async fn deploy(
@@ -58,7 +59,7 @@ pub async fn deploy(
                 }
             }
         }),
-        json!({"name": "DB_AFTER_CONNECT_QUERY", "value": "SET search_path TO _realtime"}),
+        json!({"name": "DB_AFTER_CONNECT_QUERY", "value": "SET search_path TO realtime, _realtime"}),
         json!({
             "name": "API_JWT_SECRET",
             "valueFrom": {
@@ -83,7 +84,7 @@ pub async fn deploy(
         json!({"name": "APP_NAME", "value": "realtime"}),
         json!({"name": "RUN_JANITOR", "value": "true"}),
         json!({"name": "JANITOR_INTERVAL", "value": "60000"}),
-        json!({"name": "LOG_LEVEL", "value": "info"}),
+        json!({"name": "LOG_LEVEL", "value": "debug"}),
         json!({"name": "SEED_SELF_HOST", "value": "true"}),
     ];
 
@@ -115,7 +116,7 @@ pub async fn deploy(
         command: Some(deployment::Command {
             command: vec!["/bin/sh".to_string(), "-c".to_string()],
             args: vec![
-                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";' -c \"DO \\$\\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN CREATE PUBLICATION supabase_realtime; END IF; END \\$\\$;\""
+                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS realtime;' -c 'ALTER SCHEMA realtime OWNER TO \"db-owner\";' -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";' -c \"DO \\$\\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN CREATE PUBLICATION supabase_realtime; END IF; END \\$\\$;\""
                     .to_string(),
             ],
         }),
@@ -173,7 +174,8 @@ async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
     let secret_key_base = existing
         .as_ref()
         .and_then(|secret| read_secret_field(secret, REALTIME_SECRET_KEY_BASE_KEY))
-        .unwrap_or_else(random_token);
+        .filter(|value| value.len() >= REALTIME_SECRET_KEY_BASE_LEN)
+        .unwrap_or_else(|| random_token_len(REALTIME_SECRET_KEY_BASE_LEN));
     let db_enc_key = existing
         .as_ref()
         .and_then(|secret| read_secret_field(secret, REALTIME_DB_ENC_KEY))

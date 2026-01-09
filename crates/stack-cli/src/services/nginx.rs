@@ -111,7 +111,18 @@ pub async fn deploy_nginx(
         String::new()
     };
     let realtime_block = if include_realtime {
-        websocket_block("/realtime/v1", "realtime", 4000, "$forwarded_proto", "/")
+        websocket_block(
+            "/realtime/v1",
+            "realtime",
+            4000,
+            "$forwarded_proto",
+            "/socket",
+        )
+        .replace("proxy_set_header Host $host;", "proxy_set_header Host realtime-dev;")
+        .replace(
+            "proxy_set_header X-Forwarded-Host $host;",
+            "proxy_set_header X-Forwarded-Host realtime-dev;",
+        )
     } else {
         String::new()
     };
@@ -192,7 +203,12 @@ server {{
                 String::new()
             };
             let realtime_block = if include_realtime {
-                websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/")
+                websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/socket")
+                    .replace("proxy_set_header Host $host;", "proxy_set_header Host realtime-dev;")
+                    .replace(
+                        "proxy_set_header X-Forwarded-Host $host;",
+                        "proxy_set_header X-Forwarded-Host realtime-dev;",
+                    )
             } else {
                 String::new()
             };

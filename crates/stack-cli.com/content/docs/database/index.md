@@ -4,7 +4,7 @@ Every Stack namespace gets its own Postgres cluster via CloudNativePG. You inter
 
 ## Connect with kubectl + psql
 
-The demo manifest (`demo-apps/demo.stack.yaml`) creates a database in the `stack-demo` namespace.
+The demo manifest (`demo.stack.yaml`) creates a database in the `stack-demo` namespace.
 
 Open a psql session as the default user, then connect to `stack-app`:
 

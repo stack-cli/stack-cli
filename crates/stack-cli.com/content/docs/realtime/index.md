@@ -4,43 +4,122 @@ Stack can run Supabase Realtime for your namespace so you can subscribe to datab
 
 This page continues the demo flow from the [Database](../database/) and [REST](../rest/) guides.
 
-## Quick curl check
+## Quick Start
 
-Realtime uses WebSockets, but you can confirm the endpoint responds with curl:
-
-```bash
-curl -i localhost:30090/realtime/v1/health \
-  -H "Authorization: Bearer <ANON_JWT>"
-```
-
-If Realtime is running, you should see a 200 response.
-
-## Get the JWT
-
-Use the status command to print the anon JWT:
+Open a psql session as the default user, then connect to `stack-app`:
 
 ```bash
-stack status --manifest demo-stack-app.yaml
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app
 ```
 
-Example output:
+### Create a table in your Stack database
 
-```text
-🔌 Connecting to the cluster...
-✅ Connected
-🛡️ Keycloak Admin
-   Username: temp-admin
-   Password: ec74684fb30140ee994bfb5599dbbd37
-☁️ Cloudflare deployment not found in namespace 'stack-demo'
-🔑 JWTs
-   Anon: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.E_2RkS5WSHEdZ_nxVMzTQQo-NLFLVFF8YXthl1IQk5g
-   Service role: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.vAnalcvp1tM4s94Qa5CHc3ZhT8_OaCmDaukhbkotcMs
+```sql
+-- Create a table called "todos"
+-- with a column to store tasks.
+create table todos (
+  id serial primary key,
+  task text
+);
 ```
 
-Look for the `JWTs` section and copy the `Anon` token.
+### Allow anonymous access
+
+```sql
+-- Turn on security
+alter table "todos"
+enable row level security;
+
+-- Allow anonymous access
+create policy "Allow anonymous access"
+on todos
+for select
+to anon
+using (true);
+```
+
+### Enable Postgres Replication
+
+```sql
+alter publication supabase_realtime
+add table todos;
+```
+
+### Install the client
+
+Realtime uses websockets so the best way to test it is to install the Supabase JavaScript client.
+
+```sh
+npm install @supabase/supabase-js dotenv
+```
+
+### Create the client
+
+Create a `.env` from Stack secrets, then load it from the script. The channel name can be any string except `realtime`.
+
+```bash
+stack secrets --manifest demo.stack.yaml > .env
+```
+
+```bash
+cat > realtime-listen.mjs <<'EOF'
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+import { createClient } from '@supabase/supabase-js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: join(__dirname, '.env'), override: true })
+
+const supabaseUrl = 'http://localhost:30010'
+const supabaseKey = process.env.ANON_JWT
+
+if (!supabaseKey) {
+  console.error('Missing ANON_JWT. Export it before running this script.')
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+supabase
+  .channel('schema-db-changes')
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'todos',
+    },
+    (payload) => console.log(payload)
+  )
+  .subscribe((status, err) => {
+    if (err) {
+      console.error('Realtime error:', err)
+    } else {
+      console.log('Realtime status:', status)
+    }
+  })
+EOF
+```
+
+Run it:
+
+```bash
+node realtime-listen.mjs
+```
+
+### Insert dummy data
+
+Back in `psql`, insert a row to trigger the change event:
+
+```sql
+insert into todos (task)
+values
+  ('Change!');
+```
 
 ## Technical notes
 
 - Realtime runs as a separate deployment in your namespace.
 - It uses the shared `jwt-auth` secret for API JWT validation.
-- The nginx gateway exposes it under `/realtime`.
+- The nginx gateway exposes it under `/realtime/v1`.
