@@ -135,8 +135,8 @@ kubectl port-forward svc/realtime 4000:4000 -n stack-demo
 Set the env var
 
 ```
-export SERVICE_ROLE_JWT="$(kubectl -n stack-demo get secret jwt-auth -o jsonpath='{.data.service-role-jwt}' | base64 -d | tr -d '\n')"
-echo $SERVICE_ROLE_JWT
+export ANON_JWT="$(kubectl -n stack-demo get secret jwt-auth -o jsonpath='{.data.anon-jwt}' | base64 -d | tr -d '\n')"
+echo $ANON_JWT
 ```
 
 And try `wscat`
