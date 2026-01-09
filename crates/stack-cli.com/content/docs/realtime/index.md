@@ -142,5 +142,5 @@ echo $ANON_JWT
 And try `wscat`
 
 ```
-wscat -c "ws://localhost:4000/socket/websocket?apikey=${SERVICE_ROLE_JWT}" -H "Host: realtime-dev"
+wscat -c "ws://localhost:4000/socket/websocket?apikey=${ANON_JWT}" -H "Host: realtime-dev"
 ```
