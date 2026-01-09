@@ -115,7 +115,7 @@ pub async fn deploy(
         command: Some(deployment::Command {
             command: vec!["/bin/sh".to_string(), "-c".to_string()],
             args: vec![
-                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";'"
+                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";' -c \"DO \\$\\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN CREATE PUBLICATION supabase_realtime; END IF; END \\$\\$;\""
                     .to_string(),
             ],
         }),
