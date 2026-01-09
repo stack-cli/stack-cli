@@ -8,10 +8,10 @@ This page continues the demo flow from the [Database](../database/) and [REST](.
 
 With the demo manifest, you can hit the Storage API via the nginx gateway at `/storage`.
 
-First export the service role JWT from `stack secrets`:
+First export the service role JWT from `stack status`:
 
 ```bash
-export SERVICE_ROLE_JWT="$(stack secrets --manifest demo.stack.yaml | rg '^SERVICE_ROLE_JWT=' | cut -d= -f2-)"
+export SERVICE_ROLE_JWT="$(stack status --manifest demo.stack.yaml | awk -F'Service role: ' '/Service role: /{print $2; exit}')"
 ```
 
 Then create a bucket:
@@ -26,25 +26,56 @@ curl --location --request POST 'http://localhost:30090/storage/v1/bucket' \
 Verify in Postgres:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-app \
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app \
   -c 'select * from storage.buckets;'
+```
+
+```
+Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
+   id    |  name   | owner |          created_at           |          updated_at           | public | avif_autodetection | file_size_limit | allowed_mime_types | owner_id |   type   
+---------+---------+-------+-------------------------------+-------------------------------+--------+--------------------+-----------------+--------------------+----------+----------
+ avatars | avatars |       | 2026-01-09 06:47:35.646183+00 | 2026-01-09 06:47:35.646183+00 | f      | f                  |                 |                    |          | STANDARD
+(1 row)
 ```
 
 ### Upload a file
 
+Create a file
+
 ```bash
 echo "hello storage" > hello.txt
+```
+
+and now the uplaod
+
+```bash
 curl -X POST 'http://localhost:30090/storage/v1/object/avatars/hello.txt' \
   -H "Authorization: Bearer ${SERVICE_ROLE_JWT}" \
   -H 'Content-Type: text/plain' \
   --data-binary @hello.txt
 ```
 
+You should see something like...
+
+```json
+{"Key":"avatars/hello.txt","Id":"25e4259e-2f80-43d4-9ab1-1d433b4b2165"}
+```
+
 Then check the DB:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -U db-owner -d stack-app \
+kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app \
   -c 'select id, name, bucket_id, version from storage.objects;'
+```
+
+And our file meta data is in the database.
+
+```bash
+Defaulted container "postgres" out of: postgres, bootstrap-controller (init)
+                  id                  |   name    | bucket_id |               version                
+--------------------------------------+-----------+-----------+--------------------------------------
+ 25e4259e-2f80-43d4-9ab1-1d433b4b2165 | hello.txt | avatars   | 329061dc-dacf-4150-9cc9-66bd9db14525
+(1 row)
 ```
 
 ## What the controller creates
