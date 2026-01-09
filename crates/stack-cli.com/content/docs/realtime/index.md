@@ -135,7 +135,7 @@ kubectl port-forward svc/realtime 4000:4000 -n stack-demo
 Set the env var
 
 ```
-SERVICE_ROLE_JWT="$(kubectl -n stack-demo get secret jwt-auth -o jsonpath='{.data.service-role-jwt}' | base64 -d | tr -d '\n')"
+export SERVICE_ROLE_JWT="$(kubectl -n stack-demo get secret jwt-auth -o jsonpath='{.data.service-role-jwt}' | base64 -d | tr -d '\n')"
 echo $SERVICE_ROLE_JWT
 ```
 
