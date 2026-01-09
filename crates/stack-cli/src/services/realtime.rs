@@ -59,7 +59,7 @@ pub async fn deploy(
                 }
             }
         }),
-        json!({"name": "DB_AFTER_CONNECT_QUERY", "value": "SET search_path TO realtime, _realtime"}),
+        json!({"name": "DB_AFTER_CONNECT_QUERY", "value": "SET search_path TO _realtime"}),
         json!({
             "name": "API_JWT_SECRET",
             "valueFrom": {
@@ -116,7 +116,7 @@ pub async fn deploy(
         command: Some(deployment::Command {
             command: vec!["/bin/sh".to_string(), "-c".to_string()],
             args: vec![
-                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS realtime;' -c 'ALTER SCHEMA realtime OWNER TO \"db-owner\";' -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";' -c \"DO \\$\\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN CREATE PUBLICATION supabase_realtime; END IF; END \\$\\$;\""
+                "psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS _realtime;' -c 'ALTER SCHEMA _realtime OWNER TO \"db-owner\";' -c \"DO \\$\\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN CREATE PUBLICATION supabase_realtime; END IF; END \\$\\$;\""
                     .to_string(),
             ],
         }),
