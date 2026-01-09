@@ -5,15 +5,20 @@ use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client};
 use rand::{distr::Alphanumeric, Rng};
 use serde::Serialize;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const JWT_AUTH_SECRET_NAME: &str = "jwt-auth";
 pub const JWT_SECRET_KEY: &str = "jwt-secret";
 pub const JWT_ANON_TOKEN_KEY: &str = "anon-jwt";
 pub const JWT_SERVICE_ROLE_TOKEN_KEY: &str = "service-role-jwt";
+const JWT_ISSUER: &str = "stack";
+const JWT_EXP_SECONDS: u64 = 60 * 60 * 24 * 365 * 10;
 
 #[derive(Serialize)]
 struct JwtClaims {
     role: String,
+    iss: String,
+    exp: u64,
 }
 
 pub async fn ensure_secret(
@@ -94,8 +99,14 @@ pub async fn get_token(
 }
 
 fn build_jwt(secret: &str, role: &str) -> Result<String, Error> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|err| Error::Other(err.to_string()))?
+        .as_secs();
     let claims = JwtClaims {
         role: role.to_string(),
+        iss: JWT_ISSUER.to_string(),
+        exp: now + JWT_EXP_SECONDS,
     };
 
     encode(
