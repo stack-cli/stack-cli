@@ -46,7 +46,7 @@ Create a file
 echo "hello storage" > hello.txt
 ```
 
-and now the uplaod
+and now the upload
 
 ```bash
 curl -X POST 'http://localhost:30090/storage/v1/object/avatars/hello.txt' \

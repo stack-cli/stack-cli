@@ -141,6 +141,10 @@ echo $ANON_JWT
 
 And try `wscat`
 
+```sh
+npm install -g wscat
+```
+
 ```
 wscat -c "ws://localhost:4000/socket/websocket?apikey=${ANON_JWT}" -H "Host: realtime-dev"
 ```
