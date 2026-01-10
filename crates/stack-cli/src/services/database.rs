@@ -51,6 +51,8 @@ pub const CNPG_INSTALL_HINT: &str = "CloudNativePG operator is not installed. Ru
     namespaced
 )]
 pub struct ClusterSpec {
+    #[serde(rename = "imageName")]
+    pub image_name: Option<String>,
     pub instances: i32,
     pub bootstrap: BootstrapSpec,
     pub storage: StorageSpec,
@@ -82,6 +84,7 @@ pub async fn deploy(
             ..Default::default()
         },
         spec: ClusterSpec {
+            image_name: Some("ghcr.io/voltade/cnpg-supabase:17.5-system-1".into()),
             instances: 1,
             bootstrap: BootstrapSpec {
                 initdb: InitDBSpec {

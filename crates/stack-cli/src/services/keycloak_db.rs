@@ -33,6 +33,7 @@ pub async fn deploy(
             ..Default::default()
         },
         spec: ClusterSpec {
+            image_name: None, // Just take the default
             instances: 1,
             bootstrap: BootstrapSpec {
                 initdb: InitDBSpec {
