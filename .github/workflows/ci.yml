@@ -11,6 +11,7 @@ on:
       - '.github/workflows/release*.yml'
       - '.github/workflows/spell-check.yml'
       - Justfile
+      - README.md
   pull_request:
     paths-ignore:
       - 'crates/stack-cli.com/**'
@@ -19,6 +20,7 @@ on:
       - '.github/workflows/release*.yml'
       - '.github/workflows/spell-check.yml'
       - Justfile
+      - README.md
 
 jobs:
   build:
