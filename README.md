@@ -8,7 +8,7 @@ Stack is a K8s operator the simplifies web application deployment as well as pro
 
 All endpoints are compatible with Supabase client libraries.
 
-## Turn on Kubernetes
+## Getting Started - Turn on Kubernetes
 
 Or choose any K8s
 
