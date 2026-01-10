@@ -1,82 +1,91 @@
 # Stack
 
-Stack ships two deliverables:
+Stack is a K8s operator the simplifies web application deployment as well as providing a Supabase style Backed as a Service (Baas).
 
-- **`stack-cli`** — a Rust CLI/operator that bootstraps the Stack platform (Postgres, Keycloak, ingress, and StackApp CRDs) into a Kubernetes cluster.
-- **`stack-cli.com`** — the public documentation site (Dioxus SSR + Tailwind) that explains how to build Stack apps.
+![Stack Architecture](crates/stack-cli.com/content/docs/architecture/architecture.svg "Stack Architecture")
 
-Everything lives in this monorepo so code, docs, and manifests version together.
+## Supabase Compatibility
 
-## Repository layout
+All endpoints are compatible with Supabase client libraries.
 
-| Path | Description |
-| --- | --- |
-| `crates/stack-cli` | Source for the CLI/operator plus Kubernetes manifests under `config/` and Keycloak realm templates under `keycloak/`. |
-| `crates/stack-cli.com` | Documentation + marketing site. Contains markdown content in `content/`, assets in `assets/`, Tailwind entrypoints, and the Dioxus app in `src/`. |
-| `demo-apps/` | Example Stack applications used in the docs and demos. |
-| `Justfile` | Workflow shortcuts for cluster setup, docs watch tasks, etc. |
+## stack init
 
-## Prerequisites
+Install K8s Operators
 
-- Rust toolchain (install via `rustup`, keep it on the stable channel reported in `rust-toolchain` or `rust-toolchain.toml` if present).
-- `cargo`, `just`, and `npm` (Tailwind watcher) available locally or through the dev container.
-- A local Kubernetes cluster. The repo assumes `k3d` via the `just dev-init` recipe, but any kubeconfig reachable at `~/.kube/config` works.
-
-## Cluster bootstrap workflow
-
-Most flows start with a local k3d cluster:
-
-```bash
-just dev-init          # delete/recreate the k3d-stack cluster
-just get-config        # merge the kubeconfig and rewrite endpoints to host.docker.internal
-just dev-setup         # run stack-cli init/deploy/operator once against the cluster
+```
+🔌 Connecting to the cluster...
+✅ Connected
+🐘 Installing Cloud Native Postgres Operator (CNPG)
+⏳ Waiting for Cloud Native Postgres Controller Manager
+🛡️ Installing Keycloak Operator
+📦 Creating namespace keycloak
+⏳ Waiting for Keycloak Operator to be Available
+📦 Creating namespace stack-system
+📜 Installing StackApp CRD
+⏳ Waiting for StackApp CRD
+🔐 Setting up roles
+🤖 Installing the operator into stack-system
+🗄️ Ensuring Keycloak database in namespace keycloak
+✅ Keycloak database created.
+🛡️ Ensuring Keycloak instance in namespace keycloak
 ```
 
-`just dev-setup` maps to:
+## stack deploy
 
-1. `cargo run --bin stack-cli -- init --no-operator`
-2. `cargo run --bin stack-cli -- deploy --manifest demo-stack-app.yaml`
-3. `cargo run --bin stack-cli -- operator --once`
+Deploy takes a `yaml` manifest and install your app into a namespace as well as installing and required services such as Postgres.
 
-Feel free to run those commands individually when iterating on specific areas.
-
-## Developing `stack-cli`
-
-- `cargo run --bin stack-cli -- -h` to inspect the CLI.
-- `cargo run --bin stack-cli -- init` / `deploy` / `operator` for real workflows.
-- `cargo fmt`, `cargo clippy -- -D warnings`, and `cargo test` must pass before merging.
-- The operator uses kube-rs; logs go through `tracing`. Use `RUST_LOG=debug cargo run --bin stack-cli -- operator` for verbose output.
-- Kubernetes manifests live under `crates/stack-cli/config/`. Regenerate or edit them there and keep CRDs/operators in sync.
-- Keycloak bootstrap realms are under `crates/stack-cli/keycloak/realm.json`.
-
-## Building the documentation site (`stack-cli.com`)
-
-The Dioxus/Tailwind site is self-contained in `crates/stack-cli.com`.
-
-### Live development
-
-From the repo root (or use `direnv`/`just` aliases):
-
-```bash
-just wts    # tailwind-extra -i ./input.css -o ./dist/tailwind.css --watch
-just ws     # cargo watch ... -x "run --bin static-website"
+```
+stack deploy --manifest demo.stack.yaml --profile dev
 ```
 
-Visit http://localhost:8080 to preview the rendered site. The Axum dev server reads from `dist/` and injects live reload.
-
-### Production build / Cloudflare Pages
-
-Generate the site without starting the dev server:
-
-```bash
-cd crates/stack-cli.com
-DO_NOT_RUN_SERVER=1 cargo run --bin static-website
+```
+🔌 Connecting to the cluster...
+✅ Connected
+📜 Installing StackApp CRD
+⏳ Waiting for StackApp CRD
+📦 Creating namespace stack-demo
+🚀 Applied StackApp `stack-app` in namespace `stack-demo`
 ```
 
-Cloudflare Pages runs `cloudflare-build.sh`, which performs the same build step in CI.
+## stack secrets
 
-## Contributing
+Stack creates all the required secrets so you don't have to manage them.
 
-- Follow the agent responsibilities in `AGENTS.md` to decide whether a change belongs to the Platform (CLI) or Documentation team.
-- Keep docs and CLI behavior in sync—CLI flags referenced on the site must exist, and new CLI features should land with docs.
-- Prefer ASCII in docs/comments, surface follow-up work with `// TODO(username): ...`, and coordinate across agents when touching both areas.
+```
+stack secrets --manifest demo-stack-app.yaml
+```
+
+```
+ANON_JWT=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN0YWNrIiwiZXhwIjoyMDgzNDA5MDgwfQ.awDa3WMeqcN0Tg95eZ9bMYXNaxQ0dNJ1vGI8puMw0ao
+APPLICATION_URL=postgres://application_user:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
+AUTHENTICATOR_URL=postgres://authenticator:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
+MIGRATIONS_URL=postgres://db-owner:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
+READONLY_URL=postgres://application_readonly:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
+SERVICE_ROLE_JWT=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3RhY2siLCJleHAiOjIwODM0MDkwODB9.g3wAUnnMzkF--pUggmZhROFQ66Pkq7HRLe5wVs3xMjc
+```
+
+## K3s, K3d or Cloud Kubernetes
+
+Stack deploys to a minimal Kubernetes install running on your laptop so development and production align more closely.
+
+![Stack in K8s](crates/stack-cli.com/assets/landing-page/k9s.png "Stack in k8s")
+
+## /rest/v1
+
+Postgrest compatible API to your database.
+
+## /storage/v1
+
+S3 compatible storage
+
+## /realtime/v1
+
+Subscribe to database changes over WebSockets.
+
+## /oidc
+
+No need to build Authentication screen the `/oidc` route connects you to Keycloak.
+
+## /
+
+Stack also deploys your application and any services secured in Kubernetes.
