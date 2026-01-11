@@ -52,24 +52,25 @@ add table todos;
 
 ### Install the client
 
-Realtime uses WebSockets. You can test it with a minimal Node script.
+Realtime uses WebSockets. You can test it with the official Supabase JavaScript client.
 
 ```sh
-npm install ws dotenv
+npm install @supabase/supabase-js ws dotenv
 ```
 
 ### Create the client
 
-Create a `.env` from Stack secrets, then create `test.mjs`:
+Create a `.env` from Stack secrets, then create `realtime-listen.mjs`:
 
 ```bash
 stack secrets --manifest demo.stack.yaml > .env
 ```
 
 ```bash
-cat > test.mjs <<'EOF'
-import WebSocket from "ws";
+cat > realtime-listen.mjs <<'EOF'
 import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 
 dotenv.config();
 
@@ -79,41 +80,32 @@ if (!jwt) {
   process.exit(1);
 }
 
-const url = `ws://host.docker.internal:30010/realtime/v1/websocket?apikey=${jwt}`;
-const ws = new WebSocket(url, "realtime-v1", {
-  headers: {
-    apikey: jwt,
-    Authorization: `Bearer ${jwt}`,
-  },
-});
+globalThis.WebSocket = WebSocket;
 
-ws.on("open", () => {
-  console.log("open");
-  const join = {
-    topic: "realtime:public:todos",
-    event: "phx_join",
-    payload: {
-      config: {
-        broadcast: { ack: false },
-        postgres_changes: [
-          { event: "*", schema: "public", table: "todos" },
-        ],
-      },
-    },
-    ref: "1",
-  };
-  ws.send(JSON.stringify(join));
-});
-ws.on("message", (data) => console.log(data.toString()));
-ws.on("error", (err) => console.error(err));
-ws.on("close", (code, reason) => console.log("close", code, reason.toString()));
+const supabaseUrl = "http://localhost:30010";
+const supabase = createClient(supabaseUrl, jwt);
+
+supabase
+  .channel("schema-db-changes")
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "todos" },
+    (payload) => console.log(payload)
+  )
+  .subscribe((status, err) => {
+    if (err) {
+      console.error("Realtime error:", err);
+    } else {
+      console.log("Realtime status:", status);
+    }
+  });
 EOF
 ```
 
 Run it:
 
 ```bash
-node test.mjs
+node realtime-listen.mjs
 ```
 
 ### Insert dummy data
@@ -124,6 +116,21 @@ Back in `psql`, insert a row to trigger the change event:
 insert into todos (task)
 values
   ('Change!');
+```
+
+You should see
+
+```
+Realtime status: SUBSCRIBED
+{
+  schema: 'public',
+  table: 'todos',
+  commit_timestamp: '2026-01-11T13:01:28.182Z',
+  eventType: 'INSERT',
+  new: { id: 3, task: 'Change!' },
+  old: {},
+  errors: null
+}
 ```
 
 ## Technical notes
