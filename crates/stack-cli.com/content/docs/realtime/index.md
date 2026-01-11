@@ -36,6 +36,11 @@ on todos
 for select
 to anon
 using (true);
+
+-- Grant table access for anon + service role
+grant usage on schema public to anon, authenticated, service_role;
+grant select on table public.todos to anon, authenticated;
+grant all on table public.todos to service_role;
 ```
 
 ### Enable Postgres Replication
