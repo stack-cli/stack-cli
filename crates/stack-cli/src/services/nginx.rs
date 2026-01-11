@@ -68,6 +68,9 @@ fn websocket_block(
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
+        proxy_set_header Sec-WebSocket-Protocol $http_sec_websocket_protocol;
+        proxy_pass_header Sec-WebSocket-Protocol;
+        add_header Sec-WebSocket-Protocol $http_sec_websocket_protocol always;
         proxy_pass http://{service}:{port}{upstream_path};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

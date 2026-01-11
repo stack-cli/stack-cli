@@ -98,8 +98,8 @@ pub async fn deploy(
                     ]),
                     post_init_sql: Some(vec![
                         "ALTER ROLE \"db-owner\" WITH SUPERUSER CREATEROLE CREATEDB".to_string(),
-                        "CREATE SCHEMA IF NOT EXISTS _realtime".to_string(),
-                        "ALTER SCHEMA _realtime OWNER TO \"db-owner\"".to_string(),
+                        "CREATE SCHEMA IF NOT EXISTS realtime".to_string(),
+                        "ALTER SCHEMA realtime OWNER TO \"db-owner\"".to_string(),
                         format!(
                             "CREATE ROLE application_user LOGIN ENCRYPTED PASSWORD '{}'",
                             app_database_password
