@@ -111,6 +111,11 @@ pub async fn deploy(
                         "CREATE ROLE authenticated NOLOGIN".to_string(),
                         "CREATE ROLE anon NOLOGIN".to_string(),
                         "CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS".to_string(),
+                        "GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role".to_string(),
+                        "GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated".to_string(),
+                        "GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role".to_string(),
+                        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO anon, authenticated".to_string(),
+                        "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role".to_string(),
                         format!(
                             "CREATE ROLE authenticator LOGIN ENCRYPTED PASSWORD '{}'",
                             authenticator_password

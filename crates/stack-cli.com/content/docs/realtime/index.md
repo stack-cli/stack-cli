@@ -47,65 +47,68 @@ add table todos;
 
 ### Install the client
 
-Realtime uses websockets so the best way to test it is to install the Supabase JavaScript client.
+Realtime uses WebSockets. You can test it with a minimal Node script.
 
 ```sh
-npm install @supabase/supabase-js dotenv
+npm install ws dotenv
 ```
 
 ### Create the client
 
-Create a `.env` from Stack secrets, then load it from the script. The channel name can be any string except `realtime`.
+Create a `.env` from Stack secrets, then create `test.mjs`:
 
 ```bash
 stack secrets --manifest demo.stack.yaml > .env
 ```
 
 ```bash
-cat > realtime-listen.mjs <<'EOF'
-import dotenv from 'dotenv'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
-import { createClient } from '@supabase/supabase-js'
+cat > test.mjs <<'EOF'
+import WebSocket from "ws";
+import dotenv from "dotenv";
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-dotenv.config({ path: join(__dirname, '.env'), override: true })
+dotenv.config();
 
-const supabaseUrl = 'http://localhost:30010'
-const supabaseKey = process.env.ANON_JWT
-
-if (!supabaseKey) {
-  console.error('Missing ANON_JWT. Export it before running this script.')
-  process.exit(1)
+const jwt = process.env.ANON_JWT;
+if (!jwt) {
+  console.error("Set ANON_JWT before running this script.");
+  process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+const url = `ws://host.docker.internal:30010/realtime/v1/websocket?apikey=${jwt}`;
+const ws = new WebSocket(url, "realtime-v1", {
+  headers: {
+    apikey: jwt,
+    Authorization: `Bearer ${jwt}`,
+  },
+});
 
-supabase
-  .channel('schema-db-changes')
-  .on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'todos',
+ws.on("open", () => {
+  console.log("open");
+  const join = {
+    topic: "realtime:public:todos",
+    event: "phx_join",
+    payload: {
+      config: {
+        broadcast: { ack: false },
+        postgres_changes: [
+          { event: "*", schema: "public", table: "todos" },
+        ],
+      },
     },
-    (payload) => console.log(payload)
-  )
-  .subscribe((status, err) => {
-    if (err) {
-      console.error('Realtime error:', err)
-    } else {
-      console.log('Realtime status:', status)
-    }
-  })
+    ref: "1",
+  };
+  ws.send(JSON.stringify(join));
+});
+ws.on("message", (data) => console.log(data.toString()));
+ws.on("error", (err) => console.error(err));
+ws.on("close", (code, reason) => console.log("close", code, reason.toString()));
 EOF
 ```
 
 Run it:
 
 ```bash
-node realtime-listen.mjs
+node test.mjs
 ```
 
 ### Insert dummy data
@@ -123,28 +126,3 @@ values
 - Realtime runs as a separate deployment in your namespace.
 - It uses the shared `jwt-auth` secret for API JWT validation.
 - The nginx gateway exposes it under `/realtime/v1`.
-
-## Testing Locally
-
-Open the port
-
-```
-kubectl port-forward svc/realtime 4000:4000 -n stack-demo
-```
-
-Set the env var
-
-```
-export ANON_JWT="$(kubectl -n stack-demo get secret jwt-auth -o jsonpath='{.data.anon-jwt}' | base64 -d | tr -d '\n')"
-echo $ANON_JWT
-```
-
-And try `wscat`
-
-```sh
-npm install -g wscat
-```
-
-```
-wscat -c "ws://localhost:4000/socket/websocket?apikey=${ANON_JWT}" -H "Host: realtime-dev"
-```
