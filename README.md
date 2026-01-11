@@ -1,6 +1,6 @@
 # Stack
 
-Stack is a K8s operator the simplifies web application deployment as well as providing a Supabase style Backed as a Service (Baas).
+Stack is a K8s operator that simplifies web application deployment as well as providing a Supabase style Backed as a Service (Baas).
 
 ![Stack Architecture](crates/stack-cli.com/content/docs/architecture/architecture.svg "Stack Architecture")
 
