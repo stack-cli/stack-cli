@@ -86,18 +86,52 @@ Stack deploys to a minimal Kubernetes install running on your laptop so developm
 
 Postgrest compatible API to your database.
 
+```js
+const supabase = createClient("http://localhost:30010", process.env.ANON_JWT)
+const { data } = await supabase.from("todos").select("*")
+```
+
 ## /storage/v1
 
 S3 compatible storage
+
+```js
+const supabase = createClient("http://localhost:30010", process.env.SERVICE_ROLE_JWT)
+const { data, error } = await supabase.storage.from("avatars").upload("hello.txt", file)
+```
 
 ## /realtime/v1
 
 Subscribe to database changes over WebSockets.
 
+```js
+const supabase = createClient("http://localhost:30010", process.env.ANON_JWT)
+supabase.channel("schema-db-changes")
+  .on("postgres_changes", { event: "*", schema: "public", table: "todos" }, console.log)
+  .subscribe()
+```
+
 ## /oidc
 
-No need to build Authentication screen the `/oidc` route connects you to Keycloak.
+[OAuth2 Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) handles the login flow and sessions, while [Keycloak](https://www.keycloak.org/) provides the OIDC identity provider. This is optional and only enabled when you configure authentication in your manifest.
+
+- OAuth2 Proxy handles the login flow and session cookies.
+- Keycloak provides the OIDC identity provider and user management.
+- `/oidc` routes traffic to Keycloak and keeps your app behind authenticated headers.
+- Your app receives a JWT on each request so it can trust identity claims.
 
 ## /
 
-Stack also deploys your application and any services secured in Kubernetes.
+Stack deploys your app container into the same namespace and keeps it secured by the platform defaults.
+
+```yaml
+services:
+  web:
+    image: ghcr.io/stack/demo-app:latest
+    port: 7903
+    env:
+      - name: FEATURE_FLAG
+        value: "true"
+      - name: API_URL
+        value: "https://api.example.com"
+```
