@@ -56,7 +56,7 @@ stack deploy --manifest demo.stack.yaml --profile dev
 📜 Installing StackApp CRD
 ⏳ Waiting for StackApp CRD
 📦 Creating namespace stack-demo
-🚀 Applied StackApp `stack-app` in namespace `stack-demo`
+🚀 Applied StackApp `stack-demo` in namespace `stack-demo`
 ```
 
 ## stack secrets
@@ -64,15 +64,15 @@ stack deploy --manifest demo.stack.yaml --profile dev
 Stack creates all the required secrets so you don't have to manage them.
 
 ```
-stack secrets --manifest demo-stack-app.yaml
+stack secrets --manifest demo.stack.yaml
 ```
 
 ```
 ANON_JWT=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN0YWNrIiwiZXhwIjoyMDgzNDA5MDgwfQ.awDa3WMeqcN0Tg95eZ9bMYXNaxQ0dNJ1vGI8puMw0ao
-APPLICATION_URL=postgres://application_user:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
-AUTHENTICATOR_URL=postgres://authenticator:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
-MIGRATIONS_URL=postgres://db-owner:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
-READONLY_URL=postgres://application_readonly:testpassword@stack-db-cluster-rw:5432/stack-app?sslmode=disable
+APPLICATION_URL=postgres://application_user:testpassword@stack-demo-db-cluster-rw:5432/stack-demo?sslmode=disable
+AUTHENTICATOR_URL=postgres://authenticator:testpassword@stack-demo-db-cluster-rw:5432/stack-demo?sslmode=disable
+MIGRATIONS_URL=postgres://db-owner:testpassword@stack-demo-db-cluster-rw:5432/stack-demo?sslmode=disable
+READONLY_URL=postgres://application_readonly:testpassword@stack-demo-db-cluster-rw:5432/stack-demo?sslmode=disable
 SERVICE_ROLE_JWT=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3RhY2siLCJleHAiOjIwODM0MDkwODB9.g3wAUnnMzkF--pUggmZhROFQ66Pkq7HRLe5wVs3xMjc
 ```
 

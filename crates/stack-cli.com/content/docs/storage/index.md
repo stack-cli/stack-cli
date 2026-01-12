@@ -26,7 +26,7 @@ curl --location --request POST 'http://localhost:30090/storage/v1/bucket' \
 Verify in Postgres:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app \
+kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo \
   -c 'select * from storage.buckets;'
 ```
 
@@ -64,7 +64,7 @@ You should see something like...
 Then check the DB:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app \
+kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo \
   -c 'select id, name, bucket_id, version from storage.objects;'
 ```
 

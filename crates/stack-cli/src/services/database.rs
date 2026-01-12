@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 
 use crate::error::Error;
-use crate::services::application::APPLICATION_NAME;
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::{DeleteParams, ObjectMeta};
 use kube::CustomResource;
@@ -40,6 +39,18 @@ pub struct StorageSpec {
 
 pub const CNPG_INSTALL_HINT: &str = "CloudNativePG operator is not installed. Run `stack-cli init` or apply `crates/stack-cli/config/cnpg-1.22.1.yaml` before reconciling.";
 
+pub fn cluster_resource_name(app_name: &str) -> String {
+    format!("{app_name}-db-cluster")
+}
+
+pub fn cluster_rw_service_name(app_name: &str) -> String {
+    format!("{}-rw", cluster_resource_name(app_name))
+}
+
+pub fn database_name(app_name: &str) -> String {
+    app_name.to_string()
+}
+
 /// Corresponds to the Cluster resource
 #[derive(CustomResource, Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 #[kube(
@@ -61,12 +72,16 @@ pub struct ClusterSpec {
 pub async fn deploy(
     client: Client,
     namespace: &str,
+    app_name: &str,
     disk_size: i32,
     insecure_override_passwords: &Option<String>,
 ) -> Result<Option<String>, Error> {
     // If the cluster config exists, then do nothing.
     let cluster_api: Api<Cluster> = Api::namespaced(client.clone(), namespace);
-    let cluster = cluster_api.get("stack-db-cluster").await;
+    let cluster_name = cluster_resource_name(app_name);
+    let db_name = database_name(app_name);
+    let cluster_rw_service = cluster_rw_service_name(app_name);
+    let cluster = cluster_api.get(cluster_name.as_str()).await;
     if cluster.is_ok() {
         return Ok(None);
     }
@@ -79,7 +94,7 @@ pub async fn deploy(
 
     let cluster = Cluster {
         metadata: ObjectMeta {
-            name: Some("stack-db-cluster".to_string()),
+            name: Some(cluster_name.clone()),
             namespace: Some(namespace.to_string()),
             ..Default::default()
         },
@@ -88,7 +103,7 @@ pub async fn deploy(
             instances: 1,
             bootstrap: BootstrapSpec {
                 initdb: InitDBSpec {
-                    database: APPLICATION_NAME.to_string(),
+                    database: db_name.clone(),
                     owner: "db-owner".to_string(),
                     secret: SecretSpec {
                         name: "db-owner".to_string(),
@@ -137,29 +152,29 @@ pub async fn deploy(
     secret_data.insert(
         "migrations-url".to_string(),
         format!(
-            "postgres://db-owner:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
-            dbowner_password
+            "postgres://db-owner:{}@{}:5432/{}?sslmode=disable",
+            dbowner_password, cluster_rw_service, db_name
         ),
     );
     secret_data.insert(
         "application-url".to_string(),
         format!(
-            "postgres://application_user:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
-            app_database_password
+            "postgres://application_user:{}@{}:5432/{}?sslmode=disable",
+            app_database_password, cluster_rw_service, db_name
         ),
     );
     secret_data.insert(
         "readonly-url".to_string(),
         format!(
-            "postgres://application_readonly:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
-            readonly_database_password
+            "postgres://application_readonly:{}@{}:5432/{}?sslmode=disable",
+            readonly_database_password, cluster_rw_service, db_name
         ),
     );
     secret_data.insert(
         "authenticator-url".to_string(),
         format!(
-            "postgres://authenticator:{}@stack-db-cluster-rw:5432/stack-app?sslmode=disable",
-            authenticator_password
+            "postgres://authenticator:{}@{}:5432/{}?sslmode=disable",
+            authenticator_password, cluster_rw_service, db_name
         ),
     );
 
@@ -219,11 +234,12 @@ pub fn rand_hex() -> String {
     (0..5).map(|_| rand::random::<u8>().to_string()).collect()
 }
 
-pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
+pub async fn delete(client: Client, namespace: &str, app_name: &str) -> Result<(), Error> {
     // Remove deployments
     let api: Api<Cluster> = Api::namespaced(client.clone(), namespace);
-    if api.get("stack-db-cluster").await.is_ok() {
-        api.delete("stack-db-cluster", &DeleteParams::default())
+    let cluster_name = cluster_resource_name(app_name);
+    if api.get(cluster_name.as_str()).await.is_ok() {
+        api.delete(cluster_name.as_str(), &DeleteParams::default())
             .await?;
     }
 

@@ -8,7 +8,7 @@ Stack includes an opinionated Cloudflare deployment so you can expose namespaces
 apiVersion: stack-cli.dev/v1
 kind: StackApp
 metadata:
-  name: stack-app
+  name: stack-demo
   namespace: stack-demo
 spec:
   components:
@@ -21,7 +21,7 @@ spec:
 
 - Omitting `components.cloudflare.secret_name` tells Stack to start a temporary tunnel.  
 - The operator installs `cloudflared` into the same namespace and points it at the nginx service Stack created earlier.  
-- Run `stack status --manifest demo-stack-app.yaml` to print the generated HTTPS URL.
+- Run `stack status --manifest demo.stack.yaml` to print the generated HTTPS URL.
 
 Temporary tunnels are great for demos, development sessions, and any workflow where you just need to share access for a few minutes.
 
@@ -44,7 +44,7 @@ stringData:
 apiVersion: stack-cli.dev/v1
 kind: StackApp
 metadata:
-  name: stack-app
+  name: stack-demo
   namespace: stack-demo
 spec:
   components:
@@ -66,7 +66,7 @@ The operator reuses the same nginx target as the quick tunnel. Because everythin
 Use the status command any time you need credentials or the public URL:
 
 ```bash
-stack status --manifest demo-stack-app.yaml
+stack status --manifest demo.stack.yaml
 ```
 
 You will see:

@@ -16,7 +16,7 @@ kubectl create secret generic app-secrets \
 apiVersion: stack-cli.dev/v1
 kind: StackApp
 metadata:
-  name: stack-app
+  name: stack-demo
   namespace: stack-demo
 spec:
   services:
@@ -45,7 +45,7 @@ spec:
 Use `stack status` to view the secrets Stack generates, including JWTs and Keycloak admin credentials:
 
 ```bash
-stack status --manifest demo-stack-app.yaml
+stack status --manifest demo.stack.yaml
 ```
 
 Example output:

@@ -1,4 +1,3 @@
-pub mod application;
 pub mod cloudflare;
 pub mod database;
 pub mod deployment;

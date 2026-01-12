@@ -6,10 +6,10 @@ This page continues the demo flow from the [Database](../database/) and [REST](.
 
 ## Quick Start
 
-Open a psql session as the default user, then connect to `stack-app`:
+Open a psql session as the default user, then connect to `stack-demo`:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app
+kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo
 ```
 
 ### Create a table in your Stack database

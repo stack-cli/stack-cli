@@ -1,6 +1,5 @@
 use super::deployment;
 use crate::error::Error;
-use crate::services::application::APPLICATION_NAME;
 use crate::services::keycloak::{RealmConfig, KEYCLOAK_INTERNAL_URL, KEYCLOAK_REALM_BASE_PATH};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
@@ -18,6 +17,7 @@ pub async fn deploy(
     namespace: &str,
     hostname_url: &str,
     upstream_port: u16,
+    app_name: &str,
 ) -> Result<(), Error> {
     let whitelist_domain = Url::parse(hostname_url);
     let whitelist_domain = if let Ok(host) = &whitelist_domain {
@@ -57,7 +57,7 @@ pub async fn deploy(
                 }),
                 json!({"name": "OAUTH2_PROXY_EMAIL_DOMAINS", "value": "*"}),
                 json!({"name": "OAUTH2_PROXY_COOKIE_SECURE", "value": "false"}),
-                json!({"name": "OAUTH2_PROXY_UPSTREAMS", "value": format!("http://{}:{}", APPLICATION_NAME, upstream_port)}),
+                json!({"name": "OAUTH2_PROXY_UPSTREAMS", "value": format!("http://{}:{}", app_name, upstream_port)}),
                 json!({"name": "OAUTH2_PROXY_UPSTREAM_TIMEOUT", "value": "600s"}),
                 json!({"name": "OAUTH2_PROXY_LOGIN_URL", "value": format!("{}/auth", external_realm_base)}),
                 json!({"name": "OAUTH2_PROXY_REDEEM_URL", "value": format!("{}/protocol/openid-connect/token", internal_realm_base)}),
@@ -126,6 +126,7 @@ pub async fn deploy(
             volumes: vec![],
         },
         namespace,
+        false,
         false,
     )
     .await?;

@@ -1,7 +1,6 @@
 use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
-use crate::services::application::APPLICATION_NAME;
 use crate::services::{
     cloudflare, database, deployment, jwt_secrets, keycloak, nginx, oauth2_proxy, postgrest,
     realtime, storage,
@@ -20,7 +19,6 @@ const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
 const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
 const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
-const STACK_DB_CLUSTER_NAME: &str = "stack-db-cluster";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
 const CLOUDFLARE_CONFIG_NAME: &str = "cloudflared";
@@ -59,7 +57,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             }
             delete_service_if_exists(&client, &namespace, name).await?;
         }
-        delete_application_resources(&client, &namespace).await?;
+        delete_application_resources(&client, &namespace, &name).await?;
         oauth2_proxy::delete(client.clone(), &namespace).await?;
         nginx::delete_nginx(client.clone(), &namespace).await?;
         keycloak::delete(client.clone(), &namespace).await?;
@@ -68,7 +66,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         realtime::delete(client.clone(), &namespace).await?;
         jwt_secrets::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
-        database::delete(client.clone(), &namespace).await?;
+        database::delete(client.clone(), &namespace, &name).await?;
         finalizer::delete(client, &name, &namespace).await?;
         return Ok(Action::await_change());
     }
@@ -84,13 +82,14 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     database::deploy(
         client.clone(),
         &namespace,
+        &name,
         DEFAULT_DB_DISK_SIZE_GB,
         &insecure_override_passwords,
     )
     .await?;
 
     if let Some(storage_spec) = app.spec.components.storage.as_ref() {
-        storage::deploy(client.clone(), &namespace, Some(storage_spec)).await?;
+        storage::deploy(client.clone(), &namespace, &name, Some(storage_spec)).await?;
     } else {
         storage::delete(client.clone(), &namespace).await?;
     }
@@ -102,7 +101,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     }
 
     if let Some(realtime_spec) = app.spec.components.realtime.as_ref() {
-        realtime::deploy(client.clone(), &namespace, Some(realtime_spec)).await?;
+        realtime::deploy(client.clone(), &namespace, &name, Some(realtime_spec)).await?;
     } else {
         realtime::delete(client.clone(), &namespace).await?;
     }
@@ -127,6 +126,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &namespace,
             &hostname_url,
             app.spec.services.web.port,
+            &name,
         )
         .await?;
         let allow_admin = app
@@ -141,6 +141,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &namespace,
             nginx::NginxMode::Oidc { allow_admin },
             app.spec.services.web.port,
+            &name,
             include_storage,
             include_rest,
             include_realtime,
@@ -163,6 +164,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
                 token: jwt_value.clone(),
             },
             app.spec.services.web.port,
+            &name,
             include_storage,
             include_rest,
             include_realtime,
@@ -181,9 +183,10 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         delete_cloudflare_resources(&client, &namespace).await?;
     }
 
-    deploy_web_app(&client, &namespace, &app.spec).await?;
-    deploy_extra_services(&client, &namespace, &app.spec.services.extra).await?;
-    ensure_optional_nodeports(&client, &namespace, &app.spec).await?;
+    deploy_web_app(&client, &namespace, &app.spec, &name).await?;
+    deploy_extra_services(&client, &namespace, &app.spec.services.extra, &name).await?;
+    let db_cluster_name = database::cluster_resource_name(&name);
+    ensure_optional_nodeports(&client, &namespace, &app.spec, &db_cluster_name).await?;
 
     Ok(Action::requeue(Duration::from_secs(10)))
 }
@@ -205,6 +208,7 @@ async fn deploy_web_app(
     client: &Client,
     namespace: &str,
     spec: &StackAppSpec,
+    app_name: &str,
 ) -> Result<(), Error> {
     let hostname_env = spec
         .components
@@ -253,7 +257,7 @@ async fn deploy_web_app(
     deployment::deployment(
         client.clone(),
         deployment::ServiceDeployment {
-            name: APPLICATION_NAME.to_string(),
+            name: app_name.to_string(),
             image_name: spec.services.web.image.clone(),
             replicas: WEB_APP_REPLICAS,
             port: spec.services.web.port,
@@ -265,6 +269,7 @@ async fn deploy_web_app(
         },
         namespace,
         spec.components.ingress.is_some(),
+        true,
     )
     .await
 }
@@ -273,9 +278,10 @@ async fn deploy_extra_services(
     client: &Client,
     namespace: &str,
     services: &std::collections::BTreeMap<String, ServiceSpec>,
+    app_name: &str,
 ) -> Result<(), Error> {
     let reserved = [
-        APPLICATION_NAME,
+        app_name,
         nginx::NGINX_NAME,
         postgrest::REST_NAME,
         realtime::REALTIME_NAME,
@@ -346,6 +352,7 @@ async fn deploy_extra_services(
             },
             namespace,
             false,
+            false,
         )
         .await?;
     }
@@ -357,6 +364,7 @@ async fn ensure_optional_nodeports(
     client: &Client,
     namespace: &str,
     spec: &StackAppSpec,
+    db_cluster_name: &str,
 ) -> Result<(), Error> {
     if let Some(node_port) = spec
         .components
@@ -369,7 +377,7 @@ async fn ensure_optional_nodeports(
             namespace,
             DB_NODEPORT_SERVICE_NAME,
             json!({
-                "cnpg.io/cluster": STACK_DB_CLUSTER_NAME,
+                "cnpg.io/cluster": db_cluster_name,
                 "role": "primary"
             }),
             5432,
@@ -436,15 +444,17 @@ async fn ensure_optional_nodeports(
     Ok(())
 }
 
-async fn delete_application_resources(client: &Client, namespace: &str) -> Result<(), Error> {
+async fn delete_application_resources(
+    client: &Client,
+    namespace: &str,
+    app_name: &str,
+) -> Result<(), Error> {
     let deployments: Api<KubeDeployment> = Api::namespaced(client.clone(), namespace);
-    if deployments.get(APPLICATION_NAME).await.is_ok() {
-        deployments
-            .delete(APPLICATION_NAME, &DeleteParams::default())
-            .await?;
+    if deployments.get(app_name).await.is_ok() {
+        deployments.delete(app_name, &DeleteParams::default()).await?;
     }
 
-    delete_service_if_exists(client, namespace, APPLICATION_NAME).await?;
+    delete_service_if_exists(client, namespace, app_name).await?;
     delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;

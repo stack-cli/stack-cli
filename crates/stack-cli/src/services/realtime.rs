@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::operator::crd::RealtimeConfig;
-use crate::services::deployment;
+use crate::services::{database, deployment};
 use crate::services::jwt_secrets;
 use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::Secret;
@@ -22,16 +22,20 @@ const REALTIME_INIT_IMAGE: &str = "postgres:16-alpine";
 pub async fn deploy(
     client: Client,
     namespace: &str,
+    app_name: &str,
     _config: Option<&RealtimeConfig>,
 ) -> Result<(), Error> {
     jwt_secrets::ensure_secret(client.clone(), namespace).await?;
     ensure_secret(client.clone(), namespace).await?;
 
+    let cluster_rw_service = database::cluster_rw_service_name(app_name);
+    let db_name = database::database_name(app_name);
+
     let env = vec![
         json!({"name": "PORT", "value": REALTIME_PORT.to_string()}),
-        json!({"name": "DB_HOST", "value": "stack-db-cluster-rw"}),
+        json!({"name": "DB_HOST", "value": cluster_rw_service}),
         json!({"name": "DB_PORT", "value": "5432"}),
-        json!({"name": "DB_NAME", "value": "stack-app"}),
+        json!({"name": "DB_NAME", "value": db_name}),
         json!({
             "name": "DB_USER",
             "valueFrom": {
@@ -91,9 +95,9 @@ pub async fn deploy(
     let init_container = deployment::InitContainer {
         image_name: REALTIME_INIT_IMAGE.to_string(),
         env: vec![
-            json!({"name": "PGHOST", "value": "stack-db-cluster-rw"}),
+            json!({"name": "PGHOST", "value": database::cluster_rw_service_name(app_name)}),
             json!({"name": "PGPORT", "value": "5432"}),
-            json!({"name": "PGDATABASE", "value": "stack-app"}),
+            json!({"name": "PGDATABASE", "value": database::database_name(app_name)}),
             json!({
                 "name": "PGUSER",
                 "valueFrom": {
@@ -136,6 +140,7 @@ pub async fn deploy(
             volumes: vec![],
         },
         namespace,
+        false,
         false,
     )
     .await

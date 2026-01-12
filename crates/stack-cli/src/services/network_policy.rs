@@ -1,7 +1,4 @@
-use super::{
-    application::APPLICATION_NAME,
-    keycloak::{KEYCLOAK_NAME, KEYCLOAK_NAMESPACE},
-};
+use super::keycloak::{KEYCLOAK_NAME, KEYCLOAK_NAMESPACE};
 use crate::error::Error;
 use k8s_openapi::api::networking::v1::NetworkPolicy;
 use kube::api::{Patch, PatchParams};
@@ -13,6 +10,7 @@ pub async fn default_deny(
     name: &str,
     namespace: &str,
     allow_from_anywhere: bool,
+    allow_all_egress: bool,
 ) -> Result<(), Error> {
     let policy_name = format!("{}-network-policy", name);
 
@@ -36,7 +34,7 @@ pub async fn default_deny(
     }]);
 
     // Egress: allow DNS + namespace-local traffic
-    let egress = if name == APPLICATION_NAME || name == KEYCLOAK_NAME {
+    let egress = if allow_all_egress || name == KEYCLOAK_NAME {
         json!([
             { "to": [{ "ipBlock": { "cidr": "0.0.0.0/0" } }] }
         ])

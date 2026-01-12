@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::operator::crd::StorageConfig;
-use crate::services::deployment;
+use crate::services::{database, deployment};
 use crate::services::jwt_secrets;
 use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
@@ -34,6 +34,7 @@ const STORAGE_DB_INIT_IMAGE: &str = "postgres:16-alpine";
 pub async fn deploy(
     client: Client,
     namespace: &str,
+    app_name: &str,
     config: Option<&StorageConfig>,
 ) -> Result<(), Error> {
     let secret_name = config
@@ -113,9 +114,15 @@ mc anonymous set download supa-minio/warehouse--table-s3 || true
     let storage_db_init = deployment::InitContainer {
         image_name: STORAGE_DB_INIT_IMAGE.to_string(),
         env: vec![
-            json!({"name": "PGHOST", "value": "stack-db-cluster-rw"}),
+            json!({
+                "name": "PGHOST",
+                "value": database::cluster_rw_service_name(app_name)
+            }),
             json!({"name": "PGPORT", "value": "5432"}),
-            json!({"name": "PGDATABASE", "value": "stack-app"}),
+            json!({
+                "name": "PGDATABASE",
+                "value": database::database_name(app_name)
+            }),
             json!({
                 "name": "PGUSER",
                 "valueFrom": {
@@ -323,6 +330,7 @@ SQL"#.to_string()],
         },
         namespace,
         true,
+        false,
     )
     .await
 }
@@ -487,6 +495,7 @@ async fn deploy_minio(client: Client, namespace: &str, secret_name: &str) -> Res
         },
         namespace,
         true,
+        false,
     )
     .await
 }

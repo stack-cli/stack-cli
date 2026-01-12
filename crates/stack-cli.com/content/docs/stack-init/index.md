@@ -57,7 +57,7 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
    📜 Installing StackApp CRD
    ⏳ Waiting for StackApp CRD
    📦 Creating namespace stack-demo
-   🚀 Applied StackApp `stack-app` in namespace `stack-demo`
+   🚀 Applied StackApp `stack-demo` in namespace `stack-demo`
    ```
 
 ## What just happened?

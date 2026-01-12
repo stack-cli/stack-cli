@@ -85,6 +85,7 @@ pub async fn deploy(
         },
         namespace,
         false,
+        false,
     )
     .await
 }

@@ -9,7 +9,7 @@ PostgREST uses the `anon` role from your JWT. You need to enable RLS and grant a
 Connect to Postgres
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app
+kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo
 ```
 
 then run:
@@ -24,7 +24,7 @@ create policy "read instruments" on public.instruments for select using (true);
 PostgREST caches schema metadata. After creating tables or changing policies, reload the cache:
 
 ```bash
-kubectl -n stack-demo exec -it stack-db-cluster-1 -- psql -d stack-app -c "NOTIFY pgrst, 'reload schema';"
+kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo -c "NOTIFY pgrst, 'reload schema';"
 ```
 
 ## Get the JWT

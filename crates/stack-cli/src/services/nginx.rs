@@ -1,6 +1,5 @@
 use crate::cli::apply;
 use crate::error::Error;
-use crate::services::application::APPLICATION_NAME;
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
     core::v1::{ConfigMap, Service},
@@ -95,6 +94,7 @@ pub async fn deploy_nginx(
     namespace: &str,
     mode: NginxMode,
     upstream_port: u16,
+    app_name: &str,
     include_storage: bool,
     include_rest: bool,
     include_realtime: bool,
@@ -252,7 +252,7 @@ server {{
     }}
 }}
 "#,
-                app = APPLICATION_NAME,
+                app = app_name,
                 port = upstream_port,
                 token = escaped_token
                 , storage_block = storage_block
@@ -299,6 +299,7 @@ server {{
         },
         namespace,
         true,
+        false,
     )
     .await?;
 

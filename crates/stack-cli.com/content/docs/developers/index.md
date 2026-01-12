@@ -28,7 +28,7 @@ Those steps copy the cluster credentials into your default kubeconfig, rewrite t
 
 ```bash
 stack init --no-operator
-stack deploy --manifest demo-stack-app.yaml
+stack deploy --manifest demo.stack.yaml
 stack operator --once
 ```
 
@@ -38,12 +38,12 @@ stack operator --once
 
 ## 4. Iterate
 
-- `stack status --manifest demo-stack-app.yaml` prints credentials and Cloudflare URLs.
-- Add `components.cloudflare: {}` to `demo-stack-app.yaml` to start a quick tunnel (use `components.cloudflare.secret_name` for authenticated tunnels).
+- `stack status --manifest demo.stack.yaml` prints credentials and Cloudflare URLs.
+- Add `components.cloudflare: {}` to `demo.stack.yaml` to start a quick tunnel (use `components.cloudflare.secret_name` for authenticated tunnels).
 - `stack operator --once` becomes your go-to after editing manifests so you can watch databases, secrets, and Deployments update in real time.
 
 ## Tips
 
 - `k3d cluster delete stack-demo` is handy when switching branches that alter CRDs.
 - Keep `kubectl get pods --all-namespaces --watch` open in another terminal to see reconciliations as they happen.
-- Port-forward services you care about (for example, `kubectl port-forward svc/stack-db-cluster-rw 5455:5432 -n stack-demo`) to connect local tooling to the namespace-specific resources Stack provisions.
+- Port-forward services you care about (for example, `kubectl port-forward svc/stack-demo-db-cluster-rw 5455:5432 -n stack-demo`) to connect local tooling to the namespace-specific resources Stack provisions.
