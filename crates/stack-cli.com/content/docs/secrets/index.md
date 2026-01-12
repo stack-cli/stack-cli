@@ -40,6 +40,12 @@ spec:
       readonly_database_url: DATABASE_READONLY_URL
 ```
 
+When working locally, you can rewrite the database URLs to point at a forwarded host/port:
+
+```bash
+stack secrets --manifest demo.stack.yaml --db-host localhost --db-port 30011
+```
+
 ## Stack-generated secrets
 
 Use `stack status` to view the secrets Stack generates, including JWTs and Keycloak admin credentials:

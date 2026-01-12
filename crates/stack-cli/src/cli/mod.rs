@@ -66,6 +66,12 @@ pub struct SecretsArgs {
     /// Optional profile name to merge from spec.profiles
     #[arg(long)]
     pub profile: Option<String>,
+    /// Optional hostname to override database URLs in output (e.g. localhost)
+    #[arg(long)]
+    pub db_host: Option<String>,
+    /// Optional port to override database URLs in output (e.g. 30011)
+    #[arg(long)]
+    pub db_port: Option<u16>,
 }
 
 #[derive(Subcommand)]

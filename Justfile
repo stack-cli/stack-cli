@@ -15,7 +15,7 @@ dev-status:
     cargo run --bin stack-cli -- status --manifest demo-apps/demo.stack.yaml
 
 dev-secrets:
-    cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml
+    cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml --db-host host.docker.internal --db-port 30011
 
 bionic-setup:
     cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml
