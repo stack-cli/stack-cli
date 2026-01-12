@@ -19,7 +19,7 @@ dev-secrets:
 
 bionic-setup:
     cargo run --bin stack-cli -- init --no-operator
-    cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml
+    cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml --profile dev
     cargo run --bin stack-cli -- operator --once
 
 bionic-secrets:
