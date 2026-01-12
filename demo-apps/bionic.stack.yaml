@@ -5,17 +5,20 @@ metadata:
   namespace: bionic-gpt
 spec:
   components:
-    ingress:
-      port: 30010
-    db: 
-    rest: {}
+    db: {}
     auth:
       # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-      hostname-url: http://localhost:30013
+      hostname-url: http://localhost:30012
       # Make keycloak admin accessible via /oidc/admin
       expose_admin: true
-    storage:
-      install_minio: true
+  profiles:
+    dev:
+      components:
+        ingress:
+          port: 30012
+        db:
+          expose_db_port: 30013
+          danger_override_password: testpassword
   services:
     web:
       image: ghcr.io/bionic-gpt/bionicgpt:1.11.59
