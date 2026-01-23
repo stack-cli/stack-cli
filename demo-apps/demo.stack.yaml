@@ -11,6 +11,7 @@ spec:
     realtime: {}
     storage:
       install_minio: true
+    document_engine: {}
   profiles:
     dev:
       components:
