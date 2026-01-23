@@ -126,9 +126,54 @@ supabase.channel("schema-db-changes")
 
 # Gen AI Endpoints
 
-## /document-engine
+## /document-engine/extract
 
 Use [Kreuzberg](https://github.com/kreuzberg-dev/kreuzberg) To give you document processing and capabilities
+
+```sh
+curl -F "files=@your.pdf" HOST:PORT/document-engine/extract
+```
+
+Response Schema
+
+```json
+[
+  {
+    "content": "Extracted text content...",
+    "mime_type": "application/pdf",
+    "metadata": {
+      "page_count": 10,
+      "author": "John Doe"
+    },
+    "tables": [],
+    "detected_languages": ["eng"],
+    "chunks": null,
+    "images": null
+  }
+]
+```
+
+## /document-engine/embed
+
+```sh
+curl -X POST http://host.docker.internal:30010/document-engine/embed \
+  -H "Content-Type: application/json" \
+  -d '{"texts":["Hello world","Second text"]}'
+```
+
+Response Schema
+
+```json
+{
+  "embeddings": [
+    [0.123, -0.456, 0.789, ...],  // 384 or 768 or 1024 dimensions
+    [-0.234, 0.567, -0.891, ...]
+  ],
+  "model": "balanced",
+  "dimensions": 768,
+  "count": 2
+}
+```
 
 # Your Application
 
