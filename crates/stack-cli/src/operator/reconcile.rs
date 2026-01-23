@@ -2,8 +2,8 @@ use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::{
-    cloudflare, database, deployment, jwt_secrets, keycloak, nginx, oauth2_proxy, postgrest,
-    realtime, storage,
+    cloudflare, database, deployment, document_engine, jwt_secrets, keycloak, nginx, oauth2_proxy,
+    postgrest, realtime, storage,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
@@ -64,6 +64,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         storage::delete(client.clone(), &namespace).await?;
         postgrest::delete(client.clone(), &namespace).await?;
         realtime::delete(client.clone(), &namespace).await?;
+        document_engine::delete(client.clone(), &namespace).await?;
         jwt_secrets::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace, &name).await?;
@@ -106,6 +107,12 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         realtime::delete(client.clone(), &namespace).await?;
     }
 
+    if let Some(document_engine_spec) = app.spec.components.document_engine.as_ref() {
+        document_engine::deploy(client.clone(), &namespace, Some(document_engine_spec)).await?;
+    } else {
+        document_engine::delete(client.clone(), &namespace).await?;
+    }
+
     let auth_hostname = app
         .spec
         .components
@@ -116,6 +123,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     let include_storage = app.spec.components.storage.is_some();
     let include_rest = app.spec.components.rest.is_some();
     let include_realtime = app.spec.components.realtime.is_some();
+    let include_document_engine = app.spec.components.document_engine.is_some();
 
     if let Some(hostname_url) = auth_hostname {
         let realm_config =
@@ -145,6 +153,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             include_storage,
             include_rest,
             include_realtime,
+            include_document_engine,
         )
         .await?;
     } else {
@@ -168,6 +177,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             include_storage,
             include_rest,
             include_realtime,
+            include_document_engine,
         )
         .await?;
     }
@@ -286,6 +296,7 @@ async fn deploy_extra_services(
         postgrest::REST_NAME,
         realtime::REALTIME_NAME,
         storage::STORAGE_NAME,
+        document_engine::DOCUMENT_ENGINE_NAME,
         "oauth2-proxy",
         "cloudflared",
         "minio",

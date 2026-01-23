@@ -82,6 +82,8 @@ Stack deploys to a minimal Kubernetes install running on your laptop so developm
 
 ![Stack in K8s](crates/stack-cli.com/assets/landing-page/k9s.png "Stack in k8s")
 
+# Supabase Endpoints
+
 ## /rest/v1
 
 Postgrest compatible API to your database.
@@ -111,6 +113,8 @@ supabase.channel("schema-db-changes")
   .subscribe()
 ```
 
+# Authentication Endpoint
+
 ## /oidc
 
 [OAuth2 Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) handles the login flow and sessions, while [Keycloak](https://www.keycloak.org/) provides the OIDC identity provider. This is optional and only enabled when you configure authentication in your manifest.
@@ -119,6 +123,14 @@ supabase.channel("schema-db-changes")
 - Keycloak provides the OIDC identity provider and user management.
 - `/oidc` routes traffic to Keycloak and keeps your app behind authenticated headers.
 - Your app receives a JWT on each request so it can trust identity claims.
+
+# Gen AI Endpoints
+
+## /document-engine
+
+Use [Kreuzberg](https://github.com/kreuzberg-dev/kreuzberg) To give you document processing and capabilities
+
+# Your Application
 
 ## /
 

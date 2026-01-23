@@ -1,6 +1,7 @@
 pub mod cloudflare;
 pub mod database;
 pub mod deployment;
+pub mod document_engine;
 pub mod jwt_secrets;
 pub mod keycloak;
 pub mod keycloak_db;

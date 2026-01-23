@@ -98,6 +98,7 @@ pub async fn deploy_nginx(
     include_storage: bool,
     include_rest: bool,
     include_realtime: bool,
+    include_document_engine: bool,
 ) -> Result<(), Error> {
     let env = vec![];
 
@@ -132,6 +133,11 @@ pub async fn deploy_nginx(
             "proxy_set_header X-Forwarded-Host $host;",
             "proxy_set_header X-Forwarded-Host realtime-dev;",
         )
+    } else {
+        String::new()
+    };
+    let document_engine_block = if include_document_engine {
+        proxy_block("/document-engine", "document-engine", 8000, "$forwarded_proto", "/")
     } else {
         String::new()
     };
@@ -181,6 +187,7 @@ server {{
 {storage_block}
 {rest_block}
 {realtime_block}
+{document_engine_block}
 
     location / {{
         proxy_pass http://oauth2-proxy:7900;
@@ -197,6 +204,7 @@ server {{
                 , storage_block = storage_block
                 , rest_block = rest_block
                 , realtime_block = realtime_block
+                , document_engine_block = document_engine_block
             )
         }
         NginxMode::StaticJwt { token } => {
@@ -227,6 +235,11 @@ server {{
             } else {
                 String::new()
             };
+            let document_engine_block = if include_document_engine {
+                proxy_block("/document-engine", "document-engine", 8000, "$scheme", "/")
+            } else {
+                String::new()
+            };
             format!(
                 r#"
 server {{
@@ -239,6 +252,7 @@ server {{
 {storage_block}
 {rest_block}
 {realtime_block}
+{document_engine_block}
 
     location / {{
         proxy_pass http://{app}:{port};
@@ -258,6 +272,7 @@ server {{
                 , storage_block = storage_block
                 , rest_block = rest_block
                 , realtime_block = realtime_block
+                , document_engine_block = document_engine_block
             )
         }
     };

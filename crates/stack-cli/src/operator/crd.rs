@@ -44,6 +44,7 @@ pub struct Components {
     pub ingress: Option<IngressConfig>,
     pub realtime: Option<RealtimeConfig>,
     pub rest: Option<RestConfig>,
+    pub document_engine: Option<DocumentEngineConfig>,
 }
 
 /// User-defined environment variable sourced from plaintext.
@@ -165,3 +166,7 @@ pub struct RestConfig {
 /// Optional Realtime configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 pub struct RealtimeConfig {}
+
+/// Optional document engine configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct DocumentEngineConfig {}
