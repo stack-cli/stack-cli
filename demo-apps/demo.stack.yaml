@@ -12,6 +12,7 @@ spec:
     storage:
       install_minio: true
     document_engine: {}
+    selenium: {}
   profiles:
     dev:
       components:
@@ -20,6 +21,9 @@ spec:
         db:
           expose_db_port: 30011
           danger_override_password: testpassword
+        selenium:
+          expose_webdriver_port: 30012
+          expose_vnc_port: 30013
     staging:
       components:
         ingress:

@@ -3,7 +3,7 @@ use super::finalizer;
 use crate::error::Error;
 use crate::services::{
     cloudflare, database, deployment, document_engine, jwt_secrets, keycloak, nginx, oauth2_proxy,
-    postgrest, realtime, storage,
+    postgrest, realtime, selenium, storage,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
@@ -19,6 +19,7 @@ const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
 const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
 const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
+const SELENIUM_NODEPORT_SERVICE_NAME: &str = "selenium-development";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
 const CLOUDFLARE_CONFIG_NAME: &str = "cloudflared";
@@ -65,6 +66,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         postgrest::delete(client.clone(), &namespace).await?;
         realtime::delete(client.clone(), &namespace).await?;
         document_engine::delete(client.clone(), &namespace).await?;
+        selenium::delete(client.clone(), &namespace).await?;
         jwt_secrets::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace, &name).await?;
@@ -111,6 +113,12 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         document_engine::deploy(client.clone(), &namespace, Some(document_engine_spec)).await?;
     } else {
         document_engine::delete(client.clone(), &namespace).await?;
+    }
+
+    if let Some(selenium_spec) = app.spec.components.selenium.as_ref() {
+        selenium::deploy(client.clone(), &namespace, Some(selenium_spec)).await?;
+    } else {
+        selenium::delete(client.clone(), &namespace).await?;
     }
 
     let auth_hostname = app
@@ -297,6 +305,7 @@ async fn deploy_extra_services(
         realtime::REALTIME_NAME,
         storage::STORAGE_NAME,
         document_engine::DOCUMENT_ENGINE_NAME,
+        selenium::SELENIUM_NAME,
         "oauth2-proxy",
         "cloudflared",
         "minio",
@@ -452,6 +461,40 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
     }
 
+    let selenium_config = spec.components.selenium.as_ref();
+    let webdriver_nodeport = selenium_config.and_then(|cfg| cfg.expose_webdriver_port);
+    let vnc_nodeport = selenium_config.and_then(|cfg| cfg.expose_vnc_port);
+    if webdriver_nodeport.is_some() || vnc_nodeport.is_some() {
+        let webdriver_port = selenium_config
+            .and_then(|cfg| cfg.port)
+            .unwrap_or(selenium::DEFAULT_SELENIUM_PORT);
+        let vnc_port = selenium_config
+            .and_then(|cfg| cfg.vnc_port)
+            .unwrap_or(selenium::DEFAULT_SELENIUM_VNC_PORT);
+
+        ensure_nodeport_service_multi(
+            client,
+            namespace,
+            SELENIUM_NODEPORT_SERVICE_NAME,
+            json!({ "app": selenium::SELENIUM_NAME }),
+            &[
+                NodePortSpec {
+                    name: "webdriver",
+                    port: webdriver_port,
+                    node_port: webdriver_nodeport,
+                },
+                NodePortSpec {
+                    name: "vnc",
+                    port: vnc_port,
+                    node_port: vnc_nodeport,
+                },
+            ],
+        )
+        .await?;
+    } else {
+        delete_service_if_exists(client, namespace, SELENIUM_NODEPORT_SERVICE_NAME).await?;
+    }
+
     Ok(())
 }
 
@@ -469,6 +512,7 @@ async fn delete_application_resources(
     delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
+    delete_service_if_exists(client, namespace, SELENIUM_NODEPORT_SERVICE_NAME).await?;
 
     Ok(())
 }
@@ -516,6 +560,60 @@ async fn ensure_nodeport_service(
                     "nodePort": node_port
                 }
             ]
+        }
+    });
+
+    let service_api: Api<Service> = Api::namespaced(client.clone(), namespace);
+    service_api
+        .patch(
+            name,
+            &PatchParams::apply(crate::MANAGER).force(),
+            &Patch::Apply(service),
+        )
+        .await?;
+
+    Ok(())
+}
+
+struct NodePortSpec<'a> {
+    name: &'a str,
+    port: u16,
+    node_port: Option<u16>,
+}
+
+async fn ensure_nodeport_service_multi(
+    client: &Client,
+    namespace: &str,
+    name: &str,
+    selector: Value,
+    ports: &[NodePortSpec<'_>],
+) -> Result<(), Error> {
+    let ports_value: Vec<Value> = ports
+        .iter()
+        .map(|port| {
+            let mut entry = json!({
+                "name": port.name,
+                "port": port.port,
+                "targetPort": port.port
+            });
+            if let Some(node_port) = port.node_port {
+                entry["nodePort"] = json!(node_port);
+            }
+            entry
+        })
+        .collect();
+
+    let service = json!({
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": {
+            "name": name,
+            "namespace": namespace
+        },
+        "spec": {
+            "type": "NodePort",
+            "selector": selector,
+            "ports": ports_value
         }
     });
 

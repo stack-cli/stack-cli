@@ -45,6 +45,7 @@ pub struct Components {
     pub realtime: Option<RealtimeConfig>,
     pub rest: Option<RestConfig>,
     pub document_engine: Option<DocumentEngineConfig>,
+    pub selenium: Option<SeleniumConfig>,
 }
 
 /// User-defined environment variable sourced from plaintext.
@@ -170,3 +171,20 @@ pub struct RealtimeConfig {}
 /// Optional document engine configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 pub struct DocumentEngineConfig {}
+
+/// Optional Selenium configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct SeleniumConfig {
+    /// Optional container image to run.
+    pub image: Option<String>,
+    /// Optional container port for the WebDriver endpoint.
+    pub port: Option<u16>,
+    /// Optional container port for VNC.
+    pub vnc_port: Option<u16>,
+    /// Optional shared memory size (e.g. 2Gi).
+    pub shm_size: Option<String>,
+    /// Optional NodePort to expose the WebDriver endpoint.
+    pub expose_webdriver_port: Option<u16>,
+    /// Optional NodePort to expose the VNC endpoint.
+    pub expose_vnc_port: Option<u16>,
+}

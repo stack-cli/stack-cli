@@ -10,4 +10,5 @@ pub mod nginx;
 pub mod oauth2_proxy;
 pub mod postgrest;
 pub mod realtime;
+pub mod selenium;
 pub mod storage;
