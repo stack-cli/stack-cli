@@ -46,6 +46,7 @@ pub struct Components {
     pub rest: Option<RestConfig>,
     pub document_engine: Option<DocumentEngineConfig>,
     pub selenium: Option<SeleniumConfig>,
+    pub mailhog: Option<MailhogConfig>,
 }
 
 /// User-defined environment variable sourced from plaintext.
@@ -187,4 +188,19 @@ pub struct SeleniumConfig {
     pub expose_webdriver_port: Option<u16>,
     /// Optional NodePort to expose the VNC endpoint.
     pub expose_vnc_port: Option<u16>,
+}
+
+/// Optional MailHog configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct MailhogConfig {
+    /// Optional container image to run.
+    pub image: Option<String>,
+    /// Optional container port for SMTP.
+    pub smtp_port: Option<u16>,
+    /// Optional container port for the web UI.
+    pub web_port: Option<u16>,
+    /// Optional NodePort to expose SMTP.
+    pub expose_smtp_port: Option<u16>,
+    /// Optional NodePort to expose the web UI.
+    pub expose_web_port: Option<u16>,
 }

@@ -8,16 +8,16 @@ spec:
     db: {}
     auth:
       # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-      hostname-url: http://localhost:30014
+      hostname-url: http://localhost:30015
       # Make keycloak admin accessible via /oidc/admin
       expose_admin: true
   profiles:
     dev:
       components:
         ingress:
-          port: 30014
+          port: 30015
         db:
-          expose_db_port: 30015
+          expose_db_port: 30016
           danger_override_password: testpassword
   services:
     web:

@@ -3,7 +3,7 @@ use super::finalizer;
 use crate::error::Error;
 use crate::services::{
     cloudflare, database, deployment, document_engine, jwt_secrets, keycloak, nginx, oauth2_proxy,
-    postgrest, realtime, selenium, storage,
+    postgrest, realtime, selenium, storage, mailhog,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
@@ -20,6 +20,7 @@ const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
 const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
 const SELENIUM_NODEPORT_SERVICE_NAME: &str = "selenium-development";
+const MAILHOG_NODEPORT_SERVICE_NAME: &str = "mailhog-development";
 const WEB_APP_REPLICAS: i32 = 1;
 const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
 const CLOUDFLARE_CONFIG_NAME: &str = "cloudflared";
@@ -67,6 +68,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         realtime::delete(client.clone(), &namespace).await?;
         document_engine::delete(client.clone(), &namespace).await?;
         selenium::delete(client.clone(), &namespace).await?;
+        mailhog::delete(client.clone(), &namespace).await?;
         jwt_secrets::delete(client.clone(), &namespace).await?;
         delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace, &name).await?;
@@ -119,6 +121,12 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         selenium::deploy(client.clone(), &namespace, Some(selenium_spec)).await?;
     } else {
         selenium::delete(client.clone(), &namespace).await?;
+    }
+
+    if let Some(mailhog_spec) = app.spec.components.mailhog.as_ref() {
+        mailhog::deploy(client.clone(), &namespace, Some(mailhog_spec)).await?;
+    } else {
+        mailhog::delete(client.clone(), &namespace).await?;
     }
 
     let auth_hostname = app
@@ -306,6 +314,7 @@ async fn deploy_extra_services(
         storage::STORAGE_NAME,
         document_engine::DOCUMENT_ENGINE_NAME,
         selenium::SELENIUM_NAME,
+        mailhog::MAILHOG_NAME,
         "oauth2-proxy",
         "cloudflared",
         "minio",
@@ -495,6 +504,40 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, SELENIUM_NODEPORT_SERVICE_NAME).await?;
     }
 
+    let mailhog_config = spec.components.mailhog.as_ref();
+    let smtp_nodeport = mailhog_config.and_then(|cfg| cfg.expose_smtp_port);
+    let web_nodeport = mailhog_config.and_then(|cfg| cfg.expose_web_port);
+    if smtp_nodeport.is_some() || web_nodeport.is_some() {
+        let smtp_port = mailhog_config
+            .and_then(|cfg| cfg.smtp_port)
+            .unwrap_or(mailhog::DEFAULT_SMTP_PORT);
+        let web_port = mailhog_config
+            .and_then(|cfg| cfg.web_port)
+            .unwrap_or(mailhog::DEFAULT_WEB_PORT);
+
+        ensure_nodeport_service_multi(
+            client,
+            namespace,
+            MAILHOG_NODEPORT_SERVICE_NAME,
+            json!({ "app": mailhog::MAILHOG_NAME }),
+            &[
+                NodePortSpec {
+                    name: "smtp",
+                    port: smtp_port,
+                    node_port: smtp_nodeport,
+                },
+                NodePortSpec {
+                    name: "web",
+                    port: web_port,
+                    node_port: web_nodeport,
+                },
+            ],
+        )
+        .await?;
+    } else {
+        delete_service_if_exists(client, namespace, MAILHOG_NODEPORT_SERVICE_NAME).await?;
+    }
+
     Ok(())
 }
 
@@ -513,6 +556,7 @@ async fn delete_application_resources(
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, SELENIUM_NODEPORT_SERVICE_NAME).await?;
+    delete_service_if_exists(client, namespace, MAILHOG_NODEPORT_SERVICE_NAME).await?;
 
     Ok(())
 }

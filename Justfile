@@ -6,10 +6,11 @@ dev-init:
     # 30011: postgres (demo)
     # 30012: selenium webdriver (demo)
     # 30013: selenium vnc (demo)
-    # 30014: nginx (bionic)
-    # 30015: postgres (bionic)
+    # 30014: mailhog web (demo)
+    # 30015: nginx (bionic)
+    # 30016: postgres (bionic)
     k3d cluster delete k3d-stack
-    k3d cluster create k3d-stack --agents 1 -p "30010-30015:30010-30015@agent:0"
+    k3d cluster create k3d-stack --agents 1 -p "30010-30016:30010-30016@agent:0"
     just get-config
 
 dev-setup:

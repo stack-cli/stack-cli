@@ -12,3 +12,4 @@ pub mod postgrest;
 pub mod realtime;
 pub mod selenium;
 pub mod storage;
+pub mod mailhog;

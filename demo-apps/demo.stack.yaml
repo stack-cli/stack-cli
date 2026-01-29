@@ -13,6 +13,7 @@ spec:
       install_minio: true
     document_engine: {}
     selenium: {}
+    mailhog: {}
   profiles:
     dev:
       components:
@@ -24,6 +25,8 @@ spec:
         selenium:
           expose_webdriver_port: 30012
           expose_vnc_port: 30013
+        mailhog:
+          expose_web_port: 30014
     staging:
       components:
         ingress:
