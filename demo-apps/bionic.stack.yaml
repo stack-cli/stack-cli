@@ -6,17 +6,12 @@ metadata:
 spec:
   components:
     db: {}
-    auth:
-      # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-      hostname-url: http://localhost:30015
-      # Make keycloak admin accessible via /oidc/admin
-      expose_admin: true
   profiles:
     dev:
       components:
         auth:
           # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-          hostname-url: http://localhost:30012
+          hostname-url: http://localhost:30015
           # Make keycloak admin accessible via /oidc/admin
           expose_admin: true
         ingress:
@@ -49,7 +44,7 @@ spec:
 
     rag-engine:
       image: ghcr.io/bionic-gpt/bionicgpt-rag-engine:1.12.8
-      port: 7703
+      port: 8000
       database_url: APP_DATABASE_URL
 
     doc-engine:
