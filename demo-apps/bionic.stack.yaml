@@ -14,21 +14,45 @@ spec:
   profiles:
     dev:
       components:
+        auth:
+          # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
+          hostname-url: http://localhost:30012
+          # Make keycloak admin accessible via /oidc/admin
+          expose_admin: true
         ingress:
           port: 30015
         db:
           expose_db_port: 30016
           danger_override_password: testpassword
+    test:
+      components:
+        auth:
+          # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
+          hostname-url: http://nginx
+          # Make keycloak admin accessible via /oidc/admin
+          expose_admin: true
+        db:
+          danger_override_password: testpassword
+        ingress: {}
   services:
     web:
-      image: ghcr.io/bionic-gpt/bionicgpt:1.11.59
+      image: ghcr.io/bionic-gpt/bionicgpt:1.12.2
       port: 7703
       # Pass an env var called APP_DATABASE_URL which is the application_user role.
-      migrations_database_url: APP_DATABASE_URL
+      database_url: APP_DATABASE_URL
       init:
-        image: ghcr.io/bionic-gpt/bionicgpt-db-migrations:1.11.59
+        image: ghcr.io/bionic-gpt/bionicgpt-db-migrations:1.12.2
         migrations_database_url: DATABASE_URL
         # Add any env vars required.
         env:
           - name: INIT_MESSAGE
             value: "warming up"
+    rag-engine:
+      image: ghcr.io/bionic-gpt/bionicgpt-rag-engine:1.12.2
+      port: 7703
+      database_url: APP_DATABASE_URL
+
+    chunking-engine:
+      image: downloads.unstructured.io/unstructured-io/unstructured-api:e464c16
+      port: 8000
+      database_url: APP_DATABASE_URL

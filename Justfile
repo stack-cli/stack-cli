@@ -29,6 +29,10 @@ bionic-setup:
     cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml --profile dev
     cargo run --bin stack-cli -- operator --once
 
+selenium-setup:
+    cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml --profile test -n bionic-selenium
+    cargo run --bin stack-cli -- operator --once
+
 bionic-secrets:
     cargo run --bin stack-cli -- secrets --manifest demo-apps/bionic.stack.yaml --db-host host.docker.internal --db-port 30013
 
