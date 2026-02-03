@@ -80,12 +80,12 @@ pub struct CloudflareArgs {
     /// Path to a StackApp manifest to read namespace from
     #[arg(long)]
     pub manifest: PathBuf,
-    /// Secret token for the Cloudflare tunnel
+    /// Tunnel name for a named Cloudflare tunnel
     #[arg(long)]
-    pub token: String,
-    /// Name of the Kubernetes secret to create
+    pub tunnel_name: Option<String>,
+    /// Secret token for the Cloudflare tunnel (required when using --tunnel-name)
     #[arg(long)]
-    pub secret_name: String,
+    pub token: Option<String>,
     /// Optional ingress target override for cloudflared config
     #[arg(long)]
     pub ingress_target: Option<String>,
