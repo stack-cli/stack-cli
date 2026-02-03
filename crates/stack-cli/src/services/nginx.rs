@@ -148,7 +148,7 @@ pub async fn deploy_nginx(
             NginxMode::Oidc { .. } => "$forwarded_proto",
             NginxMode::StaticJwt { .. } => "$scheme",
         };
-        proxy_block("/auth", "auth", 9999, proto_var, "")
+        proxy_block("/auth", "auth", 9999, proto_var, "/")
     } else {
         String::new()
     };
