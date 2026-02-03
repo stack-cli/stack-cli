@@ -18,6 +18,12 @@ pub fn load_stackapp(path: &Path, profile: Option<&str>) -> Result<(StackApp, St
     let stack_app: StackApp =
         serde_yaml::from_str(&merged_yaml).context("Failed to parse StackApp manifest")?;
 
+    if stack_app.spec.services.web.port.is_none() {
+        return Err(anyhow!(
+            "spec.services.web.port is required for the web service"
+        ));
+    }
+
     Ok((stack_app, merged_yaml))
 }
 

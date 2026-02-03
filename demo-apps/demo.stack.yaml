@@ -7,12 +7,13 @@ spec:
   components:
     db: {}
     rest: {}
-    auth: {}
+    auth:
+      api_external_url: http://localhost:30010/auth
+      site_url: http://localhost:30010/auth
     realtime: {}
     storage:
       install_minio: true
     document_engine: {}
-    selenium: {}
     mailhog: {}
   profiles:
     dev:

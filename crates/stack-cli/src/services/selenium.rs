@@ -52,7 +52,7 @@ pub async fn deploy(
             name: SELENIUM_NAME.to_string(),
             image_name: image,
             replicas: 1,
-            port,
+            port: Some(port),
             env: vec![],
             init_containers: vec![],
             command: None,

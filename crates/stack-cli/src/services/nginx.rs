@@ -95,6 +95,7 @@ pub async fn deploy_nginx(
     mode: NginxMode,
     upstream_port: u16,
     app_name: &str,
+    include_auth: bool,
     include_storage: bool,
     include_rest: bool,
     include_realtime: bool,
@@ -142,6 +143,16 @@ pub async fn deploy_nginx(
         String::new()
     };
 
+    let auth_block = if include_auth {
+        let proto_var = match mode {
+            NginxMode::Oidc { .. } => "$forwarded_proto",
+            NginxMode::StaticJwt { .. } => "$scheme",
+        };
+        proxy_block("/auth", "auth", 9999, proto_var, "/")
+    } else {
+        String::new()
+    };
+
     let config_body = match mode {
         NginxMode::Oidc { allow_admin } => {
             let admin_block = if allow_admin {
@@ -185,6 +196,7 @@ server {{
     }}
 
 {storage_block}
+{auth_block}
 {rest_block}
 {realtime_block}
 {document_engine_block}
@@ -201,6 +213,7 @@ server {{
 }}
 "#,
                 admin_block = admin_block
+                , auth_block = auth_block
                 , storage_block = storage_block
                 , rest_block = rest_block
                 , realtime_block = realtime_block
@@ -250,6 +263,7 @@ server {{
     proxy_busy_buffers_size 256k;
 
 {storage_block}
+{auth_block}
 {rest_block}
 {realtime_block}
 {document_engine_block}
@@ -269,6 +283,7 @@ server {{
                 app = app_name,
                 port = upstream_port,
                 token = escaped_token
+                , auth_block = auth_block
                 , storage_block = storage_block
                 , rest_block = rest_block
                 , realtime_block = realtime_block
@@ -301,7 +316,7 @@ server {{
             name: NGINX_NAME.to_string(),
             image_name,
             replicas: 1,
-            port: NGINX_PORT,
+            port: Some(NGINX_PORT),
             env,
             command: None,
             init_containers: vec![],
