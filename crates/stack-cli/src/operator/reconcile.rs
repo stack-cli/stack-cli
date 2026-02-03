@@ -141,6 +141,10 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     let include_realtime = app.spec.components.realtime.is_some();
     let include_document_engine = app.spec.components.document_engine.is_some();
 
+    let web_port = app.spec.services.web.port.ok_or_else(|| {
+        Error::Other("spec.services.web.port is required for the web service".to_string())
+    })?;
+
     if let Some(hostname_url) = auth_hostname {
         let realm_config =
             oauth2_proxy::ensure_secret(client.clone(), &namespace, &hostname_url).await?;
@@ -149,7 +153,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             client.clone(),
             &namespace,
             &hostname_url,
-            app.spec.services.web.port,
+            web_port,
             &name,
         )
         .await?;
@@ -164,7 +168,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &client,
             &namespace,
             nginx::NginxMode::Oidc { allow_admin },
-            app.spec.services.web.port,
+            web_port,
             &name,
             include_storage,
             include_rest,
@@ -188,7 +192,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             nginx::NginxMode::StaticJwt {
                 token: jwt_value.clone(),
             },
-            app.spec.services.web.port,
+            web_port,
             &name,
             include_storage,
             include_rest,
@@ -209,7 +213,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         delete_cloudflare_resources(&client, &namespace).await?;
     }
 
-    deploy_web_app(&client, &namespace, &app.spec, &name).await?;
+    deploy_web_app(&client, &namespace, &app.spec, &name, web_port).await?;
     deploy_extra_services(&client, &namespace, &app.spec.services.extra, &name).await?;
     let db_cluster_name = database::cluster_resource_name(&name);
     ensure_optional_nodeports(&client, &namespace, &app.spec, &db_cluster_name).await?;
@@ -235,6 +239,7 @@ async fn deploy_web_app(
     namespace: &str,
     spec: &StackAppSpec,
     app_name: &str,
+    web_port: u16,
 ) -> Result<(), Error> {
     let hostname_env = spec
         .components
@@ -286,7 +291,7 @@ async fn deploy_web_app(
             name: app_name.to_string(),
             image_name: spec.services.web.image.clone(),
             replicas: WEB_APP_REPLICAS,
-            port: spec.services.web.port,
+            port: Some(web_port),
             env,
             init_containers: init_containers.into_iter().collect(),
             command: None,

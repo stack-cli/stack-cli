@@ -21,7 +21,7 @@ pub async fn deploy(
             name: DOCUMENT_ENGINE_NAME.to_string(),
             image_name: DOCUMENT_ENGINE_IMAGE.to_string(),
             replicas: 1,
-            port: DOCUMENT_ENGINE_PORT,
+            port: Some(DOCUMENT_ENGINE_PORT),
             env: vec![],
             init_containers: vec![],
             command: None,

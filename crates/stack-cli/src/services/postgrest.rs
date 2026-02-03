@@ -76,7 +76,7 @@ pub async fn deploy(
             name: REST_NAME.to_string(),
             image_name: DEFAULT_REST_IMAGE.to_string(),
             replicas: 1,
-            port: DEFAULT_REST_PORT,
+            port: Some(DEFAULT_REST_PORT),
             env,
             init_containers: vec![],
             command: Some(command),

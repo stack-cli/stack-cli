@@ -42,7 +42,7 @@ pub async fn deploy(
             name: "oauth2-proxy".to_string(),
             image_name: OAUTH2_PROXY_IMAGE.to_string(),
             replicas: 1,
-            port: OAUTH2_PROXY_PORT,
+            port: Some(OAUTH2_PROXY_PORT),
             env: vec![
                 json!({"name": "OAUTH2_PROXY_HTTP_ADDRESS", "value": format!("0.0.0.0:{}", OAUTH2_PROXY_PORT)}),
                 json!({

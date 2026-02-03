@@ -132,7 +132,7 @@ pub async fn deploy(
             name: REALTIME_NAME.to_string(),
             image_name: REALTIME_IMAGE.to_string(),
             replicas: 1,
-            port: REALTIME_PORT,
+            port: Some(REALTIME_PORT),
             env,
             init_containers: vec![init_container],
             command: None,

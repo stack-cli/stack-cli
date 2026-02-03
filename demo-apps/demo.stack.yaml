@@ -46,3 +46,24 @@ spec:
         env:
           - name: INIT_MESSAGE
             value: "warming up"
+
+    auth:
+      image: supabase/gotrue:v2.185.0
+      migrations_database_url: GOTRUE_DB_DATABASE_URL
+      env:
+        - name: GOTRUE_DB_DRIVER
+          value: postgres
+        - name: API_EXTERNAL_URL
+          value: http://localhost:30010/auth
+        - name: GOTRUE_SITE_URL
+          value: http://localhost:30010/auth
+        - name: GOTRUE_JWT_ADMIN_ROLES
+          value: service_role
+        - name: GOTRUE_JWT_AUD
+          value: authenticated
+        - name: GOTRUE_JWT_DEFAULT_GROUP_NAME
+          value: authenticated
+      secret_env:
+        - name: GOTRUE_JWT_SECRET
+          secret_name: jwt-auth
+          secret_key: jwt-secret

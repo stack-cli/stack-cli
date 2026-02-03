@@ -69,8 +69,8 @@ pub struct SecretEnvVar {
 pub struct ServiceSpec {
     /// Fully-qualified container image reference (e.g. ghcr.io/org/app:tag)
     pub image: String,
-    /// Container port exposed by the application (e.g. 7903)
-    pub port: u16,
+    /// Container port exposed by the application (e.g. 7903). Required for services.web.
+    pub port: Option<u16>,
     /// Optional list of plaintext environment variables injected into the web pod.
     #[serde(default)]
     pub env: Vec<EnvVar>,

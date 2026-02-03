@@ -36,7 +36,7 @@ pub async fn deploy(
             name: MAILHOG_NAME.to_string(),
             image_name: image,
             replicas: 1,
-            port: smtp_port,
+            port: Some(smtp_port),
             env: vec![],
             init_containers: vec![],
             command: None,

@@ -301,7 +301,7 @@ server {{
             name: NGINX_NAME.to_string(),
             image_name,
             replicas: 1,
-            port: NGINX_PORT,
+            port: Some(NGINX_PORT),
             env,
             command: None,
             init_containers: vec![],

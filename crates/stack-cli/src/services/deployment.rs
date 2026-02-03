@@ -20,7 +20,7 @@ pub struct ServiceDeployment {
     pub name: String,
     pub replicas: i32,
     pub image_name: String,
-    pub port: u16,
+    pub port: Option<u16>,
     pub env: Vec<Value>,
     pub init_containers: Vec<InitContainer>,
     pub command: Option<Command>,
@@ -63,30 +63,26 @@ pub async fn deployment(
         })
         .collect();
 
-    let containers = if let Some(command) = service_deployment.command {
-        json!([{
-            "name": service_deployment.name,
-            "image": service_deployment.image_name,
-            "imagePullPolicy": "IfNotPresent",
-            "ports": [{
-                "containerPort": service_deployment.port
-            }],
-            "env": service_deployment.env,
-            "volumeMounts": service_deployment.volume_mounts,
-            "command": command.command,
-            "args": command.args
-        }])
-    } else {
-        json!([{
-            "name": service_deployment.name,
-            "image": service_deployment.image_name,
-            "ports": [{
-                "containerPort": service_deployment.port
-            }],
-            "env": service_deployment.env,
-            "volumeMounts": service_deployment.volume_mounts,
-        }])
-    };
+    let mut container = json!({
+        "name": service_deployment.name,
+        "image": service_deployment.image_name,
+        "env": service_deployment.env,
+        "volumeMounts": service_deployment.volume_mounts,
+    });
+
+    if let Some(port) = service_deployment.port {
+        container["ports"] = json!([{
+            "containerPort": port
+        }]);
+    }
+
+    if let Some(command) = service_deployment.command {
+        container["imagePullPolicy"] = json!("IfNotPresent");
+        container["command"] = json!(command.command);
+        container["args"] = json!(command.args);
+    }
+
+    let containers = json!([container]);
 
     // Create the Deployment object
     let deployment = serde_json::json!({
@@ -125,13 +121,9 @@ pub async fn deployment(
         )
         .await?;
 
-    service(
-        client.clone(),
-        &service_deployment.name,
-        service_deployment.port,
-        namespace,
-    )
-    .await?;
+    if let Some(port) = service_deployment.port {
+        service(client.clone(), &service_deployment.name, port, namespace).await?;
+    }
 
     crate::services::network_policy::default_deny(
         client,
