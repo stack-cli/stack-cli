@@ -58,7 +58,7 @@ spec:
   components:
     auth:
       api_external_url: http://localhost:30010/auth
-      gotrue_site_url: http://localhost:30010/auth
+      site_url: http://localhost:30010/auth
 ```
 
 When `components.auth` is present, Stack deploys GoTrue and routes `/auth` through nginx. It also wires JWT and database credentials automatically.

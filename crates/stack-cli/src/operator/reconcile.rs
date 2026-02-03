@@ -253,9 +253,9 @@ async fn deploy_web_app(
 ) -> Result<(), Error> {
     let hostname_env = spec
         .components
-        .auth
+        .oidc
         .as_ref()
-        .and_then(|a| a.hostname_url.clone())
+        .and_then(|oidc| oidc.hostname_url.clone())
         .unwrap_or_default();
 
     let mut env = vec![json!({"name": "HOSTNAME_URL", "value": hostname_env})];
