@@ -113,7 +113,14 @@ supabase.channel("schema-db-changes")
   .subscribe()
 ```
 
-# Authentication Endpoint
+# Authentication Endpoints
+
+## /auth
+
+Supabase Auth (GoTrue) handles email/password and token-based auth flows. This endpoint is enabled when `components.auth` is configured.
+
+- `/auth` routes traffic to GoTrue.
+- GoTrue uses the same database cluster as the rest of the stack.
 
 ## /oidc
 
