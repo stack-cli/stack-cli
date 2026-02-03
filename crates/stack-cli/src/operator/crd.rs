@@ -38,7 +38,8 @@ fn services_schema(_gen: &mut SchemaGenerator) -> Schema {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
 pub struct Components {
     pub db: Option<DbConfig>,
-    pub auth: Option<AuthConfig>,
+    pub oidc: Option<OidcConfig>,
+    pub auth: Option<SupabaseAuthConfig>,
     pub storage: Option<StorageConfig>,
     pub cloudflare: Option<CloudflareConfig>,
     pub ingress: Option<IngressConfig>,
@@ -117,9 +118,9 @@ pub struct DbConfig {
     pub expose_db_port: Option<u16>,
 }
 
-/// Optional authentication configuration.
+/// Optional OIDC authentication configuration (Keycloak + oauth2-proxy).
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
-pub struct AuthConfig {
+pub struct OidcConfig {
     /// Public hostname that Cloudflare/Keycloak should use for redirects.
     #[serde(rename = "hostname-url")]
     pub hostname_url: Option<String>,
@@ -127,6 +128,15 @@ pub struct AuthConfig {
     pub expose_auth_port: Option<u16>,
     /// When true, allow the Keycloak admin console to be proxied via /oidc/admin.
     pub expose_admin: Option<bool>,
+}
+
+/// Optional Supabase Auth (GoTrue) configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct SupabaseAuthConfig {
+    /// External URL for GoTrue (e.g. https://example.com/auth).
+    pub api_external_url: String,
+    /// Site URL for GoTrue (e.g. https://example.com/auth).
+    pub gotrue_site_url: String,
 }
 
 /// Optional Supabase storage configuration.

@@ -75,4 +75,4 @@ You will see:
 - The latest Cloudflare URL scraped from the `cloudflared` pod logs in your manifest namespace.
 - Helpful hints if the tunnel pod is not running.
 
-Update your `StackApp` manifest with `spec.components.auth.hostname-url` once you have a stable domain so Keycloak and OAuth2 Proxy can enforce proper redirects.
+Update your `StackApp` manifest with `spec.components.oidc.hostname-url` once you have a stable domain so Keycloak and OAuth2 Proxy can enforce proper redirects.

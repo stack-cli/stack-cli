@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod cloudflare;
 pub mod database;
 pub mod deployment;

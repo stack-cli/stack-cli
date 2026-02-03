@@ -2,8 +2,8 @@ use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::{
-    cloudflare, database, deployment, document_engine, jwt_secrets, keycloak, nginx, oauth2_proxy,
-    postgrest, realtime, selenium, storage, mailhog,
+    auth, cloudflare, database, deployment, document_engine, jwt_secrets, keycloak, nginx,
+    oauth2_proxy, postgrest, realtime, selenium, storage, mailhog,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
@@ -63,6 +63,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         oauth2_proxy::delete(client.clone(), &namespace).await?;
         nginx::delete_nginx(client.clone(), &namespace).await?;
         keycloak::delete(client.clone(), &namespace).await?;
+        auth::delete(client.clone(), &namespace).await?;
         storage::delete(client.clone(), &namespace).await?;
         postgrest::delete(client.clone(), &namespace).await?;
         realtime::delete(client.clone(), &namespace).await?;
@@ -129,23 +130,24 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         mailhog::delete(client.clone(), &namespace).await?;
     }
 
-    let auth_hostname = app
+    let oidc_hostname = app
         .spec
         .components
-        .auth
+        .oidc
         .as_ref()
-        .and_then(|auth| auth.hostname_url.clone());
+        .and_then(|oidc| oidc.hostname_url.clone());
 
     let include_storage = app.spec.components.storage.is_some();
     let include_rest = app.spec.components.rest.is_some();
     let include_realtime = app.spec.components.realtime.is_some();
     let include_document_engine = app.spec.components.document_engine.is_some();
+    let include_auth = app.spec.components.auth.is_some();
 
     let web_port = app.spec.services.web.port.ok_or_else(|| {
         Error::Other("spec.services.web.port is required for the web service".to_string())
     })?;
 
-    if let Some(hostname_url) = auth_hostname {
+    if let Some(hostname_url) = oidc_hostname {
         let realm_config =
             oauth2_proxy::ensure_secret(client.clone(), &namespace, &hostname_url).await?;
         keycloak::ensure_realm(client.clone(), &realm_config).await?;
@@ -160,9 +162,9 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         let allow_admin = app
             .spec
             .components
-            .auth
+            .oidc
             .as_ref()
-            .and_then(|auth| auth.expose_admin)
+            .and_then(|oidc| oidc.expose_admin)
             .unwrap_or(false);
         nginx::deploy_nginx(
             &client,
@@ -170,6 +172,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             nginx::NginxMode::Oidc { allow_admin },
             web_port,
             &name,
+            include_auth,
             include_storage,
             include_rest,
             include_realtime,
@@ -194,12 +197,19 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             },
             web_port,
             &name,
+            include_auth,
             include_storage,
             include_rest,
             include_realtime,
             include_document_engine,
         )
         .await?;
+    }
+
+    if let Some(auth_config) = app.spec.components.auth.as_ref() {
+        auth::deploy(client.clone(), &namespace, &name, auth_config).await?;
+    } else {
+        auth::delete(client.clone(), &namespace).await?;
     }
 
     if let Some(cloudflare_config) = app.spec.components.cloudflare.as_ref() {
@@ -320,6 +330,7 @@ async fn deploy_extra_services(
         document_engine::DOCUMENT_ENGINE_NAME,
         selenium::SELENIUM_NAME,
         mailhog::MAILHOG_NAME,
+        auth::AUTH_NAME,
         "oauth2-proxy",
         "cloudflared",
         "minio",
@@ -424,9 +435,9 @@ async fn ensure_optional_nodeports(
 
     let auth_node_port = spec
         .components
-        .auth
+        .oidc
         .as_ref()
-        .and_then(|auth_config| auth_config.expose_auth_port);
+        .and_then(|oidc_config| oidc_config.expose_auth_port);
     if let Some(node_port) = auth_node_port {
         ensure_nodeport_service(
             client,

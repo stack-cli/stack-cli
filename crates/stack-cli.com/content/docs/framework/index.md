@@ -51,7 +51,7 @@ metadata:
   namespace: rails-demo
 spec:
   components:
-    auth: {}
+    oidc: {}
   services:
     web:
       image: ghcr.io/acme/rails-app:latest
@@ -71,8 +71,10 @@ Stack will ensure the namespace exists, provision a CloudNativePG database clust
 Run a quick tunnel while testing:
 
 ```bash
-Add `components.cloudflare: {}` to `rails-stack-app.yaml` and re-run `stack deploy` to start a quick tunnel.
+stack deploy --manifest rails-stack-app.yaml
 stack status --manifest rails-stack-app.yaml
 ```
 
-When you are ready for a permanent hostname, pass `--token` with a Cloudflare tunnel credential and update `components.auth.hostname-url` inside the manifest so Keycloak and OAuth2 Proxy enforce proper redirects.
+Add `components.cloudflare: {}` to `rails-stack-app.yaml` and re-run `stack deploy` to start a quick tunnel.
+
+When you are ready for a permanent hostname, pass `--token` with a Cloudflare tunnel credential and update `components.oidc.hostname-url` inside the manifest so Keycloak and OAuth2 Proxy enforce proper redirects.
