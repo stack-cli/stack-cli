@@ -1,6 +1,7 @@
 pub mod apply;
 pub mod init;
 pub mod deploy;
+pub mod cloudflare;
 pub mod manifest;
 pub mod secrets;
 pub mod status;
@@ -74,6 +75,22 @@ pub struct SecretsArgs {
     pub db_port: Option<u16>,
 }
 
+#[derive(Parser)]
+pub struct CloudflareArgs {
+    /// Path to a StackApp manifest to read namespace from
+    #[arg(long)]
+    pub manifest: PathBuf,
+    /// Secret token for the Cloudflare tunnel
+    #[arg(long)]
+    pub token: String,
+    /// Name of the Kubernetes secret to create
+    #[arg(long)]
+    pub secret_name: String,
+    /// Optional ingress target override for cloudflared config
+    #[arg(long)]
+    pub ingress_target: Option<String>,
+}
+
 #[derive(Subcommand)]
 pub enum Commands {
     /// Deploy an application into Kubernetes
@@ -86,4 +103,6 @@ pub enum Commands {
     Status(StatusArgs),
     /// Print namespace secrets as KEY=VALUE lines for .env files
     Secrets(SecretsArgs),
+    /// Create Cloudflare tunnel secret and deploy cloudflared
+    Cloudflare(CloudflareArgs),
 }

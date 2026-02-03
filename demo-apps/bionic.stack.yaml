@@ -10,25 +10,22 @@ spec:
     dev:
       components:
         auth:
-          # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-          hostname-url: http://localhost:30015
-          # Make keycloak admin accessible via /oidc/admin
-          expose_admin: true
+          hostname-url: http://localhost:30000
         ingress:
-          port: 30015
+          port: 30000
         db:
-          expose_db_port: 30016
+          expose_db_port: 30001
           danger_override_password: testpassword
-    test:
+    uat:
       components:
         auth:
           # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-          hostname-url: http://nginx
-          # Make keycloak admin accessible via /oidc/admin
-          expose_admin: true
-        db:
-          danger_override_password: testpassword
-        ingress: {}
+          hostname-url: https://platform.bionic-gpt.com
+    prod:
+      components:
+        auth:
+          # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
+          hostname-url: https://app.bionic-gpt.com
   services:
     web:
       image: ghcr.io/bionic-gpt/bionicgpt:1.12.8
@@ -44,7 +41,7 @@ spec:
 
     rag-engine:
       image: ghcr.io/bionic-gpt/bionicgpt-rag-engine:1.12.8
-      port: 8000
+      port: 7703
       database_url: APP_DATABASE_URL
 
     doc-engine:

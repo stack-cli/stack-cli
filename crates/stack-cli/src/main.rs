@@ -27,6 +27,9 @@ async fn main() -> Result<()> {
         cli::Commands::Secrets(args) => {
             cli::secrets::secrets(args).await?;
         }
+        cli::Commands::Cloudflare(args) => {
+            cli::cloudflare::cloudflare(args).await?;
+        }
     }
 
     Ok(())
