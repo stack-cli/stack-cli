@@ -14,7 +14,7 @@ pub const NGINX_NAME: &str = "nginx";
 pub const NGINX_PORT: u16 = 80;
 
 pub enum NginxMode {
-    Oidc { allow_admin: bool },
+    Oidc,
     StaticJwt { token: String },
 }
 
@@ -145,7 +145,7 @@ pub async fn deploy_nginx(
 
     let auth_block = if include_auth {
         let proto_var = match mode {
-            NginxMode::Oidc { .. } => "$forwarded_proto",
+            NginxMode::Oidc => "$forwarded_proto",
             NginxMode::StaticJwt { .. } => "$scheme",
         };
         proxy_block("/auth", "auth", 9999, proto_var, "/")
@@ -154,17 +154,7 @@ pub async fn deploy_nginx(
     };
 
     let config_body = match mode {
-        NginxMode::Oidc { allow_admin } => {
-            let admin_block = if allow_admin {
-                String::new()
-            } else {
-                r#"
-    location ^~ /oidc/admin {
-        return 404;
-    }
-"#
-                .to_string()
-            };
+        NginxMode::Oidc => {
             format!(
                 r#"
 server {{
@@ -179,7 +169,6 @@ server {{
         set $forwarded_proto $http_x_forwarded_proto;
     }}
 
-{admin_block}
     location = /oidc {{
         return 301 /oidc/;
     }}
@@ -212,8 +201,7 @@ server {{
     }}
 }}
 "#,
-                admin_block = admin_block
-                , auth_block = auth_block
+                auth_block = auth_block
                 , storage_block = storage_block
                 , rest_block = rest_block
                 , realtime_block = realtime_block

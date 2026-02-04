@@ -155,17 +155,10 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &name,
         )
         .await?;
-        let allow_admin = app
-            .spec
-            .components
-            .oidc
-            .as_ref()
-            .and_then(|oidc| oidc.expose_admin)
-            .unwrap_or(false);
         nginx::deploy_nginx(
             &client,
             &namespace,
-            nginx::NginxMode::Oidc { allow_admin },
+            nginx::NginxMode::Oidc,
             web_port,
             &name,
             include_auth,

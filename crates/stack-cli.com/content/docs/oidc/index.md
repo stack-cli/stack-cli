@@ -16,8 +16,6 @@ spec:
     oidc:
       # Required by Keycloak for OIDC. OIDC requires a stable redirect URL.
       hostname-url: http://localhost:30013
-      # Make keycloak admin accessible via /oidc/admin
-      expose_admin: true
 ```
 
 When you enable `oidc` in your Stack yaml all traffic to your app will be intercepted and a login/registration page will be shown.
@@ -46,3 +44,23 @@ kubectl get secret keycloak-initial-admin -n keycloak -o yaml
 ```
 
 If you ever need to reinstall Keycloak components (for example after manually deleting the namespace), re-run `stack init`. The CLI reapplies the CRDs, operator deployment, and database manifests idempotently.
+
+## Accessing the Keycloak admin
+
+If you need to reach the Keycloak admin UI quickly, you can spin up a temporary Cloudflare tunnel in the `keycloak` namespace:
+
+```bash
+kubectl -n keycloak run cloudflared-quick --restart=Never --image=cloudflare/cloudflared:latest -- \
+  tunnel --no-autoupdate --url http://keycloak-service.keycloak.svc.cluster.local:8080
+```
+
+Then use `kubectl` to read the initial admin credentials:
+
+```bash
+kubectl -n keycloak get secret keycloak-initial-admin \
+  -o jsonpath='{.data.username}' | base64 -d && echo
+kubectl -n keycloak get secret keycloak-initial-admin \
+  -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+The output includes the admin username and password.

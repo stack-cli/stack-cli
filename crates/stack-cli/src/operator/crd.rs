@@ -125,8 +125,6 @@ pub struct OidcConfig {
     pub hostname_url: Option<String>,
     /// Optional NodePort number to expose the auth (nginx) service.
     pub expose_auth_port: Option<u16>,
-    /// When true, allow the Keycloak admin console to be proxied via /oidc/admin.
-    pub expose_admin: Option<bool>,
 }
 
 /// Optional Supabase Auth (GoTrue) configuration.
