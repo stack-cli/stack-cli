@@ -10,17 +10,12 @@ spec:
     dev:
       components:
         oidc:
-          hostname-url: http://localhost:30000
+          hostname-url: http://localhost:30015
         ingress:
-          port: 30000
+          port: 30015
         db:
-          expose_db_port: 30001
+          expose_db_port: 30016
           danger_override_password: testpassword
-    uat:
-      components:
-        oidc:
-          # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-          hostname-url: https://platform.bionic-gpt.com
     prod:
       components:
         oidc:
@@ -41,9 +36,7 @@ spec:
 
     rag-engine:
       image: ghcr.io/bionic-gpt/bionicgpt-rag-engine:1.12.8
-      port: 7703
       database_url: APP_DATABASE_URL
 
     doc-engine:
       image: ghcr.io/kreuzberg-dev/kreuzberg:4.1.2
-      port: 8000
