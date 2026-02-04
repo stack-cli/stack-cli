@@ -11,7 +11,7 @@ use std::hash::{Hash, Hasher};
 
 const CONFIG_JSON: &str = include_str!("../../keycloak/realm.json");
 const THEME_PROPERTIES: &str = include_str!("../../keycloak/stack-cli-theme.properties");
-const THEME_LOGIN_CSS: &str = include_str!("../../keycloak/stack-cli-login.css");
+const THEME_LOGIN_CSS: &str = include_str!("../../keycloak/stack-cli.css");
 const KEYCLOAK_API_GROUP: &str = "k8s.keycloak.org";
 pub const KEYCLOAK_NAMESPACE: &str = "keycloak";
 pub const KEYCLOAK_NAME: &str = "keycloak";
@@ -205,8 +205,8 @@ async fn apply_keycloak_cr(client: Client) -> Result<(), Error> {
                                             "path": "login/theme.properties"
                                         },
                                         {
-                                            "key": "login.css",
-                                            "path": "login/resources/css/login.css"
+                                            "key": "stack-cli.css",
+                                            "path": "login/resources/css/stack-cli.css"
                                         }
                                     ]
                                 }
@@ -327,7 +327,7 @@ async fn apply_theme_configmap(client: Client) -> Result<(), Error> {
         },
         "data": {
             "theme.properties": THEME_PROPERTIES,
-            "login.css": THEME_LOGIN_CSS
+            "stack-cli.css": THEME_LOGIN_CSS
         }
     });
 
