@@ -52,4 +52,3 @@ If you omit `--profile`, Stack uses the base `spec` as-is.
 
 - Expose DB or auth ports in dev only.
 - Use different ingress settings per environment.
-- Change cloudflare settings without duplicating manifests.

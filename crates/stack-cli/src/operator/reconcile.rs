@@ -2,12 +2,12 @@ use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::{
-    auth, cloudflare, database, deployment, document_engine, jwt_secrets, keycloak, nginx,
-    oauth2_proxy, postgrest, realtime, selenium, storage, mailhog,
+    auth, database, deployment, document_engine, jwt_secrets, keycloak, nginx, oauth2_proxy,
+    postgrest, realtime, selenium, storage, mailhog,
 };
 use k8s_openapi::api::{
     apps::v1::Deployment as KubeDeployment,
-    core::v1::{ConfigMap, Service},
+    core::v1::Service,
 };
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client, Resource, ResourceExt};
@@ -22,9 +22,6 @@ const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
 const SELENIUM_NODEPORT_SERVICE_NAME: &str = "selenium-development";
 const MAILHOG_NODEPORT_SERVICE_NAME: &str = "mailhog-development";
 const WEB_APP_REPLICAS: i32 = 1;
-const CLOUDFLARE_DEPLOYMENT_NAME: &str = "cloudflared";
-const CLOUDFLARE_CONFIG_NAME: &str = "cloudflared";
-
 /// Context injected with each `reconcile` and `on_error` method invocation.
 pub struct ContextData {
     /// Kubernetes client to make Kubernetes API requests with. Required for K8S resource management.
@@ -71,7 +68,6 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         selenium::delete(client.clone(), &namespace).await?;
         mailhog::delete(client.clone(), &namespace).await?;
         jwt_secrets::delete(client.clone(), &namespace).await?;
-        delete_cloudflare_resources(&client, &namespace).await?;
         database::delete(client.clone(), &namespace, &name).await?;
         finalizer::delete(client, &name, &namespace).await?;
         return Ok(Action::await_change());
@@ -212,17 +208,6 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         auth::delete(client.clone(), &namespace).await?;
     }
 
-    if let Some(cloudflare_config) = app.spec.components.cloudflare.as_ref() {
-        cloudflare::deploy(
-            &client,
-            &namespace,
-            cloudflare_config.secret_name.as_deref(),
-        )
-        .await?;
-    } else {
-        delete_cloudflare_resources(&client, &namespace).await?;
-    }
-
     deploy_web_app(&client, &namespace, &app.spec, &name, web_port).await?;
     deploy_extra_services(&client, &namespace, &app.spec.services.extra, &name).await?;
     let db_cluster_name = database::cluster_resource_name(&name);
@@ -332,7 +317,6 @@ async fn deploy_extra_services(
         mailhog::MAILHOG_NAME,
         auth::AUTH_NAME,
         "oauth2-proxy",
-        "cloudflared",
         "minio",
     ];
     let mut seen = std::collections::HashSet::new();
@@ -573,24 +557,6 @@ async fn delete_application_resources(
     delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, SELENIUM_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, MAILHOG_NODEPORT_SERVICE_NAME).await?;
-
-    Ok(())
-}
-
-async fn delete_cloudflare_resources(client: &Client, namespace: &str) -> Result<(), Error> {
-    let deployments: Api<KubeDeployment> = Api::namespaced(client.clone(), namespace);
-    if deployments.get(CLOUDFLARE_DEPLOYMENT_NAME).await.is_ok() {
-        deployments
-            .delete(CLOUDFLARE_DEPLOYMENT_NAME, &DeleteParams::default())
-            .await?;
-    }
-
-    let configs: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
-    if configs.get(CLOUDFLARE_CONFIG_NAME).await.is_ok() {
-        configs
-            .delete(CLOUDFLARE_CONFIG_NAME, &DeleteParams::default())
-            .await?;
-    }
 
     Ok(())
 }

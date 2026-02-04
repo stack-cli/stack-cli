@@ -39,7 +39,7 @@ stack operator --once
 ## 4. Iterate
 
 - `stack status --manifest demo.stack.yaml` prints credentials and Cloudflare URLs.
-- Add `components.cloudflare: {}` to `demo.stack.yaml` to start a quick tunnel (use `components.cloudflare.secret_name` for authenticated tunnels).
+- Run `stack cloudflare --manifest demo.stack.yaml` to start a quick tunnel (use `--tunnel-name` for authenticated tunnels).
 - `stack operator --once` becomes your go-to after editing manifests so you can watch databases, secrets, and Deployments update in real time.
 
 ## Tips
