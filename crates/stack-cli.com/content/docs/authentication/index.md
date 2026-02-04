@@ -1,57 +1,10 @@
 # Authentication
 
-Stack supports two authentication capabilities:
-- **OIDC gateway** via Keycloak + OAuth2 Proxy (protects your app behind `/oidc`).
-- **Supabase Auth (GoTrue)** served at `/auth` when enabled.
+Stack ships Supabase Auth (GoTrue) so you can handle email/password and token-based flows without wiring extra services. The auth API is exposed through nginx at `/auth`.
 
-When you run `stack init`, the CLI installs everything required to run a shared Keycloak control plane inside your cluster.
+This page continues the demo flow from the [Database](../database/), [REST](../rest/), and [Storage](../storage/) guides.
 
-![Alt text](keycloak.svg "Keycloak")
-
-## Enabling OIDC (Keycloak + OAuth2 Proxy)
-
-```yaml
-spec:
-  components:
-    ingress:
-      port: 30010
-    db: 
-    rest: {}
-    oidc:
-      # Required by keycloak for OIDC. OIDC requires a stable redirect URL.
-      hostname-url: http://localhost:30013
-      # Make keycloak admin accessible via /oidc/admin
-      expose_admin: true
-```
-
-When you enable `oidc` in your Stack yaml all traffic to your app will be intercepted and a login/registration page will be shown.
-
-![Alt text](keycloak-login.png "Keycloak")
-
-## How Stack uses Keycloak
-
-- Each `StackApp` with `spec.components.oidc.hostname-url` defined triggers the Stack controller to ensure a Keycloak realm and OAuth2 Proxy configuration exist.
-- The CLI creates an initial admin secret named `keycloak-initial-admin` in the Keycloak namespace. `stack status --manifest …` reads this secret so you can log in instantly.
-- OAuth2 Proxy is configured to trust Keycloak and inject the right upstream headers toward your app.
-
-## What gets installed
-
-1. **CustomResourceDefinitions** – `keycloaks.k8s.keycloak.org` and `keycloakrealmimports.k8s.keycloak.org` enable the operator to watch realms and servers.
-2. **Keycloak Operator** – A deployment that reconciles `Keycloak` and `KeycloakRealmImport` resources.
-3. **Dedicated namespace** – Stack creates (or reuses) the `keycloak` namespace so the identity stack stays isolated.
-4. **Backing database** – The Keycloak operator provisions a CloudNativePG cluster for Keycloak itself; Stack wires credentials automatically.
-
-## Verifying the installation
-
-```bash
-kubectl get pods -n keycloak
-kubectl get keycloaks.k8s.keycloak.org -n keycloak
-kubectl get secret keycloak-initial-admin -n keycloak -o yaml
-```
-
-If you ever need to reinstall Keycloak components (for example after manually deleting the namespace), re-run `stack init`. The CLI reapplies the CRDs, operator deployment, and database manifests idempotently.
-
-## Enabling Supabase Auth (GoTrue)
+## Enable Supabase Auth
 
 ```yaml
 spec:
@@ -61,4 +14,46 @@ spec:
       site_url: http://localhost:30010/auth
 ```
 
-When `components.auth` is present, Stack deploys GoTrue and routes `/auth` through nginx. It also wires JWT and database credentials automatically.
+When `components.auth` is present, Stack deploys Supabase Auth and routes `/auth` through nginx. JWT and database credentials are wired automatically.
+
+## Quick local test (demo manifest)
+
+Export the anon JWT from `stack status`:
+
+```bash
+export ANON_JWT="$(stack status --manifest demo.stack.yaml | awk -F'Anon: ' '/Anon: /{print $2; exit}')"
+```
+
+Create a test user:
+
+```bash
+curl --location --request POST 'http://localhost:30090/auth/v1/signup' \
+  --header "apikey: ${ANON_JWT}" \
+  --header "Authorization: Bearer ${ANON_JWT}" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"email": "user@example.com", "password": "password"}'
+```
+
+Verify in Postgres:
+
+```bash
+kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo \
+  -c 'select email from auth.users;'
+```
+
+## What the controller creates
+
+- An `auth` Deployment using `supabase/gotrue` on port `9999`.
+- Uses the `database-urls` secret for migrations.
+- Uses the `jwt-auth` secret for JWT signing.
+- Creates the `auth` schema in your application database.
+
+## Customising with the CRD
+
+```yaml
+spec:
+  components:
+    auth:
+      api_external_url: https://example.com/auth
+      site_url: https://example.com/auth
+```

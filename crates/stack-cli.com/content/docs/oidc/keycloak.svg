@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520">
+  <defs>
+    <style>
+      .title { font: 800 24px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; fill: #111; letter-spacing: 1px; }
+      .mono { font: 650 20px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; fill: #111; }
+      .pillText { font: 700 20px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; fill: #fff; }
+
+      .stroke { stroke: #111; stroke-width: 2.5; fill: none; }
+      .box { fill: #fff; stroke: #cfd6de; stroke-width: 2; }
+      .pill { fill: #1a1a1a; }
+    </style>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path>
+    </marker>
+  </defs>
+
+  <!-- Left: User -->
+  <rect x="80" y="210" rx="16" ry="16" width="200" height="90" class="box"/>
+  <text x="180" y="265" text-anchor="middle" class="mono">User</text>
+
+  <!-- Middle: oauth2-proxy -->
+  <rect x="440" y="185" rx="16" ry="16" width="220" height="140" class="box"/>
+  <text x="550" y="250" text-anchor="middle" class="mono">oauth2-proxy</text>
+
+  <!-- /oidc pill under oauth2-proxy -->
+  <rect x="505" y="335" rx="18" ry="18" width="90" height="44" class="pill"/>
+  <text x="550" y="363" text-anchor="middle" class="pillText">/oidc</text>
+
+  <!-- Top: Keycloak -->
+  <rect x="440" y="50" rx="16" ry="16" width="220" height="90" class="box"/>
+  <text x="550" y="105" text-anchor="middle" class="mono">Keycloak</text>
+
+  <!-- Right: Your Application -->
+  <rect x="820" y="210" rx="16" ry="16" width="220" height="90" class="box"/>
+  <text x="930" y="265" text-anchor="middle" class="mono">Your Application</text>
+
+  <!-- (1) User -> oauth2-proxy -->
+  <line x1="280" y1="255" x2="440" y2="255" class="stroke" marker-end="url(#arrow)"/>
+  <text x="360" y="238" text-anchor="middle" class="mono">(1)</text>
+
+  <!-- (2) oauth2-proxy -> Keycloak (up) -->
+  <line x1="510" y1="185" x2="510" y2="140" class="stroke" marker-end="url(#arrow)"/>
+  <text x="492" y="168" text-anchor="middle" class="mono">(2)</text>
+
+  <!-- (3) Keycloak -> oauth2-proxy (down) -->
+  <line x1="590" y1="140" x2="590" y2="185" class="stroke" marker-end="url(#arrow)"/>
+  <text x="608" y="168" text-anchor="middle" class="mono">(3)</text>
+
+  <!-- (4) oauth2-proxy -> Your Application -->
+  <line x1="660" y1="255" x2="820" y2="255" class="stroke" marker-end="url(#arrow)"/>
+  <text x="740" y="238" text-anchor="middle" class="mono">(4)</text>
+</svg>
