@@ -1,0 +1,11 @@
+/* Remove Keycloak login background */
+.login-pf body,
+.login-pf-page {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* Optional: ensure card contrast */
+.card-pf {
+  background: var(--pf-v5-global--BackgroundColor--100, #fff);
+}

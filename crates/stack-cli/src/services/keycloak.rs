@@ -10,6 +10,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 const CONFIG_JSON: &str = include_str!("../../keycloak/realm.json");
+const THEME_PROPERTIES: &str = include_str!("../../keycloak/stack-cli-theme.properties");
+const THEME_LOGIN_CSS: &str = include_str!("../../keycloak/stack-cli-login.css");
 const KEYCLOAK_API_GROUP: &str = "k8s.keycloak.org";
 pub const KEYCLOAK_NAMESPACE: &str = "keycloak";
 pub const KEYCLOAK_NAME: &str = "keycloak";
@@ -34,6 +36,7 @@ pub struct RealmConfig {
 
 pub async fn bootstrap(client: Client) -> Result<(), Error> {
     cleanup_bootstrap_conflicts(client.clone()).await?;
+    apply_theme_configmap(client.clone()).await?;
     apply_keycloak_cr(client.clone()).await?;
     apply_static_realms(client.clone()).await?;
 
@@ -79,6 +82,7 @@ pub async fn ensure_realm(client: Client, config: &RealmConfig) -> Result<(), Er
                 "registrationAllowed": config.allow_registration,
                 "registrationEmailAsUsername": true,
                 "sslRequired": "none",
+                "loginTheme": "stack-cli",
                 "attributes": {
                     "frontendUrl": config.public_base_url
                 },
@@ -186,7 +190,43 @@ async fn apply_keycloak_cr(client: Client) -> Result<(), Error> {
                     "name": "KC_PROXY",
                     "value": "edge"
                 }
-            ]
+            ],
+            "unsupported": {
+                "podTemplate": {
+                    "spec": {
+                        "volumes": [
+                            {
+                                "name": "theme-stack-cli",
+                                "configMap": {
+                                    "name": "keycloak-theme-stack-cli",
+                                    "items": [
+                                        {
+                                            "key": "theme.properties",
+                                            "path": "login/theme.properties"
+                                        },
+                                        {
+                                            "key": "login.css",
+                                            "path": "login/resources/css/login.css"
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "containers": [
+                            {
+                                "name": "keycloak",
+                                "volumeMounts": [
+                                    {
+                                "name": "theme-stack-cli",
+                                "mountPath": "/opt/keycloak/themes/stack-cli",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
         }
     });
 
@@ -211,6 +251,7 @@ async fn apply_static_realms(client: Client) -> Result<(), Error> {
     let params = PatchParams::apply(crate::MANAGER).force();
 
     for realm in realm_values()? {
+        let realm = ensure_login_theme(realm)?;
         let realm_name = realm
             .get("realm")
             .and_then(Value::as_str)
@@ -265,6 +306,42 @@ fn realm_values() -> Result<Vec<Value>, Error> {
         other => vec![other],
     };
     Ok(realms)
+}
+
+fn ensure_login_theme(mut realm: Value) -> Result<Value, Error> {
+    let Some(obj) = realm.as_object_mut() else {
+        return Ok(realm);
+    };
+    obj.entry("loginTheme")
+        .or_insert_with(|| Value::String("stack-cli".to_string()));
+    Ok(realm)
+}
+
+async fn apply_theme_configmap(client: Client) -> Result<(), Error> {
+    let config_map = json!({
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+            "name": "keycloak-theme-stack-cli",
+            "namespace": KEYCLOAK_NAMESPACE
+        },
+        "data": {
+            "theme.properties": THEME_PROPERTIES,
+            "login.css": THEME_LOGIN_CSS
+        }
+    });
+
+    let config_maps: Api<k8s_openapi::api::core::v1::ConfigMap> =
+        Api::namespaced(client, KEYCLOAK_NAMESPACE);
+    config_maps
+        .patch(
+            "keycloak-theme-stack-cli",
+            &PatchParams::apply(crate::MANAGER).force(),
+            &Patch::Apply(config_map),
+        )
+        .await?;
+
+    Ok(())
 }
 
 async fn cleanup_bootstrap_conflicts(client: Client) -> Result<(), Error> {
