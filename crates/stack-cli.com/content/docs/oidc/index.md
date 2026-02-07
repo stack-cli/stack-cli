@@ -47,11 +47,10 @@ If you ever need to reinstall Keycloak components (for example after manually de
 
 ## Accessing the Keycloak admin
 
-If you need to reach the Keycloak admin UI quickly, you can spin up a temporary Cloudflare tunnel in the `keycloak` namespace:
+If you need to reach the Keycloak admin UI quickly open up the port.
 
 ```bash
-kubectl -n keycloak run cloudflared-quick --restart=Never --image=cloudflare/cloudflared:latest -- \
-  tunnel --no-autoupdate --url http://keycloak-service.keycloak.svc.cluster.local:8080
+kubectl -n keycloak port-forward svc/keycloak-service 8080:8080
 ```
 
 Then use `kubectl` to read the initial admin credentials:
