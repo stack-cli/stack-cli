@@ -31,10 +31,7 @@ pub async fn deploy(
         "{}/oidc/realms/{}/protocol/openid-connect",
         hostname_base, namespace
     );
-    let internal_realm_base = format!(
-        "{}/realms/{}",
-        KEYCLOAK_INTERNAL_URL, namespace
-    );
+    let internal_realm_base = format!("{}/realms/{}", KEYCLOAK_INTERNAL_URL, namespace);
 
     deployment::deployment(
         client.clone(),

@@ -191,7 +191,9 @@ pub fn summary() -> Summary {
                         title: "DigitalOcean Droplets",
                         description: "Run k3s on a Droplet and deploy multiple StackApps",
                         folder: "docs/deploy-anywhere/digitalocean/",
-                        markdown: include_str!("../content/docs/deploy-anywhere/digitalocean/index.md"),
+                        markdown: include_str!(
+                            "../content/docs/deploy-anywhere/digitalocean/index.md"
+                        ),
                         image: None,
                         author_image: None,
                         author: None,

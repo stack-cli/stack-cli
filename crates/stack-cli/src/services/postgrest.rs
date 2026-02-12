@@ -93,7 +93,9 @@ pub async fn deploy(
 pub async fn delete(client: Client, namespace: &str) -> Result<(), Error> {
     let deployments: Api<KubeDeployment> = Api::namespaced(client.clone(), namespace);
     if deployments.get(REST_NAME).await.is_ok() {
-        deployments.delete(REST_NAME, &DeleteParams::default()).await?;
+        deployments
+            .delete(REST_NAME, &DeleteParams::default())
+            .await?;
     }
 
     let services: Api<Service> = Api::namespaced(client, namespace);

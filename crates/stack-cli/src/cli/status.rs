@@ -1,5 +1,5 @@
-use crate::services::jwt_secrets;
 use crate::cli::manifest;
+use crate::services::jwt_secrets;
 use anyhow::{anyhow, Context, Result};
 use k8s_openapi::api::core::v1::{Pod, Secret};
 use kube::api::{ListParams, LogParams};
@@ -108,11 +108,9 @@ pub async fn status(args: &crate::cli::StatusArgs) -> Result<()> {
     if let Ok(jwt_secret) = jwt_secret_api.get(jwt_secrets::JWT_AUTH_SECRET_NAME).await {
         let anon_jwt =
             decode_secret_field(&jwt_secret, jwt_secrets::JWT_ANON_TOKEN_KEY).unwrap_or_default();
-        let service_role_jwt = decode_secret_field(
-            &jwt_secret,
-            jwt_secrets::JWT_SERVICE_ROLE_TOKEN_KEY,
-        )
-        .unwrap_or_default();
+        let service_role_jwt =
+            decode_secret_field(&jwt_secret, jwt_secrets::JWT_SERVICE_ROLE_TOKEN_KEY)
+                .unwrap_or_default();
 
         println!("🔑 JWTs");
         println!("   Anon: {}", anon_jwt);

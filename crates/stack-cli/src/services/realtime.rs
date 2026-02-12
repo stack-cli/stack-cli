@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::operator::crd::RealtimeConfig;
-use crate::services::{database, deployment};
 use crate::services::jwt_secrets;
+use crate::services::{database, deployment};
 use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::{DeleteParams, Patch, PatchParams};

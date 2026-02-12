@@ -343,7 +343,10 @@ pub(crate) async fn ensure_namespace(client: &Client, namespace: &str) -> Result
         ..Default::default()
     };
 
-    match namespaces.create(&PostParams::default(), &new_namespace).await {
+    match namespaces
+        .create(&PostParams::default(), &new_namespace)
+        .await
+    {
         Ok(ns) => Ok(ns),
         Err(KubeError::Api(err)) if err.code == 409 => Ok(new_namespace),
         Err(err) => Err(err.into()),

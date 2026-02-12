@@ -38,6 +38,7 @@ pub struct StorageSpec {
 }
 
 pub const CNPG_INSTALL_HINT: &str = "CloudNativePG operator is not installed. Run `stack-cli init` or apply `crates/stack-cli/config/cnpg-1.22.1.yaml` before reconciling.";
+pub const DEFAULT_IMAGE_NAME: &str = "ghcr.io/voltade/cnpg-supabase:17.5-system-1";
 
 pub fn cluster_resource_name(app_name: &str) -> String {
     format!("{app_name}-db-cluster")
@@ -74,6 +75,7 @@ pub async fn deploy(
     namespace: &str,
     app_name: &str,
     disk_size: i32,
+    image_name: &Option<String>,
     insecure_override_passwords: &Option<String>,
 ) -> Result<Option<String>, Error> {
     // If the cluster config exists, then do nothing.
@@ -89,8 +91,7 @@ pub async fn deploy(
     let readonly_database_password: String =
         insecure_override_passwords.clone().unwrap_or(rand_hex());
     let dbowner_password: String = insecure_override_passwords.clone().unwrap_or(rand_hex());
-    let authenticator_password: String =
-        insecure_override_passwords.clone().unwrap_or(rand_hex());
+    let authenticator_password: String = insecure_override_passwords.clone().unwrap_or(rand_hex());
 
     let cluster = Cluster {
         metadata: ObjectMeta {
@@ -99,7 +100,11 @@ pub async fn deploy(
             ..Default::default()
         },
         spec: ClusterSpec {
-            image_name: Some("ghcr.io/voltade/cnpg-supabase:17.5-system-1".into()),
+            image_name: Some(
+                image_name
+                    .clone()
+                    .unwrap_or_else(|| DEFAULT_IMAGE_NAME.to_string()),
+            ),
             instances: 1,
             bootstrap: BootstrapSpec {
                 initdb: InitDBSpec {

@@ -160,9 +160,7 @@ pub async fn deploy(
             .unwrap_or_else(|| nginx_target.clone());
 
         if read_secret_field(&secret, SECRET_TOKEN_KEY).is_none() {
-            return Err(Error::Other(
-                "Cloudflare secret missing token".to_string(),
-            ));
+            return Err(Error::Other("Cloudflare secret missing token".to_string()));
         }
 
         let yaml = if let Some(tunnel_name) = tunnel_name {

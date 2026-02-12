@@ -123,13 +123,22 @@ pub async fn deploy_nginx(
             "$forwarded_proto",
             "/socket/",
         );
-        let rest_block = proxy_block("/realtime/v1/api", "realtime", 4000, "$forwarded_proto", "/api/");
+        let rest_block = proxy_block(
+            "/realtime/v1/api",
+            "realtime",
+            4000,
+            "$forwarded_proto",
+            "/api/",
+        );
 
         format!(
             r#"{ws_block}
 {rest_block}"#
         )
-        .replace("proxy_set_header Host $host;", "proxy_set_header Host realtime-dev;")
+        .replace(
+            "proxy_set_header Host $host;",
+            "proxy_set_header Host realtime-dev;",
+        )
         .replace(
             "proxy_set_header X-Forwarded-Host $host;",
             "proxy_set_header X-Forwarded-Host realtime-dev;",
@@ -138,7 +147,13 @@ pub async fn deploy_nginx(
         String::new()
     };
     let document_engine_block = if include_document_engine {
-        proxy_block("/document-engine", "document-engine", 8000, "$forwarded_proto", "/")
+        proxy_block(
+            "/document-engine",
+            "document-engine",
+            8000,
+            "$forwarded_proto",
+            "/",
+        )
     } else {
         String::new()
     };
@@ -201,11 +216,11 @@ server {{
     }}
 }}
 "#,
-                auth_block = auth_block
-                , storage_block = storage_block
-                , rest_block = rest_block
-                , realtime_block = realtime_block
-                , document_engine_block = document_engine_block
+                auth_block = auth_block,
+                storage_block = storage_block,
+                rest_block = rest_block,
+                realtime_block = realtime_block,
+                document_engine_block = document_engine_block
             )
         }
         NginxMode::StaticJwt { token } => {
@@ -221,14 +236,19 @@ server {{
                 String::new()
             };
             let realtime_block = if include_realtime {
-                let ws_block = websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/socket/");
-                let rest_block = proxy_block("/realtime/v1/api", "realtime", 4000, "$scheme", "/api/");
+                let ws_block =
+                    websocket_block("/realtime/v1", "realtime", 4000, "$scheme", "/socket/");
+                let rest_block =
+                    proxy_block("/realtime/v1/api", "realtime", 4000, "$scheme", "/api/");
 
                 format!(
                     r#"{ws_block}
 {rest_block}"#
                 )
-                .replace("proxy_set_header Host $host;", "proxy_set_header Host realtime-dev;")
+                .replace(
+                    "proxy_set_header Host $host;",
+                    "proxy_set_header Host realtime-dev;",
+                )
                 .replace(
                     "proxy_set_header X-Forwarded-Host $host;",
                     "proxy_set_header X-Forwarded-Host realtime-dev;",
@@ -270,12 +290,12 @@ server {{
 "#,
                 app = app_name,
                 port = upstream_port,
-                token = escaped_token
-                , auth_block = auth_block
-                , storage_block = storage_block
-                , rest_block = rest_block
-                , realtime_block = realtime_block
-                , document_engine_block = document_engine_block
+                token = escaped_token,
+                auth_block = auth_block,
+                storage_block = storage_block,
+                rest_block = rest_block,
+                realtime_block = realtime_block,
+                document_engine_block = document_engine_block
             )
         }
     };

@@ -21,10 +21,7 @@ struct JwtClaims {
     exp: u64,
 }
 
-pub async fn ensure_secret(
-    client: Client,
-    namespace: &str,
-) -> Result<(), Error> {
+pub async fn ensure_secret(client: Client, namespace: &str) -> Result<(), Error> {
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
     let existing = secret_api.get(JWT_AUTH_SECRET_NAME).await.ok();
 

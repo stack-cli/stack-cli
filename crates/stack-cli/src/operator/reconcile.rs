@@ -2,13 +2,10 @@ use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
 use crate::error::Error;
 use crate::services::{
-    auth, database, deployment, document_engine, jwt_secrets, keycloak, nginx, oauth2_proxy,
-    postgrest, realtime, selenium, storage, mailhog,
+    auth, database, deployment, document_engine, jwt_secrets, keycloak, mailhog, nginx,
+    oauth2_proxy, postgrest, realtime, selenium, storage,
 };
-use k8s_openapi::api::{
-    apps::v1::Deployment as KubeDeployment,
-    core::v1::Service,
-};
+use k8s_openapi::api::{apps::v1::Deployment as KubeDeployment, core::v1::Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client, Resource, ResourceExt};
 use kube_runtime::controller::Action;
@@ -50,9 +47,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             let deployments: Api<KubeDeployment> =
                 Api::namespaced(client.clone(), namespace.as_str());
             if deployments.get(name).await.is_ok() {
-                deployments
-                    .delete(name, &DeleteParams::default())
-                    .await?;
+                deployments.delete(name, &DeleteParams::default()).await?;
             }
             delete_service_if_exists(&client, &namespace, name).await?;
         }
@@ -81,11 +76,18 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .db
         .as_ref()
         .and_then(|db| db.danger_override_password.clone());
+    let database_image_name = app
+        .spec
+        .components
+        .db
+        .as_ref()
+        .and_then(|db| db.image_name.clone());
     database::deploy(
         client.clone(),
         &namespace,
         &name,
         DEFAULT_DB_DISK_SIZE_GB,
+        &database_image_name,
         &insecure_override_passwords,
     )
     .await?;
@@ -147,14 +149,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         let realm_config =
             oauth2_proxy::ensure_secret(client.clone(), &namespace, &hostname_url).await?;
         keycloak::ensure_realm(client.clone(), &realm_config).await?;
-        oauth2_proxy::deploy(
-            client.clone(),
-            &namespace,
-            &hostname_url,
-            web_port,
-            &name,
-        )
-        .await?;
+        oauth2_proxy::deploy(client.clone(), &namespace, &hostname_url, web_port, &name).await?;
         nginx::deploy_nginx(
             &client,
             &namespace,
@@ -171,13 +166,10 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
     } else {
         cleanup_auth_resources(client.clone(), &namespace).await?;
         jwt_secrets::ensure_secret(client.clone(), &namespace).await?;
-        let jwt_value = jwt_secrets::get_token(
-            client.clone(),
-            &namespace,
-            jwt_secrets::JWT_ANON_TOKEN_KEY,
-        )
-        .await?
-        .unwrap_or_else(|| "1".to_string());
+        let jwt_value =
+            jwt_secrets::get_token(client.clone(), &namespace, jwt_secrets::JWT_ANON_TOKEN_KEY)
+                .await?
+                .unwrap_or_else(|| "1".to_string());
         nginx::deploy_nginx(
             &client,
             &namespace,
@@ -316,7 +308,9 @@ async fn deploy_extra_services(
 
     for (name, service) in services {
         if name.trim().is_empty() {
-            return Err(Error::Other("extra service name cannot be empty".to_string()));
+            return Err(Error::Other(
+                "extra service name cannot be empty".to_string(),
+            ));
         }
         if reserved.contains(&name.as_str()) {
             return Err(Error::Other(format!(
@@ -541,7 +535,9 @@ async fn delete_application_resources(
 ) -> Result<(), Error> {
     let deployments: Api<KubeDeployment> = Api::namespaced(client.clone(), namespace);
     if deployments.get(app_name).await.is_ok() {
-        deployments.delete(app_name, &DeleteParams::default()).await?;
+        deployments
+            .delete(app_name, &DeleteParams::default())
+            .await?;
     }
 
     delete_service_if_exists(client, namespace, app_name).await?;

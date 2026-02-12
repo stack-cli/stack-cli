@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::operator::crd::StorageConfig;
-use crate::services::{database, deployment};
 use crate::services::jwt_secrets;
+use crate::services::{database, deployment};
 use k8s_openapi::api::apps::v1::Deployment as KubeDeployment;
 use k8s_openapi::api::core::v1::{Secret, Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
@@ -194,7 +194,8 @@ BEGIN
     'db-owner', anon_role, authenticated_role, service_role
   );
 END $do$;
-SQL"#.to_string()],
+SQL"#
+                .to_string()],
         }),
     };
 

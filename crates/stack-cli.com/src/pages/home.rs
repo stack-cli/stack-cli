@@ -5,8 +5,7 @@ use crate::layouts::layout::Layout;
 use dioxus::prelude::*;
 
 pub fn home_page() -> String {
-    let install_script =
-        r#"curl -fsSL https://stack-cli.com/install.sh | bash"#;
+    let install_script = r#"curl -fsSL https://stack-cli.com/install.sh | bash"#;
     let stack_yaml = r#"apiVersion: stack-cli.dev/v1
 kind: StackApp
 metadata:

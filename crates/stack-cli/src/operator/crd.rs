@@ -1,5 +1,5 @@
 use kube::CustomResource;
-use schemars::{json_schema, Schema, SchemaGenerator, JsonSchema};
+use schemars::{json_schema, JsonSchema, Schema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 
 /// Stack application custom resource specification.
@@ -113,6 +113,8 @@ pub struct WebInit {
 pub struct DbConfig {
     /// Danger: overrides generated DB passwords. Use only for local development.
     pub danger_override_password: Option<String>,
+    /// Optional CloudNativePG postgres image (e.g. ghcr.io/voltade/cnpg-supabase:17.5-system-1).
+    pub image_name: Option<String>,
     /// Optional NodePort number to expose the database service.
     pub expose_db_port: Option<u16>,
 }

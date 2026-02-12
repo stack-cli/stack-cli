@@ -1,7 +1,7 @@
 pub mod apply;
-pub mod init;
-pub mod deploy;
 pub mod cloudflare;
+pub mod deploy;
+pub mod init;
 pub mod manifest;
 pub mod secrets;
 pub mod status;

@@ -89,11 +89,8 @@ pub async fn secrets(args: &crate::cli::SecretsArgs) -> Result<()> {
         ];
         for key in keys {
             if let Some(value) = env_vars.get(&key).cloned() {
-                let rewritten = rewrite_database_url(
-                    &value,
-                    args.db_host.as_deref(),
-                    args.db_port,
-                )?;
+                let rewritten =
+                    rewrite_database_url(&value, args.db_host.as_deref(), args.db_port)?;
                 env_vars.insert(key, rewritten);
             }
         }
