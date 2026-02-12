@@ -42,6 +42,7 @@ pub struct Components {
     pub auth: Option<SupabaseAuthConfig>,
     pub storage: Option<StorageConfig>,
     pub redis: Option<RedisConfig>,
+    pub rabbitmq: Option<RabbitMqConfig>,
     pub ingress: Option<IngressConfig>,
     pub realtime: Option<RealtimeConfig>,
     pub rest: Option<RestConfig>,
@@ -88,6 +89,8 @@ pub struct ServiceSpec {
     pub readonly_database_url: Option<String>,
     /// Optional environment variable name to receive the REDIS_URL (from `redis-urls/redis-url`).
     pub redis_url: Option<String>,
+    /// Optional environment variable name to receive the AMQP URL (from `rabbitmq-urls/amqp-url`).
+    pub rabbitmq_url: Option<String>,
 }
 
 // Extra services use the same schema as the primary web service.
@@ -111,6 +114,8 @@ pub struct WebInit {
     pub readonly_database_url: Option<String>,
     /// Optional environment variable name to receive the REDIS_URL (from `redis-urls/redis-url`).
     pub redis_url: Option<String>,
+    /// Optional environment variable name to receive the AMQP URL (from `rabbitmq-urls/amqp-url`).
+    pub rabbitmq_url: Option<String>,
 }
 
 /// Optional database configuration.
@@ -169,6 +174,27 @@ pub struct RedisConfig {
     pub persistence: Option<bool>,
     /// Optional NodePort number to expose Redis.
     pub expose_redis_port: Option<u16>,
+}
+
+/// Optional RabbitMQ configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct RabbitMqConfig {
+    /// Optional container image to run.
+    pub image: Option<String>,
+    /// Optional RabbitMQ AMQP service port.
+    pub port: Option<u16>,
+    /// Optional RabbitMQ management UI port.
+    pub management_port: Option<u16>,
+    /// Optional PVC size (e.g. 5Gi). Used when persistence is enabled.
+    pub size: Option<String>,
+    /// Optional secret name containing RabbitMQ credentials under keys `username` and `password`.
+    pub credentials_secret_name: Option<String>,
+    /// Enable persistent storage. Defaults to true.
+    pub persistence: Option<bool>,
+    /// Optional NodePort number to expose AMQP.
+    pub expose_amqp_port: Option<u16>,
+    /// Optional NodePort number to expose RabbitMQ management UI.
+    pub expose_management_port: Option<u16>,
 }
 
 /// Optional ingress configuration for exposing nginx via NodePort.

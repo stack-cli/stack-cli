@@ -11,6 +11,7 @@ pub mod network_policy;
 pub mod nginx;
 pub mod oauth2_proxy;
 pub mod postgrest;
+pub mod rabbitmq;
 pub mod realtime;
 pub mod redis;
 pub mod selenium;

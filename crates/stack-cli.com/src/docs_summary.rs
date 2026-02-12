@@ -80,6 +80,16 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
+                        title: "RabbitMQ",
+                        description: "Enable RabbitMQ for messaging and background workers",
+                        folder: "docs/rabbitmq/",
+                        markdown: include_str!("../content/docs/rabbitmq/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Realtime",
                         description: "Enable Supabase Realtime and test the endpoint",
                         folder: "docs/realtime/",
