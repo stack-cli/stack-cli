@@ -70,6 +70,16 @@ pub fn summary() -> Summary {
                     },
                     Page {
                         date: "",
+                        title: "Redis",
+                        description: "Enable Redis for caching, queues, and shared app state",
+                        folder: "docs/redis/",
+                        markdown: include_str!("../content/docs/redis/index.md"),
+                        image: None,
+                        author_image: None,
+                        author: None,
+                    },
+                    Page {
+                        date: "",
                         title: "Realtime",
                         description: "Enable Supabase Realtime and test the endpoint",
                         folder: "docs/realtime/",

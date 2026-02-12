@@ -41,6 +41,7 @@ pub struct Components {
     pub oidc: Option<OidcConfig>,
     pub auth: Option<SupabaseAuthConfig>,
     pub storage: Option<StorageConfig>,
+    pub redis: Option<RedisConfig>,
     pub ingress: Option<IngressConfig>,
     pub realtime: Option<RealtimeConfig>,
     pub rest: Option<RestConfig>,
@@ -85,6 +86,8 @@ pub struct ServiceSpec {
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
     pub readonly_database_url: Option<String>,
+    /// Optional environment variable name to receive the REDIS_URL (from `redis-urls/redis-url`).
+    pub redis_url: Option<String>,
 }
 
 // Extra services use the same schema as the primary web service.
@@ -106,6 +109,8 @@ pub struct WebInit {
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
     pub readonly_database_url: Option<String>,
+    /// Optional environment variable name to receive the REDIS_URL (from `redis-urls/redis-url`).
+    pub redis_url: Option<String>,
 }
 
 /// Optional database configuration.
@@ -147,6 +152,23 @@ pub struct StorageConfig {
     pub s3_secret_name: Option<String>,
     /// When true, deploy the bundled MinIO instance; defaults to true when no s3_secret_name is provided.
     pub install_minio: Option<bool>,
+}
+
+/// Optional Redis configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
+pub struct RedisConfig {
+    /// Optional container image to run.
+    pub image: Option<String>,
+    /// Optional Redis service port.
+    pub port: Option<u16>,
+    /// Optional PVC size (e.g. 1Gi). Used when persistence is enabled.
+    pub size: Option<String>,
+    /// Optional secret name containing Redis password under key `password`.
+    pub password_secret_name: Option<String>,
+    /// Enable persistent storage. Defaults to true.
+    pub persistence: Option<bool>,
+    /// Optional NodePort number to expose Redis.
+    pub expose_redis_port: Option<u16>,
 }
 
 /// Optional ingress configuration for exposing nginx via NodePort.
