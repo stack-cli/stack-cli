@@ -160,7 +160,7 @@ spec:
                         }
                         p {
                             class: "mt-4 text-sm leading-relaxed text-base-content/80",
-                            "Add sign up and login with Keycloak-backed identity and row-level access patterns."
+                            "Use Supabase Auth for application sign-up/login, with optional OIDC gateway login via oauth2-proxy + Keycloak."
                         }
                     }
 
@@ -258,8 +258,8 @@ spec:
                                     class: "mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-black"
                                 }
                                 span {
-                                    span { class: "font-medium", "Auth + OIDC" }
-                                    " via Keycloak"
+                                    span { class: "font-medium", "Supabase Auth" }
+                                    " with optional oauth2-proxy + Keycloak OIDC gateway"
                                 }
                             }
                             li {

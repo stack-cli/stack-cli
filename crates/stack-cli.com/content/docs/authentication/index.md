@@ -2,6 +2,8 @@
 
 Stack ships Supabase Auth (GoTrue) so you can handle email/password and token-based flows without wiring extra services. The auth API is exposed through nginx at `/auth`.
 
+Stack also supports an optional browser login gateway using oauth2-proxy + Keycloak (configured under `components.oidc`). That OIDC flow is separate from the Supabase Auth API.
+
 This page continues the demo flow from the [Database](../database/), [REST](../rest/), and [Storage](../storage/) guides.
 
 ## Enable Supabase Auth
@@ -15,6 +17,26 @@ spec:
 ```
 
 When `components.auth` is present, Stack deploys Supabase Auth and routes `/auth` through nginx. JWT and database credentials are wired automatically.
+
+## Supabase Auth and OIDC are complementary
+
+- `components.auth` deploys Supabase Auth (`supabase/gotrue`) for your app auth API at `/auth`.
+- `components.oidc.hostname-url` deploys oauth2-proxy and ensures a Keycloak realm for front-door OIDC login.
+- You can use either one independently, or both together in the same `StackApp`.
+
+Example enabling both:
+
+```yaml
+spec:
+  components:
+    auth:
+      api_external_url: http://localhost:30010/auth
+      site_url: http://localhost:30010/auth
+    oidc:
+      hostname-url: http://localhost:30010
+```
+
+See the [OIDC guide](../oidc/) for realm and oauth2-proxy details.
 
 ## Quick local test (demo manifest)
 
@@ -44,9 +66,9 @@ kubectl -n stack-demo exec -it stack-demo-db-cluster-1 -- psql -d stack-demo \
 ## What the controller creates
 
 - An `auth` Deployment using `supabase/gotrue` on port `9999`.
-- Uses the `database-urls` secret for migrations.
+- Creates an init step that ensures the `supabase_auth_admin` role and `auth` schema exist.
 - Uses the `jwt-auth` secret for JWT signing.
-- Creates the `auth` schema in your application database.
+- Routes `/auth` to the `auth` service via nginx.
 
 ## Customising with the CRD
 

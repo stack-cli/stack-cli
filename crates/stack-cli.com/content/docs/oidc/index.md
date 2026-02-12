@@ -2,6 +2,9 @@
 
 Stack relies on Keycloak for OAuth2 and OpenID Connect flows. When you run `stack init`, the CLI installs everything required to run a shared Keycloak control plane inside your cluster.
 
+OIDC in Stack is implemented with oauth2-proxy in front of your app plus a Keycloak realm per namespace.
+This is separate from `components.auth` (Supabase Auth), which provides the `/auth` API.
+
 ![Alt text](keycloak.svg "Keycloak")
 
 ## Enabling OIDC
@@ -18,7 +21,7 @@ spec:
       hostname-url: http://localhost:30013
 ```
 
-When you enable `oidc` in your Stack yaml all traffic to your app will be intercepted and a login/registration page will be shown.
+When you enable `oidc` in your Stack yaml, oauth2-proxy is deployed and app traffic is gated through OIDC login.
 
 ![Alt text](keycloak-login.png "Keycloak")
 
@@ -27,6 +30,7 @@ When you enable `oidc` in your Stack yaml all traffic to your app will be interc
 - Each `StackApp` with `spec.components.oidc.hostname-url` defined triggers the Stack controller to ensure a Keycloak realm and OAuth2 Proxy configuration exist.
 - The CLI creates an initial admin secret named `keycloak-initial-admin` in the Keycloak namespace. `stack status --manifest …` reads this secret so you can log in instantly.
 - OAuth2 Proxy is configured to trust Keycloak and inject the right upstream headers toward your app.
+- Stack stores OIDC client settings in an `oidc-secret` secret in your app namespace.
 
 ## What gets installed
 
