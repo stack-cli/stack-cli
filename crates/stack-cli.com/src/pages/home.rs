@@ -114,6 +114,101 @@ spec:
             }
 
             section {
+                class: "mx-auto max-w-6xl px-4 pb-16",
+                div {
+                    class: "mb-8",
+                    h2 {
+                        class: "text-2xl font-semibold tracking-tight sm:text-3xl",
+                        "Platform components, presented as one product"
+                    }
+                    p {
+                        class: "mt-3 text-base leading-relaxed text-base-content/80",
+                        "A simplified view of the Stack platform. You can enable one component or run them all together."
+                    }
+                }
+
+                div {
+                    class: "grid grid-cols-1 gap-4 md:grid-cols-12",
+
+                    a {
+                        href: "/docs/database",
+                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-12 xl:col-span-6",
+                        div {
+                            class: "flex items-center gap-3",
+                            span { class: "text-xs font-mono text-base-content/70", "[DB]" }
+                            h3 { class: "text-lg font-semibold", "Postgres Database" }
+                        }
+                        p {
+                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
+                            "Every StackApp gets a full PostgreSQL database with app-scoped credentials and sane defaults."
+                        }
+                        ul {
+                            class: "mt-4 space-y-1.5 text-sm",
+                            li { "100% portable across Kubernetes environments" }
+                            li { "Built-in support for auth and app APIs" }
+                            li { "Easy to extend with standard Postgres tooling" }
+                        }
+                    }
+
+                    a {
+                        href: "/docs/authentication",
+                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
+                        div {
+                            class: "flex items-center gap-3",
+                            span { class: "text-xs font-mono text-base-content/70", "[AUTH]" }
+                            h3 { class: "text-lg font-semibold", "Authentication" }
+                        }
+                        p {
+                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
+                            "Add sign up and login with Keycloak-backed identity and row-level access patterns."
+                        }
+                    }
+
+                    a {
+                        href: "/docs/rest",
+                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
+                        div {
+                            class: "flex items-center gap-3",
+                            span { class: "text-xs font-mono text-base-content/70", "[REST]" }
+                            h3 { class: "text-lg font-semibold", "REST APIs" }
+                        }
+                        p {
+                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
+                            "Get instant REST endpoints on top of Postgres without writing boilerplate handlers."
+                        }
+                    }
+
+                    a {
+                        href: "/docs/realtime",
+                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
+                        div {
+                            class: "flex items-center gap-3",
+                            span { class: "text-xs font-mono text-base-content/70", "[RT]" }
+                            h3 { class: "text-lg font-semibold", "Realtime" }
+                        }
+                        p {
+                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
+                            "Stream changes to clients for collaborative and live-updating experiences."
+                        }
+                    }
+
+                    a {
+                        href: "/docs/storage",
+                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
+                        div {
+                            class: "flex items-center gap-3",
+                            span { class: "text-xs font-mono text-base-content/70", "[OBJ]" }
+                            h3 { class: "text-lg font-semibold", "Storage" }
+                        }
+                        p {
+                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
+                            "Store and serve files with S3-compatible object storage integrated into your app stack."
+                        }
+                    }
+                }
+            }
+
+            section {
                 class: "mx-auto max-w-6xl px-4 py-16",
                 div {
                     class: "grid gap-10 lg:grid-cols-2 lg:items-start",
