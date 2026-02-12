@@ -24,4 +24,4 @@ Other platforms and services that solve adjacent parts of the problem.
 | [Uncloud](https://uncloud.run/)    | Container deployment                      | No                                | Docker Compose           | No              |
 | [Kamal](https://kamal-deploy.org/) | Application deployment                    | No                                | SSH-based                | No              |
 | [Dokploy](https://dokploy.com/)    | App deployment & hosting                  | No                                | Docker / Docker Compose  | No              |
-
+| [Nuvix](https://www.nuvix.in/)    | App deployment & hosting                  | Yes                                | Docker / Docker Compose  | No              |
