@@ -15,26 +15,26 @@ dev-init:
 
 dev-setup:
     cargo run --bin stack-cli -- init --no-operator
-    cargo run --bin stack-cli -- deploy --manifest demo-apps/demo.stack.yaml --profile dev
+    cargo run --bin stack-cli -- deploy --manifest infra-as-code/demo.stack.yaml --profile dev
     cargo run --bin stack-cli -- operator --once
 
 dev-status:
-    cargo run --bin stack-cli -- status --manifest demo-apps/demo.stack.yaml
+    cargo run --bin stack-cli -- status --manifest infra-as-code/demo.stack.yaml
 
 dev-secrets:
-    cargo run --bin stack-cli -- secrets --manifest demo-apps/demo.stack.yaml --db-host host.docker.internal --db-port 30011
+    cargo run --bin stack-cli -- secrets --manifest infra-as-code/demo.stack.yaml --db-host host.docker.internal --db-port 30011
 
 bionic-setup:
     cargo run --bin stack-cli -- init --no-operator
-    cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml --profile dev
+    cargo run --bin stack-cli -- deploy --manifest infra-as-code/bionic.stack.yaml --profile dev
     cargo run --bin stack-cli -- operator --once
 
 selenium-setup:
-    cargo run --bin stack-cli -- deploy --manifest demo-apps/bionic.stack.yaml --profile test -n bionic-selenium
+    cargo run --bin stack-cli -- deploy --manifest infra-as-code/bionic.stack.yaml --profile test -n bionic-selenium
     cargo run --bin stack-cli -- operator --once
 
 bionic-secrets:
-    cargo run --bin stack-cli -- secrets --manifest demo-apps/bionic.stack.yaml --db-host host.docker.internal --db-port 30013
+    cargo run --bin stack-cli -- secrets --manifest infra-as-code/bionic.stack.yaml --db-host host.docker.internal --db-port 30013
 
 codex: 
     sudo npm install -g @openai/codex

@@ -10,7 +10,7 @@ This repository mixes several deliverables that move at different speeds. Use th
 
 ## CLI + Operator (`crates/stack-cli`)
 - **Purpose**: Own the CLI and operator that install and reconcile Stack services (CNPG, Keycloak, nginx, StackApps) in Kubernetes.
-- **Primary tasks**: Extend CLI commands, reconcile loop logic, and manifests in `config/` and `keycloak/`. Maintain CRD schema and component wiring (REST, Realtime, Storage, Auth, Cloudflare, Ingress). Keep demo manifests in `demo-apps/` in sync with CRD changes.
+- **Primary tasks**: Extend CLI commands, reconcile loop logic, and manifests in `config/` and `keycloak/`. Maintain CRD schema and component wiring (REST, Realtime, Storage, Auth, Cloudflare, Ingress). Keep demo manifests in `infra-as-code/` in sync with CRD changes.
 - **Working locally**: `just dev-init`, `just get-config`, `just dev-setup`, and `just dev-secrets` to smoke test against k3d. Use `cargo run --bin stack-cli -- init/install/operator/status/secrets` for targeted workflows.
 - **Before shipping**: `cargo fmt`, `cargo clippy -- -D warnings`, and `cargo test`. For manifest or controller changes, validate against a local K3d/K3s cluster and document new behavior in docs.
 

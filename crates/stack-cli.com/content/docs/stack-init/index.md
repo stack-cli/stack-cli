@@ -39,7 +39,7 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
 3. **Apply the demo StackApp manifest.**
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/stack-cli/stack-cli/main/demo-apps/demo.stack.yaml \
+   curl -fsSL https://raw.githubusercontent.com/stack-cli/stack-cli/main/infra-as-code/demo.stack.yaml \
      -o demo.stack.yaml
    ```
 

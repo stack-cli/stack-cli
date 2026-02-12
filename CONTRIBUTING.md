@@ -13,7 +13,7 @@ Everything lives in this monorepo so code, docs, and manifests version together.
 | --- | --- |
 | `crates/stack-cli` | Source for the CLI/operator plus Kubernetes manifests under `config/` and Keycloak realm templates under `keycloak/`. |
 | `crates/stack-cli.com` | Documentation + marketing site. Contains markdown content in `content/`, assets in `assets/`, Tailwind entrypoints, and the Dioxus app in `src/`. |
-| `demo-apps/` | Example Stack applications used in the docs and demos. |
+| `infra-as-code/` | Example Stack applications used in the docs and demos. |
 | `Justfile` | Workflow shortcuts for cluster setup, docs watch tasks, etc. |
 
 ## Prerequisites
