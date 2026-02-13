@@ -83,6 +83,8 @@ code {
   padding: 0.4rem 0.5rem;
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .mono {
