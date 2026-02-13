@@ -1,0 +1,39 @@
+name: Publish Demo App Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or tag to publish from
+        required: false
+        default: main
+      tags:
+        description: Comma-separated image tags (e.g. latest,v1.2.3-rc)
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-demo-app:
+    name: Build and publish demo app image
+    runs-on: ubuntu-latest
+    env:
+      FORCE_COLOR: 1
+      DAGGER_LOG_FORMAT: plain
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref }}
+
+      - name: Build and publish demo app image
+        run: cargo run -p dagger-pipeline -- demo-app
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # demo-app publish currently gates on main
+          GITHUB_REF_NAME: main
+          STACK_DEMO_APP_TAGS: ${{ inputs.tags }}

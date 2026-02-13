@@ -114,39 +114,12 @@ jobs:
           path: ${{ matrix.artifact_path }}
           if-no-files-found: error
 
-  build-demo-app:
-    name: Build and publish demo app image
-    runs-on: ubuntu-latest
-    needs:
-      - get-version
-    permissions:
-      contents: read
-      packages: write
-    env:
-      FORCE_COLOR: 1
-      DAGGER_LOG_FORMAT: plain
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.ref }}
-
-      - name: Build and publish demo app image
-        run: cargo run -p dagger-pipeline -- demo-app
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REF_NAME: main
-          STACK_DEMO_APP_TAGS: v${{ needs.get-version.outputs.version }}-rc
-
-
   pre-release-candidate:
     name: Push Executables to a Pre Release
     runs-on: ubuntu-latest
     needs:
       - get-version
       - build-cli
-      - build-demo-app
     outputs:
       tag: ${{ steps.release_meta.outputs.tag }}
       version: ${{ steps.release_meta.outputs.version }}
