@@ -134,13 +134,18 @@ fn storage_proxy_block(proto_var: &str, max_upload_size_bytes: u64) -> String {
     location ^~ /storage/v1/ {{
         client_max_body_size {max_upload_size_bytes};
 
+        add_header Access-Control-Allow-Origin $http_origin always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        add_header Vary Origin always;
+
         if ($request_method = OPTIONS) {{
             add_header Access-Control-Allow-Origin $http_origin always;
             add_header Access-Control-Allow-Credentials "true" always;
+            add_header Vary Origin always;
             add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
             add_header Access-Control-Allow-Headers "authorization, apikey, content-type, x-client-info, x-upsert, x-auth-jwt, x-supabase-api-version, x-supabase-client" always;
+            add_header Access-Control-Allow-Private-Network "true" always;
             add_header Access-Control-Max-Age 86400 always;
-            add_header Vary Origin always;
             return 204;
         }}
 

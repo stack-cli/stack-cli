@@ -27,6 +27,18 @@ create policy realtime_entries_insert_own
 grant usage on schema public to authenticated;
 grant select, insert on table public.realtime_entries to authenticated;
 
-alter publication supabase_realtime add table public.realtime_entries;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'realtime_entries'
+  ) then
+    alter publication supabase_realtime add table public.realtime_entries;
+  end if;
+end
+$$;
 
 notify pgrst, 'reload schema';
