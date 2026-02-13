@@ -55,7 +55,7 @@ Build context:
 
 Artifact output:
 
-- `artifacts/demo-app/react-supabase-next.tar`
+- `artifacts/demo-app/react-supabase-next.tar` (only when `STACK_DEMO_APP_EXPORT_ARTIFACT=1`)
 
 Publish behavior:
 
@@ -66,6 +66,7 @@ Useful env vars:
 
 - `GITHUB_REF_NAME` (must be `main` to publish)
 - `STACK_DEMO_APP_TAGS` (comma-separated, e.g. `latest,dev`)
+- `STACK_DEMO_APP_EXPORT_ARTIFACT` (`1`/`true` to export local `.tar`; default is disabled)
 - `STACK_VERSION` (optional extra tag)
 - `GITHUB_SHA` (optional extra `sha-xxxxxxx` tag)
 - `STACK_DEMO_APP_REGISTRY` (default `ghcr.io`)

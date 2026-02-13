@@ -31,11 +31,17 @@ pub async fn build_and_publish(client: &Query, repo: &Directory) -> Result<()> {
             "8080",
         ]);
 
-    container
-        .clone()
-        .export(DEMO_ARTIFACT_PATH)
-        .await
-        .context("failed to export demo app container")?;
+    if should_export_artifact() {
+        println!("Exporting demo app image artifact to {DEMO_ARTIFACT_PATH}...");
+        container
+            .clone()
+            .export(DEMO_ARTIFACT_PATH)
+            .await
+            .context("failed to export demo app container")?;
+        println!("Exported demo app image artifact.");
+    } else {
+        println!("Skipping demo app image artifact export (set STACK_DEMO_APP_EXPORT_ARTIFACT=1 to enable).");
+    }
 
     publish_image(client, &container).await
 }
@@ -98,5 +104,14 @@ fn collect_image_tags() -> Vec<String> {
                 .map(|sha| format!("sha-{sha}")),
         ],
         true,
+    )
+}
+
+fn should_export_artifact() -> bool {
+    matches!(
+        env::var("STACK_DEMO_APP_EXPORT_ARTIFACT")
+            .ok()
+            .as_deref(),
+        Some("1") | Some("true") | Some("TRUE") | Some("yes") | Some("YES")
     )
 }
