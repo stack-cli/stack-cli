@@ -13,6 +13,6 @@ export default function LoginPage() {
 }
 
 export const metadata = {
-  title: 'Login | My rari App',
+  title: 'Login | React Supabase Example',
   description: 'Sign in to your account',
 }

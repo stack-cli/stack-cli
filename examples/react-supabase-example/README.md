@@ -1,4 +1,4 @@
-# my-rari-app
+# react-supabase-example
 
 A high-performance React Server Components application powered by [rari](https://rari.dev).
 

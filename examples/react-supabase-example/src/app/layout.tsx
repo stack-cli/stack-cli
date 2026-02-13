@@ -20,6 +20,6 @@ export default function RootLayout({ children }: LayoutProps) {
 }
 
 export const metadata = {
-  title: 'My rari App',
+  title: 'React Supabase Example',
   description: 'Built with rari',
 }

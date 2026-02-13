@@ -19,6 +19,6 @@ return (
 }
 
 export const metadata = {
-title: 'Blog | My rari App',
+title: 'Blog | React Supabase Example',
 description: 'Read our latest posts',
 }

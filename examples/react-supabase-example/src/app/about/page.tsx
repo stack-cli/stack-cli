@@ -24,6 +24,6 @@ export default function AboutPage(_params: PageProps) {
 }
 
 export const metadata: Metadata = {
-  title: 'About | my-rari-app',
+  title: 'About | React Supabase Example',
   description: 'Learn more about this rari application',
 }
