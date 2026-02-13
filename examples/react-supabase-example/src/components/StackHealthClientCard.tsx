@@ -105,9 +105,12 @@ export default function StackHealthClientCard() {
 
   return (
     <section className="rounded-lg border p-4">
-      <h2 className="text-xl font-medium">Client-Side Stack Health</h2>
+      <h2 className="text-xl font-medium">React Client Component Calling Stack APIs</h2>
       <p className="mt-2 text-sm text-gray-700">
-        Calls are executed in the browser after page load.
+        These calls run in the browser after hydration using
+        {' '}
+        <code>VITE_SUPABASE_URL</code>
+        .
       </p>
       {configError && <p className="mt-3 text-sm text-red-700">{configError}</p>}
       {loading && !configError && <p className="mt-3 text-sm text-gray-700">Running checks...</p>}

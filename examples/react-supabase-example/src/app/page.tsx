@@ -10,7 +10,9 @@ type HealthRow = {
 }
 
 async function runServerChecks(): Promise<HealthRow[]> {
-  const baseUrl = process.env.VITE_SUPABASE_URL ?? 'http://localhost:30010'
+  const baseUrl = process.env.SUPABASE_SERVER_URL
+    ?? process.env.VITE_SUPABASE_URL
+    ?? 'http://host.docker.internal:30010'
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY ?? ''
 
   const checks = [
@@ -97,9 +99,16 @@ export default async function HomePage() {
         </section>
 
         <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Server-Side Stack Health</h2>
+          <h2 className="text-xl font-medium">React Server Component Calling Stack APIs</h2>
           <p className="mt-2 text-sm text-gray-700">
-            Calls are executed during server render.
+            These calls run on the server during RSC render using
+            {' '}
+            <code>SUPABASE_SERVER_URL</code>
+            {' '}
+            (for dev containers use
+            {' '}
+            <code>http://host.docker.internal:30010</code>
+            ).
           </p>
           <div className="mt-3 overflow-auto">
             <table className="min-w-full border-collapse text-sm">
