@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { addAuthEvent } from '@/lib/supabase/authTrace'
 
 export default function SignupForm() {
   const [email, setEmail] = useState('')
@@ -24,6 +25,7 @@ export default function SignupForm() {
     setLoading(true)
     setError(null)
     setMessage(null)
+    addAuthEvent('signup_submit')
 
     const supabase = getSupabaseBrowserClient()
     const { data, error: signupError } = await supabase.auth.signUp({
@@ -34,11 +36,15 @@ export default function SignupForm() {
     setLoading(false)
 
     if (signupError) {
+      addAuthEvent(`signup_error ${signupError.message}`)
       setError(signupError.message)
       return
     }
 
+    addAuthEvent('signup_success')
+
     if (data.session) {
+      addAuthEvent('signup_returned_session')
       window.location.assign('/')
       return
     }
@@ -49,6 +55,7 @@ export default function SignupForm() {
     })
 
     if (!loginError && loginData.session) {
+      addAuthEvent('signup_followup_login_success')
       window.location.assign('/')
       return
     }

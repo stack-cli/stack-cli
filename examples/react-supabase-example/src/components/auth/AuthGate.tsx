@@ -1,13 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { addAuthEvent } from '@/lib/supabase/authTrace'
 
-export default function AuthStatus() {
-  const [session, setSession] = useState<Session | null>(null)
+type AuthGateProps = {
+  children: ReactNode
+}
+
+export default function AuthGate({ children }: AuthGateProps) {
   const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState<Session | null>(null)
+
   const configError = !import.meta.env.VITE_SUPABASE_URL
     ? 'Missing VITE_SUPABASE_URL in .env.local'
     : !import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -21,15 +25,21 @@ export default function AuthStatus() {
     }
 
     const supabase = getSupabaseBrowserClient()
-
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
+
+      if (!data.session) {
+        window.location.replace('/login')
+      }
     })
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, nextSession) => {
         setSession(nextSession)
+        if (!nextSession) {
+          window.location.replace('/login')
+        }
       },
     )
 
@@ -38,35 +48,18 @@ export default function AuthStatus() {
     }
   }, [configError])
 
-  async function signOut() {
-    const supabase = getSupabaseBrowserClient()
-    addAuthEvent('logout_submit')
-    await supabase.auth.signOut()
-    addAuthEvent('logout_success')
+  if (configError) {
+    return <p className="text-sm text-red-700">{configError}</p>
   }
 
   if (loading) {
-    return <span className="text-sm text-gray-600">Checking auth...</span>
-  }
-
-  if (configError) {
-    return <span className="text-sm text-red-700">{configError}</span>
+    return <p className="text-sm text-gray-700">Checking auth session...</p>
   }
 
   if (!session) {
-    return <span className="text-sm text-gray-600">Signed out</span>
+    return <p className="text-sm text-gray-700">Redirecting to login...</p>
   }
 
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-700">{session.user.email}</span>
-      <button
-        type="button"
-        onClick={signOut}
-        className="rounded border px-2 py-1 text-sm"
-      >
-        Logout
-      </button>
-    </div>
-  )
+  return <>{children}</>
 }
+

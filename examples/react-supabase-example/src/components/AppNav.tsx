@@ -5,9 +5,10 @@ import type { Session } from '@supabase/supabase-js'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { addAuthEvent } from '@/lib/supabase/authTrace'
 
-export default function AuthStatus() {
+export default function AppNav() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+
   const configError = !import.meta.env.VITE_SUPABASE_URL
     ? 'Missing VITE_SUPABASE_URL in .env.local'
     : !import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -21,7 +22,6 @@ export default function AuthStatus() {
     }
 
     const supabase = getSupabaseBrowserClient()
-
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
@@ -39,34 +39,51 @@ export default function AuthStatus() {
   }, [configError])
 
   async function signOut() {
+    if (configError) {
+      return
+    }
+
     const supabase = getSupabaseBrowserClient()
     addAuthEvent('logout_submit')
     await supabase.auth.signOut()
     addAuthEvent('logout_success')
+    window.location.replace('/login')
   }
 
   if (loading) {
-    return <span className="text-sm text-gray-600">Checking auth...</span>
+    return (
+      <nav className="flex flex-wrap items-center gap-4 border-b pb-4">
+        <span className="text-sm text-gray-600">Loading menu...</span>
+      </nav>
+    )
   }
 
   if (configError) {
-    return <span className="text-sm text-red-700">{configError}</span>
+    return (
+      <nav className="flex flex-wrap items-center gap-4 border-b pb-4">
+        <span className="text-sm text-red-700">{configError}</span>
+      </nav>
+    )
   }
 
   if (!session) {
-    return <span className="text-sm text-gray-600">Signed out</span>
+    return (
+      <nav className="flex flex-wrap items-center gap-4 border-b pb-4">
+        <a href="/signup">Sign up</a>
+        <a href="/login">Login</a>
+      </nav>
+    )
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-700">{session.user.email}</span>
-      <button
-        type="button"
-        onClick={signOut}
-        className="rounded border px-2 py-1 text-sm"
-      >
+    <nav className="flex flex-wrap items-center gap-4 border-b pb-4">
+      <a href="/">Home</a>
+      <a href="/postgrest">Postgrest</a>
+      <span className="ml-auto text-sm text-gray-700">{session.user.email}</span>
+      <button type="button" onClick={signOut} className="rounded border px-2 py-1 text-sm">
         Logout
       </button>
-    </div>
+    </nav>
   )
 }
+

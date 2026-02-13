@@ -1,20 +1,13 @@
 import type { LayoutProps } from 'rari'
-import AuthStatus from '@/components/auth/AuthStatus'
+import AppNav from '@/components/AppNav'
+import AuthTechnicalCard from '@/components/AuthTechnicalCard'
 
 export default function RootLayout({ children }: LayoutProps) {
   return (
     <div className="mx-auto max-w-4xl p-6 space-y-8">
-      <nav className="flex flex-wrap items-center gap-4 border-b pb-4">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/blog">Blog</a>
-        <a href="/signup">Sign up</a>
-        <a href="/login">Login</a>
-        <div className="ml-auto">
-          <AuthStatus />
-        </div>
-      </nav>
+      <AppNav />
       <main>{children}</main>
+      <AuthTechnicalCard />
     </div>
   )
 }
