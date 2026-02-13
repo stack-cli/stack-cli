@@ -36,14 +36,17 @@ spec:
           port: 30090
   services:
     web:
-      image: mendhak/http-https-echo:latest
+      image: ghcr.io/stack-cli/react-supabase-next:latest
       port: 8080
-      database_url: DATABASE_URL
       env:
-        - name: ECHO_INCLUDE_ENV_VARS
-          value: "1"
-        - name: JWT_HEADER
-          value: Authorization
+        - name: SUPABASE_SERVER_URL
+          value: http://nginx
+        - name: NEXT_PUBLIC_SUPABASE_URL
+          value: http://localhost:30010
+      secret_env:
+        - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          secret_name: jwt-auth
+          secret_key: anon-jwt
       init:
         image: alpine:3.18
         env:

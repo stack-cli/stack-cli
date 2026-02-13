@@ -29,6 +29,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,3 +40,12 @@ jobs:
         run: cargo run -p dagger-pipeline -- build linux
         env:
           DAGGER_LOG_FORMAT: plain
+
+      - name: Build and publish demo app image
+        if: github.ref_name == 'main'
+        run: cargo run -p dagger-pipeline -- demo-app
+        env:
+          DAGGER_LOG_FORMAT: plain
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STACK_DEMO_APP_TAGS: latest

@@ -1,6 +1,8 @@
 mod args;
 mod cli;
+mod demo_app;
 mod operator;
+mod publish;
 
 use anyhow::{Context, Result};
 use args::{Args, CliTarget, Command};
@@ -34,6 +36,9 @@ async fn run(client: dagger_sdk::Query, args: Args) -> Result<()> {
                     cli::build_cli(&client, &repo, target).await?;
                 }
             }
+        }
+        Command::DemoApp => {
+            demo_app::build_and_publish(&client, &repo).await?;
         }
     }
 

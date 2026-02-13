@@ -15,6 +15,8 @@ pub enum Command {
         #[arg(value_enum)]
         target: Option<CliTarget>,
     },
+    /// Build and publish the React Supabase demo app image
+    DemoApp,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
