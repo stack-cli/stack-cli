@@ -4,8 +4,8 @@ artifacts
 
 # Needed or semantic release adds a lod of stuff when udating our version numbers.
 node_modules
-package.json
-package-lock.json
+/package.json
+/package-lock.json
 target
 .env
 realtime-listen.mjs
