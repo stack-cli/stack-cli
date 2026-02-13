@@ -10,6 +10,21 @@ type GalleryItem = {
   signedUrl: string
 }
 
+function toBrowserReachableSignedUrl(signedUrl: string, serverBaseUrl: string, browserBaseUrl: string) {
+  try {
+    const signed = new URL(signedUrl)
+    const server = new URL(serverBaseUrl)
+    const browser = new URL(browserBaseUrl)
+    if (signed.origin === server.origin) {
+      signed.protocol = browser.protocol
+      signed.host = browser.host
+    }
+    return signed.toString()
+  } catch {
+    return signedUrl
+  }
+}
+
 export default async function StorageServerGallery() {
   const cookieStore = await cookies()
   const accessToken = cookieStore.get(sessionCookieNames.accessToken)?.value ?? ''
@@ -32,6 +47,7 @@ export default async function StorageServerGallery() {
   const baseUrl = process.env.SUPABASE_SERVER_URL
     ?? process.env.NEXT_PUBLIC_SUPABASE_URL
     ?? 'http://host.docker.internal:30010'
+  const browserBaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? baseUrl
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
   if (!anonKey) {
@@ -89,7 +105,7 @@ export default async function StorageServerGallery() {
       name: object.name,
       createdAt: object.created_at ?? '-',
       size: object.metadata?.size ?? 0,
-      signedUrl: signed.signedUrl,
+      signedUrl: toBrowserReachableSignedUrl(signed.signedUrl, baseUrl, browserBaseUrl),
     })
   }
 
@@ -118,7 +134,7 @@ export default async function StorageServerGallery() {
           }}
         >
           {results.map((item) => (
-            <figure key={item.path} style={{ margin: 0, display: 'grid', gap: '0.4rem' }}>
+            <figure key={item.path} style={{ margin: 0, display: 'grid', gap: '0.4rem', minWidth: 0 }}>
               <img
                 src={item.signedUrl}
                 alt={item.name}
