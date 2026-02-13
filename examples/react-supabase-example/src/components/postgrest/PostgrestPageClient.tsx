@@ -153,24 +153,19 @@ export default function PostgrestPageClient() {
         </p>
 
         <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Calls This Page Will Make</h2>
-          <ul className="mt-2 space-y-1 font-mono text-xs">
-            <li>GET /rest/v1/demo_items?select=id,title,created_at&order=created_at.desc&limit=5</li>
-            <li>POST /rest/v1/demo_items</li>
-          </ul>
-          <p className="mt-2 text-xs text-gray-700">
-            Headers:
-            {' '}
-            <code>apikey</code>
-            ,
-            {' '}
-            <code>Authorization: Bearer &lt;access_token&gt;</code>
-            , and JSON content type for POST.
-          </p>
-        </section>
-
-        <section className="rounded-lg border p-4">
           <h2 className="text-xl font-medium">Top 5 Rows (client-side GET)</h2>
+          <p className="mt-2 text-xs text-gray-700">
+            Runtime:
+            {' '}
+            <strong>React Client Component</strong>
+            {' '}
+            (runs in the browser after hydration).
+          </p>
+          <p className="mt-1 font-mono text-xs text-gray-700">
+            Call:
+            {' '}
+            <code>supabase.from('demo_items').select('id,title,created_at').order('created_at', desc).limit(5)</code>
+          </p>
           {loading && <p className="mt-2 text-sm text-gray-700">Loading rows...</p>}
           {!loading && (
             <div className="mt-3 overflow-auto">
@@ -203,6 +198,18 @@ export default function PostgrestPageClient() {
 
         <section className="rounded-lg border p-4">
           <h2 className="text-xl font-medium">Insert Row (client-side POST)</h2>
+          <p className="mt-2 text-xs text-gray-700">
+            Runtime:
+            {' '}
+            <strong>React Client Component</strong>
+            {' '}
+            (runs in the browser, no page refresh).
+          </p>
+          <p className="mt-1 font-mono text-xs text-gray-700">
+            Call:
+            {' '}
+            <code>supabase.from('demo_items').insert({'{'} title, user_id {'}'}).select('id')</code>
+          </p>
           <form onSubmit={onSubmit} className="mt-3 flex gap-2">
             <input
               type="text"
@@ -224,6 +231,13 @@ export default function PostgrestPageClient() {
 
         <section className="rounded-lg border p-4">
           <h2 className="text-xl font-medium">Calls Already Made</h2>
+          <p className="mt-2 text-xs text-gray-700">
+            Runtime:
+            {' '}
+            <strong>React Client Component</strong>
+            {' '}
+            call outcomes captured after each operation.
+          </p>
           <div className="mt-3 overflow-auto">
             <table className="min-w-full border-collapse text-sm">
               <thead>

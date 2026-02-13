@@ -75,6 +75,7 @@ export default function AppNav() {
   return (
     <nav className="flex flex-wrap items-center gap-4 border-b pb-4">
       <a href="/">Home</a>
+      <a href="/realtime">Realtime</a>
       <a href="/postgrest">Postgrest</a>
       <span className="ml-auto text-sm text-gray-700">{session.user.email}</span>
       <button type="button" onClick={signOut} className="rounded border px-2 py-1 text-sm">

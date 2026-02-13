@@ -14,6 +14,12 @@ export type DemoItem = {
   created_at: string
 }
 
+export type RealtimeEntry = {
+  id: string
+  message: string
+  created_at: string
+}
+
 type HealthCheck = {
   component: string
   method: 'GET'
@@ -137,6 +143,55 @@ export async function insertDemoItem(
   const { data, error } = await supabase
     .from('demo_items')
     .insert({ title, user_id: userId })
+    .select('id')
+    .limit(1)
+
+  if (error) {
+    return {
+      ok: false,
+      result: `${error.code ?? 'error'}: ${error.message}`,
+    }
+  }
+
+  return {
+    ok: true,
+    result: `${(data ?? []).length} row inserted`,
+  }
+}
+
+export async function listRealtimeEntries(
+  supabase: SupabaseClient,
+  limit = 5,
+): Promise<{ items: RealtimeEntry[]; ok: boolean; result: string }> {
+  const { data, error } = await supabase
+    .from('realtime_entries')
+    .select('id,message,created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    return {
+      items: [],
+      ok: false,
+      result: `${error.code ?? 'error'}: ${error.message}`,
+    }
+  }
+
+  return {
+    items: (data ?? []) as RealtimeEntry[],
+    ok: true,
+    result: `${(data ?? []).length} row(s) returned`,
+  }
+}
+
+export async function insertRealtimeEntry(
+  supabase: SupabaseClient,
+  message: string,
+  userId: string,
+): Promise<{ ok: boolean; result: string }> {
+  const { data, error } = await supabase
+    .from('realtime_entries')
+    .insert({ message, user_id: userId })
     .select('id')
     .limit(1)
 
