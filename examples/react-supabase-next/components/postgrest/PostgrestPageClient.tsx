@@ -5,9 +5,15 @@ import AuthGate from '@/components/auth/AuthGate'
 import { listDemoItems, type DemoItem } from '@/lib/supabase/api'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import {
-  INSERT_DEMO_ITEM_INITIAL_STATE,
+  type InsertDemoItemState,
   insertDemoItemServerAction,
 } from '@/app/postgrest/actions'
+
+const INSERT_DEMO_ITEM_INITIAL_STATE: InsertDemoItemState = {
+  ok: false,
+  message: '',
+  submittedAt: 0,
+}
 
 export default function PostgrestPageClient() {
   const [loading, setLoading] = useState(true)

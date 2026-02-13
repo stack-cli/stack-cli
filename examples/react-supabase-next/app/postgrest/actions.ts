@@ -8,12 +8,6 @@ export type InsertDemoItemState = {
   submittedAt: number
 }
 
-export const INSERT_DEMO_ITEM_INITIAL_STATE: InsertDemoItemState = {
-  ok: false,
-  message: '',
-  submittedAt: 0,
-}
-
 export async function insertDemoItemServerAction(
   _prevState: InsertDemoItemState,
   formData: FormData,
