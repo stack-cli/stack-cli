@@ -48,7 +48,5 @@ spec:
           secret_name: jwt-auth
           secret_key: anon-jwt
       init:
-        image: alpine:3.18
-        env:
-          - name: INIT_MESSAGE
-            value: "warming up"
+        image: ghcr.io/stack-cli/react-supabase-next-migrations:latest
+        migrations_database_url: MIGRATIONS_URL

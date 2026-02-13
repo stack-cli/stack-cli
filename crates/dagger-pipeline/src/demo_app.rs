@@ -5,25 +5,62 @@ use std::env;
 
 const BASE_IMAGE: &str = "node:22-bookworm";
 const RUNTIME_IMAGE: &str = "node:22-bookworm-slim";
+const MIGRATIONS_IMAGE: &str = "postgres:16-alpine";
 const DEMO_APP_DIR: &str = "examples/react-supabase-next";
 const DEMO_ARTIFACT_PATH: &str = "artifacts/demo-app/react-supabase-next.tar";
+const MIGRATIONS_ARTIFACT_PATH: &str = "artifacts/demo-app/react-supabase-next-migrations.tar";
 const DEFAULT_REGISTRY: &str = "ghcr.io";
 const DEFAULT_REPOSITORY: &str = "stack-cli/react-supabase-next";
+const DEFAULT_MIGRATIONS_REPOSITORY: &str = "stack-cli/react-supabase-next-migrations";
 
 pub async fn build_and_publish(client: &Query, repo: &Directory) -> Result<()> {
     let app_dir = repo.directory(DEMO_APP_DIR);
+    app_dir
+        .file("package.json")
+        .contents()
+        .await
+        .with_context(|| {
+            format!(
+                "missing {DEMO_APP_DIR}/package.json in the checked-out ref; ensure the workflow ref contains the demo app files"
+            )
+        })?;
 
+    let web_container = build_web_runtime_container(client, &app_dir);
+    let migrations_container = build_migrations_container(client, &app_dir);
+
+    if should_export_artifact() {
+        println!("Exporting demo app image artifact to {DEMO_ARTIFACT_PATH}...");
+        web_container
+            .clone()
+            .export(DEMO_ARTIFACT_PATH)
+            .await
+            .context("failed to export demo app container")?;
+        println!("Exporting migrations image artifact to {MIGRATIONS_ARTIFACT_PATH}...");
+        migrations_container
+            .clone()
+            .export(MIGRATIONS_ARTIFACT_PATH)
+            .await
+            .context("failed to export migrations container")?;
+        println!("Exported demo app and migrations image artifacts.");
+    } else {
+        println!("Skipping demo app image artifact export (set STACK_DEMO_APP_EXPORT_ARTIFACT=1 to enable).");
+    }
+
+    publish_images(client, &web_container, &migrations_container).await
+}
+
+fn build_web_runtime_container(client: &Query, app_dir: &Directory) -> Container {
     let builder = client
         .container()
         .from(BASE_IMAGE)
-        .with_directory("/app", app_dir)
+        .with_directory("/app", app_dir.clone())
         .with_workdir("/app")
         .with_env_variable("NEXT_TELEMETRY_DISABLED", "1")
         .with_exec(vec!["corepack", "enable"])
         .with_exec(vec!["pnpm", "install", "--frozen-lockfile"])
         .with_exec(vec!["pnpm", "build"]);
 
-    let container = client
+    client
         .container()
         .from(RUNTIME_IMAGE)
         .with_workdir("/app")
@@ -33,32 +70,37 @@ pub async fn build_and_publish(client: &Query, repo: &Directory) -> Result<()> {
         .with_env_variable("PORT", "8080")
         .with_directory("/app", builder.directory("/app/.next/standalone"))
         .with_directory("/app/.next/static", builder.directory("/app/.next/static"))
-        .with_entrypoint(vec!["node", "server.js"]);
-
-    if should_export_artifact() {
-        println!("Exporting demo app image artifact to {DEMO_ARTIFACT_PATH}...");
-        container
-            .clone()
-            .export(DEMO_ARTIFACT_PATH)
-            .await
-            .context("failed to export demo app container")?;
-        println!("Exported demo app image artifact.");
-    } else {
-        println!("Skipping demo app image artifact export (set STACK_DEMO_APP_EXPORT_ARTIFACT=1 to enable).");
-    }
-
-    publish_image(client, &container).await
+        .with_entrypoint(vec!["node", "server.js"])
 }
 
-async fn publish_image(client: &Query, container: &Container) -> Result<()> {
+fn build_migrations_container(client: &Query, app_dir: &Directory) -> Container {
+    client
+        .container()
+        .from(MIGRATIONS_IMAGE)
+        .with_directory("/migrations", app_dir.directory("sql/migrations"))
+        .with_file(
+            "/usr/local/bin/run-migrations.sh",
+            app_dir.file("scripts/run-migrations.sh"),
+        )
+        .with_exec(vec!["chmod", "+x", "/usr/local/bin/run-migrations.sh"])
+        .with_entrypoint(vec!["/usr/local/bin/run-migrations.sh"])
+}
+
+async fn publish_images(
+    client: &Query,
+    web_container: &Container,
+    migrations_container: &Container,
+) -> Result<()> {
     if !is_main_ref() {
         println!("Skipping demo app publish: branch is not main");
         return Ok(());
     }
 
     let registry = env::var("STACK_DEMO_APP_REGISTRY").unwrap_or_else(|_| DEFAULT_REGISTRY.into());
-    let repository =
+    let web_repository =
         env::var("STACK_DEMO_APP_REPOSITORY").unwrap_or_else(|_| DEFAULT_REPOSITORY.into());
+    let migrations_repository = env::var("STACK_DEMO_APP_MIGRATIONS_REPOSITORY")
+        .unwrap_or_else(|_| DEFAULT_MIGRATIONS_REPOSITORY.into());
     let tags = collect_image_tags();
 
     if tags.is_empty() {
@@ -81,12 +123,22 @@ async fn publish_image(client: &Query, container: &Container) -> Result<()> {
     }
 
     publish::publish_container_tags(
-        container,
+        web_container,
         &registry,
-        &repository,
+        &web_repository,
         &tags,
         credentials.as_ref(),
         "demo app",
+    )
+    .await?;
+
+    publish::publish_container_tags(
+        migrations_container,
+        &registry,
+        &migrations_repository,
+        &tags,
+        credentials.as_ref(),
+        "demo app migrations",
     )
     .await
 }

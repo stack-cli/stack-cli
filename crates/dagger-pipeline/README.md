@@ -56,11 +56,13 @@ Build context:
 Artifact output:
 
 - `artifacts/demo-app/react-supabase-next.tar` (only when `STACK_DEMO_APP_EXPORT_ARTIFACT=1`)
+- `artifacts/demo-app/react-supabase-next-migrations.tar` (only when `STACK_DEMO_APP_EXPORT_ARTIFACT=1`)
 
 Publish behavior:
 
 - Publishes only when `GITHUB_REF_NAME=main`
 - Defaults to `ghcr.io/stack-cli/react-supabase-next`
+- Also publishes migrations image by default to `ghcr.io/stack-cli/react-supabase-next-migrations`
 
 Useful env vars:
 
@@ -71,6 +73,7 @@ Useful env vars:
 - `GITHUB_SHA` (optional extra `sha-xxxxxxx` tag)
 - `STACK_DEMO_APP_REGISTRY` (default `ghcr.io`)
 - `STACK_DEMO_APP_REPOSITORY` (default `stack-cli/react-supabase-next`)
+- `STACK_DEMO_APP_MIGRATIONS_REPOSITORY` (default `stack-cli/react-supabase-next-migrations`)
 - `GHCR_USERNAME` or `GITHUB_ACTOR`
 - `GHCR_TOKEN` or `GITHUB_TOKEN`
 
