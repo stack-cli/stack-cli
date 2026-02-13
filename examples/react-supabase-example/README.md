@@ -21,8 +21,7 @@ The `/postgrest` page expects `public.demo_items` with RLS policies.
 Run the migration against your Stack database:
 
 ```bash
-export MIGRATIONS_URL="<from stack secrets>"
-psql "$MIGRATIONS_URL" -f sql/migrations/001_demo_items.sql
+just db-migrate
 ```
 
 ## 🚀 Deploy to the Cloud

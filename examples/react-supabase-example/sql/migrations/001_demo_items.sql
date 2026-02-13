@@ -23,3 +23,8 @@ create policy demo_items_insert_own
   on public.demo_items
   for insert
   with check (auth.uid() = user_id);
+
+grant usage on schema public to authenticated;
+grant select, insert on table public.demo_items to authenticated;
+
+notify pgrst, 'reload schema';
