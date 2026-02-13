@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
+import { syncSessionCookies } from '@/lib/supabase/sessionCookie'
 
 export default function SignupForm() {
   const [email, setEmail] = useState('')
@@ -36,6 +37,7 @@ export default function SignupForm() {
 
     if (data.session) {
       setLoading(false)
+      syncSessionCookies(data.session)
       window.location.assign('/')
       return
     }
@@ -44,6 +46,7 @@ export default function SignupForm() {
     setLoading(false)
 
     if (!loginError && loginData.session) {
+      syncSessionCookies(loginData.session)
       window.location.assign('/')
       return
     }
