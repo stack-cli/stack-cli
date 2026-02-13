@@ -10,3 +10,4 @@ target
 .env
 realtime-listen.mjs
 test.mjs
+.pnpm-store
