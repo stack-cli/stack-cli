@@ -38,7 +38,7 @@ export default function LoginForm() {
       return
     }
 
-    setMessage('Logged in successfully.')
+    window.location.assign('/')
   }
 
   return (
