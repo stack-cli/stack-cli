@@ -30,6 +30,38 @@ const MINIO_IMAGE: &str = "minio/minio:latest";
 const MINIO_PORT: u16 = 9000;
 const MINIO_MC_IMAGE: &str = "minio/mc:latest";
 const STORAGE_DB_INIT_IMAGE: &str = "postgres:16-alpine";
+pub const DEFAULT_MAX_UPLOAD_SIZE_BYTES: u64 = 50 * 1024 * 1024;
+
+pub fn storage_upload_size_limit_bytes(config: Option<&StorageConfig>) -> u64 {
+    config
+        .and_then(|c| c.max_upload_size.as_deref())
+        .and_then(parse_upload_size_to_bytes)
+        .unwrap_or(DEFAULT_MAX_UPLOAD_SIZE_BYTES)
+}
+
+fn parse_upload_size_to_bytes(raw: &str) -> Option<u64> {
+    let value = raw.trim().to_ascii_lowercase();
+    if value.is_empty() {
+        return None;
+    }
+
+    let split_at = value
+        .find(|c: char| !c.is_ascii_digit())
+        .unwrap_or(value.len());
+    let (num, unit) = value.split_at(split_at);
+    if num.is_empty() {
+        return None;
+    }
+
+    let amount = num.parse::<u64>().ok()?;
+    match unit.trim() {
+        "" | "b" => Some(amount),
+        "k" | "kb" => amount.checked_mul(1024),
+        "m" | "mb" => amount.checked_mul(1024 * 1024),
+        "g" | "gb" => amount.checked_mul(1024 * 1024 * 1024),
+        _ => None,
+    }
+}
 
 pub async fn deploy(
     client: Client,
@@ -37,6 +69,7 @@ pub async fn deploy(
     app_name: &str,
     config: Option<&StorageConfig>,
 ) -> Result<(), Error> {
+    let upload_size_limit = storage_upload_size_limit_bytes(config);
     let secret_name = config
         .and_then(|c| c.s3_secret_name.as_ref())
         .map(String::from)
@@ -255,7 +288,7 @@ SQL"#
                 }
             }
         }),
-        json!({"name": "FILE_SIZE_LIMIT", "value": "52428800"}),
+        json!({"name": "FILE_SIZE_LIMIT", "value": upload_size_limit.to_string()}),
         json!({
             "name": "AWS_ACCESS_KEY_ID",
             "valueFrom": {

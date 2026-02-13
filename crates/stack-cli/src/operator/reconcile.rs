@@ -153,6 +153,8 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .and_then(|oidc| oidc.hostname_url.clone());
 
     let include_storage = app.spec.components.storage.is_some();
+    let storage_max_upload_size_bytes =
+        storage::storage_upload_size_limit_bytes(app.spec.components.storage.as_ref());
     let include_rest = app.spec.components.rest.is_some();
     let include_realtime = app.spec.components.realtime.is_some();
     let include_document_engine = app.spec.components.document_engine.is_some();
@@ -175,6 +177,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &name,
             include_auth,
             include_storage,
+            storage_max_upload_size_bytes,
             include_rest,
             include_realtime,
             include_document_engine,
@@ -197,6 +200,7 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
             &name,
             include_auth,
             include_storage,
+            storage_max_upload_size_bytes,
             include_rest,
             include_realtime,
             include_document_engine,

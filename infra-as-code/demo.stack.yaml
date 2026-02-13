@@ -14,6 +14,7 @@ spec:
     realtime: {}
     storage:
       install_minio: true
+      max_upload_size: 50mb
     document_engine: {}
     mailhog: {}
   profiles:

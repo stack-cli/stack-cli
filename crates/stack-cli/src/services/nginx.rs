@@ -124,7 +124,7 @@ fn auth_proxy_block(proto_var: &str) -> String {
     )
 }
 
-fn storage_proxy_block(proto_var: &str) -> String {
+fn storage_proxy_block(proto_var: &str, max_upload_size_bytes: u64) -> String {
     format!(
         r#"
     location = /storage/v1 {{
@@ -132,6 +132,8 @@ fn storage_proxy_block(proto_var: &str) -> String {
     }}
 
     location ^~ /storage/v1/ {{
+        client_max_body_size {max_upload_size_bytes};
+
         if ($request_method = OPTIONS) {{
             add_header Access-Control-Allow-Origin $http_origin always;
             add_header Access-Control-Allow-Credentials "true" always;
@@ -152,7 +154,8 @@ fn storage_proxy_block(proto_var: &str) -> String {
         proxy_set_header X-Auth-JWT $http_x_auth_jwt;
     }}
 "#,
-        proto_var = proto_var
+        proto_var = proto_var,
+        max_upload_size_bytes = max_upload_size_bytes
     )
 }
 
@@ -165,6 +168,7 @@ pub async fn deploy_nginx(
     app_name: &str,
     include_auth: bool,
     include_storage: bool,
+    storage_max_upload_size_bytes: u64,
     include_rest: bool,
     include_realtime: bool,
     include_document_engine: bool,
@@ -174,7 +178,7 @@ pub async fn deploy_nginx(
     let image_name = "nginx:1.27.2".to_string();
 
     let storage_block = if include_storage {
-        storage_proxy_block("$forwarded_proto")
+        storage_proxy_block("$forwarded_proto", storage_max_upload_size_bytes)
     } else {
         String::new()
     };
@@ -294,7 +298,7 @@ server {{
         NginxMode::StaticJwt { token } => {
             let escaped_token = token.replace('"', "\\\"");
             let storage_block = if include_storage {
-                storage_proxy_block("$scheme")
+                storage_proxy_block("$scheme", storage_max_upload_size_bytes)
             } else {
                 String::new()
             };

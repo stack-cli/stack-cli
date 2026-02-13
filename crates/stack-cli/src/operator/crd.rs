@@ -159,6 +159,8 @@ pub struct StorageConfig {
     pub s3_secret_name: Option<String>,
     /// When true, deploy the bundled MinIO instance; defaults to true when no s3_secret_name is provided.
     pub install_minio: Option<bool>,
+    /// Maximum upload size accepted by Storage and nginx (e.g. 50mb, 10m, 1048576). Defaults to 50mb.
+    pub max_upload_size: Option<String>,
 }
 
 /// Optional Redis configuration.
