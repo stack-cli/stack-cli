@@ -14,6 +14,17 @@ pnpm run dev
 
 Visit [http://localhost:5173](http://localhost:5173) to see your app.
 
+## PostgREST Demo Table Setup
+
+The `/postgrest` page expects `public.demo_items` with RLS policies.
+
+Run the migration against your Stack database:
+
+```bash
+export MIGRATIONS_URL="<from stack secrets>"
+psql "$MIGRATIONS_URL" -f sql/migrations/001_demo_items.sql
+```
+
 ## 🚀 Deploy to the Cloud
 
 This rari application is pre-configured for cloud deployment.
