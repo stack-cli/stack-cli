@@ -1,4 +1,5 @@
 import LoginForm from '@/components/auth/LoginForm'
+import AuthFlowInfoCard from '@/components/AuthFlowInfoCard'
 
 export default function LoginPage() {
   return (
@@ -8,6 +9,7 @@ export default function LoginPage() {
         Log in using Supabase Auth on your local Stack instance.
       </p>
       <LoginForm />
+      <AuthFlowInfoCard mode="login" />
     </div>
   )
 }

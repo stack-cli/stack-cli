@@ -1,4 +1,5 @@
 import SignupForm from '@/components/auth/SignupForm'
+import AuthFlowInfoCard from '@/components/AuthFlowInfoCard'
 
 export default function SignupPage() {
   return (
@@ -8,6 +9,7 @@ export default function SignupPage() {
         Sign up using Supabase Auth on your local Stack instance.
       </p>
       <SignupForm />
+      <AuthFlowInfoCard mode="signup" />
     </div>
   )
 }

@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { addAuthEvent } from '@/lib/supabase/authTrace'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -25,7 +24,6 @@ export default function LoginForm() {
     setLoading(true)
     setError(null)
     setMessage(null)
-    addAuthEvent('login_submit')
 
     const supabase = getSupabaseBrowserClient()
     const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -36,12 +34,10 @@ export default function LoginForm() {
     setLoading(false)
 
     if (loginError) {
-      addAuthEvent(`login_error ${loginError.message}`)
       setError(loginError.message)
       return
     }
 
-    addAuthEvent('login_success')
     window.location.assign('/')
   }
 

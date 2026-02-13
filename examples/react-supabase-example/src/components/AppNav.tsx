@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { addAuthEvent } from '@/lib/supabase/authTrace'
 
 export default function AppNav() {
   const [session, setSession] = useState<Session | null>(null)
@@ -44,9 +43,7 @@ export default function AppNav() {
     }
 
     const supabase = getSupabaseBrowserClient()
-    addAuthEvent('logout_submit')
     await supabase.auth.signOut()
-    addAuthEvent('logout_success')
     window.location.replace('/login')
   }
 
@@ -86,4 +83,3 @@ export default function AppNav() {
     </nav>
   )
 }
-

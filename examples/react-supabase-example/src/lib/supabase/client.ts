@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { addAuthTrace } from '@/lib/supabase/authTrace'
+import { setLastAuthCall } from '@/lib/supabase/flowState'
 
 let browserClient: SupabaseClient | undefined
 
@@ -19,7 +19,6 @@ export function getSupabaseBrowserClient(): SupabaseClient {
     browserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         fetch: async (input, init) => {
-          const startedAt = Date.now()
           const urlString = typeof input === 'string'
             ? input
             : input instanceof URL
@@ -39,14 +38,12 @@ export function getSupabaseBrowserClient(): SupabaseClient {
             })()
 
             if (path.includes('/auth/')) {
-              addAuthTrace({
+              setLastAuthCall({
                 at: new Date().toISOString(),
-                type: 'http',
                 method,
                 path,
                 status: response.status,
                 ok: response.ok,
-                durationMs: Date.now() - startedAt,
               })
             }
 
@@ -61,14 +58,12 @@ export function getSupabaseBrowserClient(): SupabaseClient {
             })()
 
             if (path.includes('/auth/')) {
-              addAuthTrace({
+              setLastAuthCall({
                 at: new Date().toISOString(),
-                type: 'http',
                 method,
                 path,
                 ok: false,
-                durationMs: Date.now() - startedAt,
-                message: error instanceof Error ? error.message : 'Request failed',
+                error: error instanceof Error ? error.message : 'Request failed',
               })
             }
 
