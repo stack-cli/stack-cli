@@ -4,6 +4,7 @@ use dagger_sdk::{Container, Directory, Query};
 use std::env;
 
 const BASE_IMAGE: &str = "node:22-bookworm";
+const RUNTIME_IMAGE: &str = "node:22-bookworm-slim";
 const DEMO_APP_DIR: &str = "examples/react-supabase-next";
 const DEMO_ARTIFACT_PATH: &str = "artifacts/demo-app/react-supabase-next.tar";
 const DEFAULT_REGISTRY: &str = "ghcr.io";
@@ -12,24 +13,27 @@ const DEFAULT_REPOSITORY: &str = "stack-cli/react-supabase-next";
 pub async fn build_and_publish(client: &Query, repo: &Directory) -> Result<()> {
     let app_dir = repo.directory(DEMO_APP_DIR);
 
-    let container = client
+    let builder = client
         .container()
         .from(BASE_IMAGE)
         .with_directory("/app", app_dir)
         .with_workdir("/app")
         .with_env_variable("NEXT_TELEMETRY_DISABLED", "1")
-        .with_env_variable("PORT", "8080")
         .with_exec(vec!["corepack", "enable"])
         .with_exec(vec!["pnpm", "install", "--frozen-lockfile"])
-        .with_exec(vec!["pnpm", "build"])
-        .with_entrypoint(vec![
-            "pnpm",
-            "start",
-            "--hostname",
-            "0.0.0.0",
-            "--port",
-            "8080",
-        ]);
+        .with_exec(vec!["pnpm", "build"]);
+
+    let container = client
+        .container()
+        .from(RUNTIME_IMAGE)
+        .with_workdir("/app")
+        .with_env_variable("NODE_ENV", "production")
+        .with_env_variable("NEXT_TELEMETRY_DISABLED", "1")
+        .with_env_variable("HOSTNAME", "0.0.0.0")
+        .with_env_variable("PORT", "8080")
+        .with_directory("/app", builder.directory("/app/.next/standalone"))
+        .with_directory("/app/.next/static", builder.directory("/app/.next/static"))
+        .with_entrypoint(vec!["node", "server.js"]);
 
     if should_export_artifact() {
         println!("Exporting demo app image artifact to {DEMO_ARTIFACT_PATH}...");
@@ -109,9 +113,7 @@ fn collect_image_tags() -> Vec<String> {
 
 fn should_export_artifact() -> bool {
     matches!(
-        env::var("STACK_DEMO_APP_EXPORT_ARTIFACT")
-            .ok()
-            .as_deref(),
+        env::var("STACK_DEMO_APP_EXPORT_ARTIFACT").ok().as_deref(),
         Some("1") | Some("true") | Some("TRUE") | Some("yes") | Some("YES")
     )
 }
