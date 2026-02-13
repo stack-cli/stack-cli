@@ -23,7 +23,7 @@ spec:
       hostname-url: http://localhost:30013
     auth:
       api_external_url: http://localhost:30010/auth
-      site_url: http://localhost:30010/auth
+      site_url: http://localhost:30010
     storage:
       install_minio: true
   services:

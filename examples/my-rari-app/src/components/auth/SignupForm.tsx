@@ -39,11 +39,21 @@ export default function SignupForm() {
     }
 
     if (data.session) {
-      setMessage('Account created and signed in.')
+      window.location.assign('/')
       return
     }
 
-    setMessage('Account created. Check confirmation settings if no session was returned.')
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (!loginError && loginData.session) {
+      window.location.assign('/')
+      return
+    }
+
+    setMessage('Account created. Sign in from /login if auto-login is disabled.')
   }
 
   return (

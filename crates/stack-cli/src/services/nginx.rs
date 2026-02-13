@@ -88,6 +88,42 @@ fn websocket_block(
     )
 }
 
+fn auth_proxy_block(proto_var: &str) -> String {
+    format!(
+        r#"
+    location = /auth {{
+        return 301 /auth/v1/;
+    }}
+
+    location = /auth/ {{
+        return 301 /auth/v1/;
+    }}
+
+    location ^~ /auth/v1/ {{
+        if ($request_method = OPTIONS) {{
+            add_header Access-Control-Allow-Origin $http_origin always;
+            add_header Access-Control-Allow-Credentials "true" always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "authorization, apikey, content-type, x-client-info, x-auth-jwt, x-supabase-api-version, x-supabase-client" always;
+            add_header Access-Control-Max-Age 86400 always;
+            add_header Vary Origin always;
+            return 204;
+        }}
+
+        proxy_pass http://auth:9999/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto {proto_var};
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Auth-JWT $http_x_auth_jwt;
+    }}
+"#,
+        proto_var = proto_var
+    )
+}
+
 // The web user interface
 pub async fn deploy_nginx(
     client: &Client,
@@ -163,7 +199,7 @@ pub async fn deploy_nginx(
             NginxMode::Oidc => "$forwarded_proto",
             NginxMode::StaticJwt { .. } => "$scheme",
         };
-        proxy_block("/auth", "auth", 9999, proto_var, "/")
+        auth_proxy_block(proto_var)
     } else {
         String::new()
     };

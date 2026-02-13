@@ -144,7 +144,7 @@ pub struct OidcConfig {
 pub struct SupabaseAuthConfig {
     /// External URL for GoTrue (e.g. https://example.com/auth).
     pub api_external_url: String,
-    /// Site URL for GoTrue (e.g. https://example.com/auth).
+    /// Site URL for your app (e.g. https://example.com).
     pub site_url: String,
 }
 

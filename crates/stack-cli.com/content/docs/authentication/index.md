@@ -13,7 +13,7 @@ spec:
   components:
     auth:
       api_external_url: http://localhost:30010/auth
-      site_url: http://localhost:30010/auth
+      site_url: http://localhost:30010
 ```
 
 When `components.auth` is present, Stack deploys Supabase Auth and routes `/auth` through nginx. JWT and database credentials are wired automatically.
@@ -31,7 +31,7 @@ spec:
   components:
     auth:
       api_external_url: http://localhost:30010/auth
-      site_url: http://localhost:30010/auth
+      site_url: http://localhost:30010
     oidc:
       hostname-url: http://localhost:30010
 ```
@@ -77,5 +77,5 @@ spec:
   components:
     auth:
       api_external_url: https://example.com/auth
-      site_url: https://example.com/auth
+      site_url: https://example.com
 ```

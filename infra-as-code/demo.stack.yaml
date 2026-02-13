@@ -9,7 +9,7 @@ spec:
     rest: {}
     auth:
       api_external_url: http://localhost:30010/auth
-      site_url: http://localhost:30010/auth
+      site_url: http://localhost:30010
     realtime: {}
     storage:
       install_minio: true
