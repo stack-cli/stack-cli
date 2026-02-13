@@ -35,6 +35,15 @@ function getChecks(baseUrl: string, anonKey: string) {
       } as Record<string, string>,
     },
     {
+      component: 'realtime',
+      method: 'GET',
+      path: '/realtime/v1/api/health',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      } as Record<string, string>,
+    },
+    {
       component: 'storage',
       method: 'GET',
       path: '/storage/v1/bucket',
