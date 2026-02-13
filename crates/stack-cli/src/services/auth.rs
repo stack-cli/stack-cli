@@ -25,7 +25,8 @@ pub async fn deploy(
     let cluster_rw_service = database::cluster_rw_service_name(app_name);
     let db_name = database::database_name(app_name);
 
-    let env = vec![
+    let confirm_email = config.confirm_email.unwrap_or(true);
+    let mut env = vec![
         json!({"name": "GOTRUE_API_PORT", "value": AUTH_PORT.to_string()}),
         json!({"name": "GOTRUE_DB_DRIVER", "value": "postgres"}),
         json!({"name": "API_EXTERNAL_URL", "value": config.api_external_url.clone()}),
@@ -53,6 +54,10 @@ pub async fn deploy(
             }
         }),
     ];
+    env.push(json!({
+        "name": "GOTRUE_MAILER_AUTOCONFIRM",
+        "value": (!confirm_email).to_string()
+    }));
 
     let init_container = deployment::InitContainer {
         image_name: AUTH_INIT_IMAGE.to_string(),

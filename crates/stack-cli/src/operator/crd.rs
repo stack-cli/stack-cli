@@ -146,6 +146,8 @@ pub struct SupabaseAuthConfig {
     pub api_external_url: String,
     /// Site URL for your app (e.g. https://example.com).
     pub site_url: String,
+    /// Whether users must confirm email before signing in. Defaults to true.
+    pub confirm_email: Option<bool>,
 }
 
 /// Optional Supabase storage configuration.

@@ -24,6 +24,7 @@ spec:
     auth:
       api_external_url: http://localhost:30010/auth
       site_url: http://localhost:30010
+      confirm_email: false
     storage:
       install_minio: true
   services:

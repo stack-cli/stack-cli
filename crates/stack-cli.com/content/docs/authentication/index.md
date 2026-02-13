@@ -14,9 +14,11 @@ spec:
     auth:
       api_external_url: http://localhost:30010/auth
       site_url: http://localhost:30010
+      confirm_email: false
 ```
 
 When `components.auth` is present, Stack deploys Supabase Auth and routes `/auth` through nginx. JWT and database credentials are wired automatically.
+Set `confirm_email: false` in local development when you want signups to auto-confirm.
 
 ## Supabase Auth and OIDC are complementary
 
@@ -32,6 +34,7 @@ spec:
     auth:
       api_external_url: http://localhost:30010/auth
       site_url: http://localhost:30010
+      confirm_email: false
     oidc:
       hostname-url: http://localhost:30010
 ```
@@ -78,4 +81,5 @@ spec:
     auth:
       api_external_url: https://example.com/auth
       site_url: https://example.com
+      confirm_email: true
 ```
