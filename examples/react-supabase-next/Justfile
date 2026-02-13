@@ -1,0 +1,41 @@
+list:
+    just --list
+
+db-migrate:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    manifest="../../infra-as-code/demo.stack.yaml"
+    echo "Resolving MIGRATIONS_URL from stack secrets using ${manifest}..."
+
+    migrations_url="$({
+      stack secrets \
+        --manifest "${manifest}" \
+        --db-host host.docker.internal \
+        --db-port 30011 \
+      | sed -n 's/^MIGRATIONS_URL=//p' \
+      | head -n1
+    })"
+
+    if [[ -z "${migrations_url}" ]]; then
+      echo "Failed to resolve MIGRATIONS_URL from stack secrets output" >&2
+      exit 1
+    fi
+
+    shopt -s nullglob
+    files=(sql/migrations/*.sql)
+    if [[ ${#files[@]} -eq 0 ]]; then
+      echo "No migration files found in sql/migrations" >&2
+      exit 1
+    fi
+
+    for file in "${files[@]}"; do
+      echo "Applying ${file}..."
+      LC_ALL=C psql "${migrations_url}" -v ON_ERROR_STOP=1 -f "${file}"
+    done
+
+    echo "Restarting PostgREST deployment (namespace: stack-demo)..."
+    kubectl -n stack-demo rollout restart deployment/rest
+    kubectl -n stack-demo rollout status deployment/rest --timeout=120s
+
+    echo "Done."
