@@ -110,7 +110,12 @@ export default function RealtimePageClient() {
         </p>
 
         <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Last 5 Realtime Entries</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-medium">Last 5 Realtime Entries</h2>
+            <span className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              Client
+            </span>
+          </div>
           <p className="mt-2 font-mono text-xs text-gray-700">
             Calls:
             {' '}
@@ -151,7 +156,12 @@ export default function RealtimePageClient() {
         </section>
 
         <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Insert Realtime Entry</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-medium">Insert Realtime Entry</h2>
+            <span className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              Client
+            </span>
+          </div>
           <p className="mt-2 font-mono text-xs text-gray-700">
             Call:
             {' '}

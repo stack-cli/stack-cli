@@ -1,57 +1,35 @@
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import AuthGate from '@/components/auth/AuthGate'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import { insertDemoItem, listDemoItems, type DemoItem } from '@/lib/supabase/api'
-
-type CallResult = {
-  at: string
-  call: string
-  status: number | null
-  ok: boolean
-  result: string
-}
+import { listDemoItems, type DemoItem } from '@/lib/supabase/api'
+import {
+  INSERT_DEMO_ITEM_INITIAL_STATE,
+  insertDemoItemServerAction,
+} from '@/app/postgrest/actions'
 
 export default function PostgrestPageClient() {
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [title, setTitle] = useState('')
+  const [userId, setUserId] = useState('')
+  const [accessToken, setAccessToken] = useState('')
   const [items, setItems] = useState<DemoItem[]>([])
-  const [calls, setCalls] = useState<CallResult[]>([])
-
-  function recordCall(call: CallResult) {
-    setCalls(current => [call, ...current].slice(0, 10))
-  }
+  const [insertState, insertAction, insertPending] = useActionState(
+    insertDemoItemServerAction,
+    INSERT_DEMO_ITEM_INITIAL_STATE,
+  )
 
   async function loadTopFive() {
-    const call = "supabase.from('demo_items').select(...).order('created_at', desc).limit(5)"
-
     try {
       const supabase = getSupabaseBrowserClient()
       const { items: nextItems, ok, result } = await listDemoItems(supabase, 5)
       setItems(nextItems)
 
-      recordCall({
-        at: new Date().toISOString(),
-        call,
-        status: null,
-        ok,
-        result,
-      })
-
       if (!ok) {
         setError(result)
       }
     } catch (error) {
-      recordCall({
-        at: new Date().toISOString(),
-        call,
-        status: null,
-        ok: false,
-        result: error instanceof Error ? error.message : 'Request failed',
-      })
       setError(error instanceof Error ? error.message : 'List request failed')
     }
   }
@@ -79,6 +57,8 @@ export default function PostgrestPageClient() {
         return
       }
 
+      setUserId(data.session.user.id)
+      setAccessToken(data.session.access_token)
       await loadTopFive()
       setLoading(false)
     }
@@ -89,55 +69,19 @@ export default function PostgrestPageClient() {
     })
   }, [])
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setSubmitting(true)
-
-    const supabase = getSupabaseBrowserClient()
-    const { data } = await supabase.auth.getSession()
-
-    if (!data.session?.access_token || !data.session.user?.id) {
-      setSubmitting(false)
-      setError('No authenticated session')
+  useEffect(() => {
+    if (!insertState.submittedAt) {
       return
     }
 
-    const call = "supabase.from('demo_items').insert({ title, user_id }).select('id')"
-
-    try {
-      const supabase = getSupabaseBrowserClient()
-      const { ok, result } = await insertDemoItem(supabase, title, data.session.user.id)
-
-      recordCall({
-        at: new Date().toISOString(),
-        call,
-        status: null,
-        ok,
-        result,
-      })
-
-      if (!ok) {
-        setSubmitting(false)
-        setError(result)
-        return
-      }
-
-      setTitle('')
-      await loadTopFive()
-    } catch (nextError) {
-      recordCall({
-        at: new Date().toISOString(),
-        call,
-        status: null,
-        ok: false,
-        result: nextError instanceof Error ? nextError.message : 'Request failed',
-      })
-      setError(nextError instanceof Error ? nextError.message : 'Insert request failed')
+    if (!insertState.ok) {
+      setError(insertState.message)
+      return
     }
 
-    setSubmitting(false)
-  }
+    setError(null)
+    void loadTopFive()
+  }, [insertState])
 
   return (
     <AuthGate>
@@ -153,7 +97,12 @@ export default function PostgrestPageClient() {
         </p>
 
         <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Top 5 Rows (client-side GET)</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-medium">Top 5 Rows</h2>
+            <span className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              Client
+            </span>
+          </div>
           <p className="mt-2 text-xs text-gray-700">
             Runtime:
             {' '}
@@ -197,76 +146,42 @@ export default function PostgrestPageClient() {
         </section>
 
         <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Insert Row (client-side POST)</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-medium">Insert Row</h2>
+            <span className="rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              Server
+            </span>
+          </div>
           <p className="mt-2 text-xs text-gray-700">
             Runtime:
             {' '}
-            <strong>React Client Component</strong>
+            <strong>React Server Action</strong>
             {' '}
-            (runs in the browser, no page refresh).
+            for insert, triggered by a client form submission (no page refresh).
           </p>
           <p className="mt-1 font-mono text-xs text-gray-700">
             Call:
             {' '}
-            <code>supabase.from('demo_items').insert({'{'} title, user_id {'}'}).select('id')</code>
+            <code>insertDemoItemServerAction -&gt; supabase.from('demo_items').insert({'{'} title, user_id {'}'}).select('id')</code>
           </p>
-          <form onSubmit={onSubmit} className="mt-3 flex gap-2">
+          <form action={insertAction} className="mt-3 flex gap-2">
             <input
               type="text"
-              value={title}
-              onChange={event => setTitle(event.target.value)}
+              name="title"
               placeholder="Enter title"
               className="w-full rounded border px-3 py-2"
               required
             />
+            <input type="hidden" name="user_id" value={userId} />
+            <input type="hidden" name="access_token" value={accessToken} />
             <button
               type="submit"
-              disabled={submitting}
+              disabled={insertPending || !userId || !accessToken}
               className="rounded bg-black px-4 py-2 text-white disabled:opacity-60"
             >
-              {submitting ? 'Inserting...' : 'Insert'}
+              {insertPending ? 'Inserting...' : 'Insert'}
             </button>
           </form>
-        </section>
-
-        <section className="rounded-lg border p-4">
-          <h2 className="text-xl font-medium">Calls Already Made</h2>
-          <p className="mt-2 text-xs text-gray-700">
-            Runtime:
-            {' '}
-            <strong>React Client Component</strong>
-            {' '}
-            call outcomes captured after each operation.
-          </p>
-          <div className="mt-3 overflow-auto">
-            <table className="min-w-full border-collapse text-sm">
-              <thead>
-                <tr>
-                  <th className="border px-2 py-1 text-left">Time</th>
-                  <th className="border px-2 py-1 text-left">Call</th>
-                  <th className="border px-2 py-1 text-left">Status</th>
-                  <th className="border px-2 py-1 text-left">OK</th>
-                  <th className="border px-2 py-1 text-left">Result</th>
-                </tr>
-              </thead>
-              <tbody>
-                {calls.length === 0 && (
-                  <tr>
-                    <td className="border px-2 py-1" colSpan={5}>No calls recorded yet.</td>
-                  </tr>
-                )}
-                {calls.map((call, index) => (
-                  <tr key={`${call.at}-${index}`}>
-                    <td className="border px-2 py-1 font-mono text-xs">{call.at}</td>
-                    <td className="border px-2 py-1 font-mono text-xs">{call.call}</td>
-                    <td className="border px-2 py-1">{call.status ?? '-'}</td>
-                    <td className="border px-2 py-1">{String(call.ok)}</td>
-                    <td className="border px-2 py-1 font-mono text-xs">{call.result}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </section>
 
         {error && <p className="text-sm text-red-700">{error}</p>}
