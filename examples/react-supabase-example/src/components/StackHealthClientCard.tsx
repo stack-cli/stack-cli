@@ -1,62 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
-type HealthRow = {
-  component: string
-  call: string
-  status: number | null
-  ok: boolean
-  result: string
-}
-
-function getChecks(baseUrl: string, anonKey: string) {
-  return [
-    {
-      component: 'auth',
-      method: 'GET',
-      path: '/auth/v1/health',
-      headers: {} as Record<string, string>,
-    },
-    {
-      component: 'auth-settings',
-      method: 'GET',
-      path: '/auth/v1/settings',
-      headers: {} as Record<string, string>,
-    },
-    {
-      component: 'rest',
-      method: 'GET',
-      path: '/rest/v1/',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        Accept: 'application/openapi+json',
-      } as Record<string, string>,
-    },
-    {
-      component: 'realtime',
-      method: 'GET',
-      path: '/realtime/v1/api/health',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-      } as Record<string, string>,
-    },
-    {
-      component: 'storage',
-      method: 'GET',
-      path: '/storage/v1/bucket',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-      } as Record<string, string>,
-    },
-  ].map(check => ({
-    ...check,
-    url: `${baseUrl}${check.path}`,
-  }))
-}
+import { runStackHealthChecks, type HealthRow } from '@/lib/supabase/api'
 
 export default function StackHealthClientCard() {
   const [rows, setRows] = useState<HealthRow[]>([])
@@ -77,32 +22,7 @@ export default function StackHealthClientCard() {
     }
 
     const run = async () => {
-      const checks = getChecks(baseUrl, anonKey)
-      const results = await Promise.all(checks.map(async (check) => {
-        try {
-          const response = await fetch(check.url, {
-            method: check.method,
-            headers: check.headers,
-          })
-          const text = await response.text()
-          return {
-            component: check.component,
-            call: `${check.method} ${check.path}`,
-            status: response.status,
-            ok: response.ok,
-            result: text.slice(0, 140) || '<empty>',
-          } satisfies HealthRow
-        } catch (error) {
-          return {
-            component: check.component,
-            call: `${check.method} ${check.path}`,
-            status: null,
-            ok: false,
-            result: error instanceof Error ? error.message : 'Request failed',
-          } satisfies HealthRow
-        }
-      }))
-
+      const results = await runStackHealthChecks(baseUrl, anonKey)
       setRows(results)
       setLoading(false)
     }

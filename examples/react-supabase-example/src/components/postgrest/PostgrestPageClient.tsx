@@ -3,12 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import AuthGate from '@/components/auth/AuthGate'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-
-type DemoItem = {
-  id: string
-  title: string
-  created_at: string
-}
+import { insertDemoItem, listDemoItems, type DemoItem } from '@/lib/supabase/api'
 
 type CallResult = {
   at: string
@@ -30,44 +25,34 @@ export default function PostgrestPageClient() {
     setCalls(current => [call, ...current].slice(0, 10))
   }
 
-  async function loadTopFive(accessToken: string) {
-    const path = '/rest/v1/demo_items?select=id,title,created_at&order=created_at.desc&limit=5'
-    const url = `${import.meta.env.VITE_SUPABASE_URL}${path}`
+  async function loadTopFive() {
+    const call = "supabase.from('demo_items').select(...).order('created_at', desc).limit(5)"
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/json',
-        },
-      })
-      const bodyText = await response.text()
+      const supabase = getSupabaseBrowserClient()
+      const { items: nextItems, ok, result } = await listDemoItems(supabase, 5)
+      setItems(nextItems)
+
       recordCall({
         at: new Date().toISOString(),
-        call: `GET ${path}`,
-        status: response.status,
-        ok: response.ok,
-        result: bodyText.slice(0, 140) || '<empty>',
+        call,
+        status: null,
+        ok,
+        result,
       })
 
-      if (!response.ok) {
-        setError(`List request failed with status ${response.status}`)
-        return
+      if (!ok) {
+        setError(result)
       }
-
-      const parsed = JSON.parse(bodyText) as DemoItem[]
-      setItems(parsed)
-    } catch (nextError) {
+    } catch (error) {
       recordCall({
         at: new Date().toISOString(),
-        call: `GET ${path}`,
+        call,
         status: null,
         ok: false,
-        result: nextError instanceof Error ? nextError.message : 'Request failed',
+        result: error instanceof Error ? error.message : 'Request failed',
       })
-      setError(nextError instanceof Error ? nextError.message : 'List request failed')
+      setError(error instanceof Error ? error.message : 'List request failed')
     }
   }
 
@@ -94,7 +79,7 @@ export default function PostgrestPageClient() {
         return
       }
 
-      await loadTopFive(data.session.access_token)
+      await loadTopFive()
       setLoading(false)
     }
 
@@ -118,45 +103,32 @@ export default function PostgrestPageClient() {
       return
     }
 
-    const path = '/rest/v1/demo_items'
-    const url = `${import.meta.env.VITE_SUPABASE_URL}${path}`
-    const payload = {
-      title,
-      user_id: data.session.user.id,
-    }
+    const call = "supabase.from('demo_items').insert({ title, user_id }).select('id')"
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${data.session.access_token}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify(payload),
-      })
-      const bodyText = await response.text()
+      const supabase = getSupabaseBrowserClient()
+      const { ok, result } = await insertDemoItem(supabase, title, data.session.user.id)
+
       recordCall({
         at: new Date().toISOString(),
-        call: `POST ${path}`,
-        status: response.status,
-        ok: response.ok,
-        result: bodyText.slice(0, 140) || '<empty>',
+        call,
+        status: null,
+        ok,
+        result,
       })
 
-      if (!response.ok) {
+      if (!ok) {
         setSubmitting(false)
-        setError(`Insert failed with status ${response.status}`)
+        setError(result)
         return
       }
 
       setTitle('')
-      await loadTopFive(data.session.access_token)
+      await loadTopFive()
     } catch (nextError) {
       recordCall({
         at: new Date().toISOString(),
-        call: `POST ${path}`,
+        call,
         status: null,
         ok: false,
         result: nextError instanceof Error ? nextError.message : 'Request failed',

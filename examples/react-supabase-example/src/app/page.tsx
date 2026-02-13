@@ -1,95 +1,13 @@
 import AuthGate from '@/components/auth/AuthGate'
 import StackHealthClientCard from '@/components/StackHealthClientCard'
+import { runStackHealthChecks } from '@/lib/supabase/api'
 
-type HealthRow = {
-  component: string
-  call: string
-  status: number | null
-  ok: boolean
-  result: string
-}
-
-async function runServerChecks(): Promise<HealthRow[]> {
+async function runServerChecks() {
   const baseUrl = process.env.SUPABASE_SERVER_URL
     ?? process.env.VITE_SUPABASE_URL
     ?? 'http://host.docker.internal:30010'
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY ?? ''
-
-  const checks = [
-    {
-      component: 'auth',
-      method: 'GET',
-      path: '/auth/v1/health',
-      headers: {} as Record<string, string>,
-    },
-    {
-      component: 'auth-settings',
-      method: 'GET',
-      path: '/auth/v1/settings',
-      headers: {} as Record<string, string>,
-    },
-    {
-      component: 'rest',
-      method: 'GET',
-      path: '/rest/v1/',
-      headers: anonKey
-        ? ({
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-            Accept: 'application/openapi+json',
-          } as Record<string, string>)
-        : ({} as Record<string, string>),
-    },
-    {
-      component: 'realtime',
-      method: 'GET',
-      path: '/realtime/v1/api/health',
-      headers: anonKey
-        ? ({
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-          } as Record<string, string>)
-        : ({} as Record<string, string>),
-    },
-    {
-      component: 'storage',
-      method: 'GET',
-      path: '/storage/v1/bucket',
-      headers: anonKey
-        ? ({
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-          } as Record<string, string>)
-        : ({} as Record<string, string>),
-    },
-  ]
-
-  return Promise.all(checks.map(async check => {
-    const url = `${baseUrl}${check.path}`
-    try {
-      const response = await fetch(url, {
-        method: check.method,
-        headers: check.headers,
-        cache: 'no-store',
-      })
-      const text = await response.text()
-      return {
-        component: check.component,
-        call: `${check.method} ${check.path}`,
-        status: response.status,
-        ok: response.ok,
-        result: text.slice(0, 140) || '<empty>',
-      }
-    } catch (error) {
-      return {
-        component: check.component,
-        call: `${check.method} ${check.path}`,
-        status: null,
-        ok: false,
-        result: error instanceof Error ? error.message : 'Request failed',
-      }
-    }
-  }))
+  return runStackHealthChecks(baseUrl, anonKey)
 }
 
 // This is a React Server Component - runs on the server!
