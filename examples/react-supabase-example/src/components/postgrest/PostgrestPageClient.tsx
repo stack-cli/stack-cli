@@ -7,7 +7,7 @@ import { listDemoItems, type DemoItem } from '@/lib/supabase/api'
 import {
   INSERT_DEMO_ITEM_INITIAL_STATE,
   insertDemoItemServerAction,
-} from '@/app/postgrest/actions'
+} from '@/actions/postgrest-actions'
 
 export default function PostgrestPageClient() {
   const [loading, setLoading] = useState(true)
