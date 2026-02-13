@@ -1,7 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/login/page": "app/login/page.js",
-  "/signup/page": "app/signup/page.js",
-  "/realtime/page": "app/realtime/page.js",
-  "/postgrest/page": "app/postgrest/page.js"
-}
