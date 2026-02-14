@@ -125,3 +125,53 @@ broadcast-curl message='hello from just':
       -H "apikey: ${service_key}" \
       -H "Authorization: Bearer ${service_key}" \
       -d "${payload}"
+
+broadcast-command cmd='kubectl get pods -A -o wide':
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    env_file=".env.local"
+    if [[ ! -f "${env_file}" ]]; then
+      echo "${env_file} not found. Run: just sync-env-jwts" >&2
+      exit 1
+    fi
+
+    base_url="$(sed -n 's/^SUPABASE_SERVER_URL=//p' "${env_file}" | head -n1)"
+    service_key="$(sed -n 's/^SUPABASE_SERVICE_ROLE_KEY=//p' "${env_file}" | head -n1)"
+
+    if [[ -z "${base_url}" || -z "${service_key}" ]]; then
+      echo "Missing SUPABASE_SERVER_URL or SUPABASE_SERVICE_ROLE_KEY in ${env_file}" >&2
+      echo "Run: just sync-env-jwts" >&2
+      exit 1
+    fi
+
+    run_cmd='{{cmd}}'
+    echo "Running and broadcasting: ${run_cmd}"
+
+    line_no=0
+    set +e
+    while IFS= read -r raw_line; do
+      line_no=$((line_no + 1))
+      ts="$(date -u +%H:%M:%S)"
+      line="${raw_line:0:500}"
+      msg="[${ts}] #${line_no} ${line}"
+      payload="$(printf '{"messages":[{"topic":"realtime-broadcast-demo","event":"message","payload":{"message":"%s","sent_at":"%s"},"private":false}]}' "${msg}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+
+      curl -sS -X POST "${base_url}/realtime/v1/api/broadcast" \
+        -H "Content-Type: application/json" \
+        -H "apikey: ${service_key}" \
+        -H "Authorization: Bearer ${service_key}" \
+        -d "${payload}" >/dev/null
+      sleep 0.05
+    done < <(bash -lc "${run_cmd}" 2>&1)
+    cmd_exit=$?
+    set -e
+
+    summary="$(printf '{"messages":[{"topic":"realtime-broadcast-demo","event":"message","payload":{"message":"[done] command exit=%s","sent_at":"%s"},"private":false}]}' "${cmd_exit}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+    curl -sS -X POST "${base_url}/realtime/v1/api/broadcast" \
+      -H "Content-Type: application/json" \
+      -H "apikey: ${service_key}" \
+      -H "Authorization: Bearer ${service_key}" \
+      -d "${summary}" >/dev/null
+
+    exit "${cmd_exit}"
