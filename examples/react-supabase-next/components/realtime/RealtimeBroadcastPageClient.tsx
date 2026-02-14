@@ -23,6 +23,8 @@ export default function RealtimeBroadcastPageClient() {
   ])
   const terminalRef = useRef<HTMLDivElement | null>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const activeTokenRef = useRef<string | null>(null)
+  const resubscribingRef = useRef(false)
 
   const statusLabel = useMemo(() => {
     if (status === 'subscribed') return 'Subscribed'
@@ -58,16 +60,22 @@ export default function RealtimeBroadcastPageClient() {
     let cancelled = false
     let channel: RealtimeChannel | null = null
 
-    const run = async () => {
-      const { data } = await supabase.auth.getSession()
-      if (!data.session?.access_token) {
-        setStatus('errored')
-        setError('No authenticated session')
-        writeLine('No authenticated session')
-        return
+    const subscribeWithToken = async (token: string) => {
+      if (cancelled) return
+      if (activeTokenRef.current === token && channelRef.current) return
+
+      if (channel) {
+        resubscribingRef.current = true
+        await supabase.removeChannel(channel)
+        channel = null
+        channelRef.current = null
+        resubscribingRef.current = false
       }
 
-      supabase.realtime.setAuth(data.session.access_token)
+      setError(null)
+      setStatus('connecting')
+      supabase.realtime.setAuth(token)
+      activeTokenRef.current = token
 
       channel = supabase
         .channel(CHANNEL_NAME, {
@@ -92,6 +100,7 @@ export default function RealtimeBroadcastPageClient() {
             return
           }
           if (nextStatus === 'CLOSED') {
+            if (resubscribingRef.current) return
             setStatus('closed')
             writeLine('Subscription closed.')
             return
@@ -113,6 +122,19 @@ export default function RealtimeBroadcastPageClient() {
       channelRef.current = channel
     }
 
+    const run = async () => {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token
+      if (!token) {
+        setStatus('connecting')
+        setError(null)
+        writeLine('Waiting for auth session token...')
+        return
+      }
+
+      await subscribeWithToken(token)
+    }
+
     run().catch((nextError: unknown) => {
       const message = nextError instanceof Error ? nextError.message : 'Realtime broadcast setup failed'
       setStatus('errored')
@@ -120,10 +142,18 @@ export default function RealtimeBroadcastPageClient() {
       writeLine(message)
     })
 
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      const token = nextSession?.access_token
+      if (!token) return
+      void subscribeWithToken(token)
+    })
+
     return () => {
       cancelled = true
+      resubscribingRef.current = true
       channelRef.current = null
       if (channel) void supabase.removeChannel(channel)
+      authListener.subscription.unsubscribe()
     }
   }, [])
 
