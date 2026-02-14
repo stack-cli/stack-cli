@@ -39,3 +39,61 @@ db-migrate:
     kubectl -n stack-demo rollout status deployment/rest --timeout=120s
 
     echo "Done."
+
+sync-env-jwts:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    manifest="../../infra-as-code/demo.stack.yaml"
+    env_file=".env.local"
+
+    echo "Resolving JWTs from stack secrets using ${manifest}..."
+    secrets_output="$({
+      stack secrets \
+        --manifest "${manifest}" \
+        --db-host host.docker.internal \
+        --db-port 30011
+    })"
+
+    anon_jwt="$(printf '%s\n' "${secrets_output}" | sed -n 's/^ANON_JWT=//p' | head -n1)"
+    service_role_jwt="$(printf '%s\n' "${secrets_output}" | sed -n 's/^SERVICE_ROLE_JWT=//p' | head -n1)"
+
+    if [[ -z "${anon_jwt}" || -z "${service_role_jwt}" ]]; then
+      echo "Failed to resolve ANON_JWT or SERVICE_ROLE_JWT from stack secrets output" >&2
+      exit 1
+    fi
+
+    if [[ ! -f "${env_file}" ]]; then
+      printf '%s\n' \
+        'SUPABASE_SERVER_URL=http://host.docker.internal:30010' \
+        'NEXT_PUBLIC_SUPABASE_URL=http://localhost:30010' \
+        'NEXT_PUBLIC_SUPABASE_ANON_KEY=' \
+        'SUPABASE_SERVICE_ROLE_KEY=' \
+        > "${env_file}"
+    fi
+
+    tmp_file="$(mktemp)"
+    awk '
+      BEGIN {
+        saw_anon = 0
+        saw_service = 0
+      }
+      /^NEXT_PUBLIC_SUPABASE_ANON_KEY=/ {
+        print "NEXT_PUBLIC_SUPABASE_ANON_KEY=" anon
+        saw_anon = 1
+        next
+      }
+      /^SUPABASE_SERVICE_ROLE_KEY=/ {
+        print "SUPABASE_SERVICE_ROLE_KEY=" service
+        saw_service = 1
+        next
+      }
+      { print }
+      END {
+        if (!saw_anon) print "NEXT_PUBLIC_SUPABASE_ANON_KEY=" anon
+        if (!saw_service) print "SUPABASE_SERVICE_ROLE_KEY=" service
+      }
+    ' anon="${anon_jwt}" service="${service_role_jwt}" "${env_file}" > "${tmp_file}"
+
+    mv "${tmp_file}" "${env_file}"
+    echo "Updated ${env_file}: NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY"

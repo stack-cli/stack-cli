@@ -73,8 +73,8 @@ export default function RealtimeBroadcastPageClient() {
         .channel(CHANNEL_NAME, {
           config: {
             broadcast: {
-              ack: true,
-              self: false,
+              ack: false,
+              self: true,
             },
           },
         })
@@ -157,7 +157,7 @@ export default function RealtimeBroadcastPageClient() {
     setSending(false)
   }
 
-  const canSend = !sending && channelRef.current !== null
+  const canSend = !sending && status === 'subscribed'
 
   return (
     <AuthGate>
