@@ -97,3 +97,31 @@ sync-env-jwts:
 
     mv "${tmp_file}" "${env_file}"
     echo "Updated ${env_file}: NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY"
+
+broadcast-curl message='hello from just':
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    env_file=".env.local"
+    if [[ ! -f "${env_file}" ]]; then
+      echo "${env_file} not found. Run: just sync-env-jwts" >&2
+      exit 1
+    fi
+
+    base_url="$(sed -n 's/^SUPABASE_SERVER_URL=//p' "${env_file}" | head -n1)"
+    service_key="$(sed -n 's/^SUPABASE_SERVICE_ROLE_KEY=//p' "${env_file}" | head -n1)"
+
+    if [[ -z "${base_url}" || -z "${service_key}" ]]; then
+      echo "Missing SUPABASE_SERVER_URL or SUPABASE_SERVICE_ROLE_KEY in ${env_file}" >&2
+      echo "Run: just sync-env-jwts" >&2
+      exit 1
+    fi
+
+    msg='{{message}}'
+    payload="$(printf '{"messages":[{"topic":"realtime-broadcast-demo","event":"message","payload":{"message":"%s","sent_at":"%s"},"private":false}]}' "${msg}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+
+    curl -i -sS -X POST "${base_url}/realtime/v1/api/broadcast" \
+      -H "Content-Type: application/json" \
+      -H "apikey: ${service_key}" \
+      -H "Authorization: Bearer ${service_key}" \
+      -d "${payload}"
