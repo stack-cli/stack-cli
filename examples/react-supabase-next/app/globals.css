@@ -141,8 +141,7 @@ code {
   color: #e2e8f0;
   border: 1px solid #111827;
   border-radius: 0.5rem;
-  min-height: 16rem;
-  max-height: 24rem;
+  height: calc((10 * 1.5em) + 1.5rem);
   overflow: auto;
   padding: 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;

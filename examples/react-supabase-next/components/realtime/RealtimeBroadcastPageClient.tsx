@@ -56,44 +56,74 @@ export default function RealtimeBroadcastPageClient() {
 
     const supabase = getSupabaseBrowserClient()
     let cancelled = false
+    let channel: RealtimeChannel | null = null
 
-    const channel = supabase
-      .channel(CHANNEL_NAME)
-      .on('broadcast', { event: EVENT_NAME }, ({ payload }) => {
-        const body = typeof payload === 'object' ? JSON.stringify(payload) : String(payload ?? '')
-        const time = new Date().toLocaleTimeString()
-        writeLine(`[${time}] ${body}`)
-      })
-      .subscribe((nextStatus) => {
-        if (cancelled) return
+    const run = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session?.access_token) {
+        setStatus('errored')
+        setError('No authenticated session')
+        writeLine('No authenticated session')
+        return
+      }
 
-        if (nextStatus === 'SUBSCRIBED') {
-          setStatus('subscribed')
-          writeLine('Subscription active.')
-          return
-        }
-        if (nextStatus === 'CLOSED') {
-          setStatus('closed')
-          writeLine('Subscription closed.')
-          return
-        }
-        if (nextStatus === 'CHANNEL_ERROR' || nextStatus === 'TIMED_OUT') {
-          const message = `Subscription failed: ${nextStatus}`
-          setStatus('errored')
-          setError(message)
-          writeLine(message)
-          return
-        }
+      supabase.realtime.setAuth(data.session.access_token)
 
-        setStatus('connecting')
-      })
+      channel = supabase
+        .channel(CHANNEL_NAME, {
+          config: {
+            broadcast: {
+              ack: true,
+              self: false,
+            },
+          },
+        })
+        .on('broadcast', { event: EVENT_NAME }, ({ payload }) => {
+          const body = typeof payload === 'object' ? JSON.stringify(payload) : String(payload ?? '')
+          const time = new Date().toLocaleTimeString()
+          writeLine(`[${time}] ${body}`)
+        })
+        .subscribe((nextStatus, err) => {
+          if (cancelled) return
 
-    channelRef.current = channel
+          if (nextStatus === 'SUBSCRIBED') {
+            setStatus('subscribed')
+            writeLine('Subscription active.')
+            return
+          }
+          if (nextStatus === 'CLOSED') {
+            setStatus('closed')
+            writeLine('Subscription closed.')
+            return
+          }
+          if (nextStatus === 'CHANNEL_ERROR' || nextStatus === 'TIMED_OUT') {
+            const reason = err?.message ?? null
+            const message = reason
+              ? `Subscription failed: ${nextStatus} (${reason})`
+              : `Subscription failed: ${nextStatus}`
+            setStatus('errored')
+            setError(message)
+            writeLine(message)
+            return
+          }
+
+          setStatus('connecting')
+        })
+
+      channelRef.current = channel
+    }
+
+    run().catch((nextError: unknown) => {
+      const message = nextError instanceof Error ? nextError.message : 'Realtime broadcast setup failed'
+      setStatus('errored')
+      setError(message)
+      writeLine(message)
+    })
 
     return () => {
       cancelled = true
       channelRef.current = null
-      void supabase.removeChannel(channel)
+      if (channel) void supabase.removeChannel(channel)
     }
   }, [])
 
@@ -127,6 +157,8 @@ export default function RealtimeBroadcastPageClient() {
     setSending(false)
   }
 
+  const canSend = !sending && channelRef.current !== null
+
   return (
     <AuthGate>
       <div className="stack">
@@ -141,7 +173,6 @@ export default function RealtimeBroadcastPageClient() {
           </div>
           <p className="mono" style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
             Calls: supabase.channel('{CHANNEL_NAME}').on('broadcast', {'{'} event: '{EVENT_NAME}' {'}'}, ...).subscribe()
-            and channel.send({'{'} type: 'broadcast', event: '{EVENT_NAME}', payload {'}'})
           </p>
           <div className="terminal-shell" ref={terminalRef}>
             {lines.map((line, index) => (
@@ -155,6 +186,12 @@ export default function RealtimeBroadcastPageClient() {
             <h2 style={{ margin: 0 }}>Send Broadcast Event</h2>
             <span className="badge badge-client">Client</span>
           </div>
+          <p className="muted" style={{ marginTop: '0.5rem' }}>
+            What happens: submit sends a websocket broadcast, the realtime channel subscription receives it, and the stream above appends it as a terminal line.
+          </p>
+          <p className="mono" style={{ fontSize: '0.75rem' }}>
+            Calls: channel.send({'{'} type: 'broadcast', event: '{EVENT_NAME}', payload {'}'})
+          </p>
           <form onSubmit={onSubmit} className="row" style={{ marginTop: '0.75rem' }}>
             <input
               type="text"
@@ -164,7 +201,7 @@ export default function RealtimeBroadcastPageClient() {
               required
               className="input"
             />
-            <button type="submit" disabled={sending || status !== 'subscribed'} className="btn">
+            <button type="submit" disabled={!canSend} className="btn">
               {sending ? 'Sending...' : 'Send'}
             </button>
           </form>
