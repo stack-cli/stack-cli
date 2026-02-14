@@ -136,6 +136,25 @@ code {
   cursor: not-allowed;
 }
 
+.terminal-shell {
+  background: #020617;
+  color: #e2e8f0;
+  border: 1px solid #111827;
+  border-radius: 0.5rem;
+  min-height: 16rem;
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.terminal-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 700px) {
   .shell {
     padding: 1rem;

@@ -61,6 +61,7 @@ export default function AppNav() {
     <nav style={{ display: 'flex', gap: 16, borderBottom: '1px solid #e5e7eb', paddingBottom: 12, alignItems: 'center' }}>
       <Link href="/">Home</Link>
       <Link href="/realtime">Realtime</Link>
+      <Link href="/realtime-broadcast">Realtime Broadcast</Link>
       <Link href="/postgrest">Postgrest</Link>
       <Link href="/storage">Storage</Link>
       <span style={{ marginLeft: 'auto', fontSize: 14, color: '#374151' }}>{session.user.email}</span>
