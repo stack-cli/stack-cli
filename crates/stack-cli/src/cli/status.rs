@@ -60,17 +60,24 @@ pub async fn status(args: &crate::cli::StatusArgs) -> Result<()> {
 
     let keycloak_secret_api: Api<Secret> =
         Api::namespaced(client.clone(), args.keycloak_namespace.as_str());
-    let admin_secret = keycloak_secret_api
-        .get("keycloak-initial-admin")
-        .await
-        .context("Missing keycloak initial admin secret")?;
-    let username = decode_secret_field(&admin_secret, "username").unwrap_or_else(|| "admin".into());
-    let password =
-        decode_secret_field(&admin_secret, "password").unwrap_or_else(|| "<unknown>".into());
+    match keycloak_secret_api.get("keycloak-initial-admin").await {
+        Ok(admin_secret) => {
+            let username =
+                decode_secret_field(&admin_secret, "username").unwrap_or_else(|| "admin".into());
+            let password = decode_secret_field(&admin_secret, "password")
+                .unwrap_or_else(|| "<unknown>".into());
 
-    println!("🛡️ Keycloak Admin");
-    println!("   Username: {}", username);
-    println!("   Password: {}", password);
+            println!("🛡️ Keycloak Admin");
+            println!("   Username: {}", username);
+            println!("   Password: {}", password);
+        }
+        Err(_) => {
+            println!(
+                "🛡️ Keycloak Admin: (not found in namespace '{}' - run `stack init --install-keycloak` to enable)",
+                args.keycloak_namespace
+            );
+        }
+    }
 
     let pods: Api<Pod> = Api::namespaced(client.clone(), namespace.as_str());
     let pod_list = pods

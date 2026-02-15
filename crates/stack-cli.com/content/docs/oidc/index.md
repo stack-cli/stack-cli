@@ -1,6 +1,6 @@
 # OIDC (Keycloak)
 
-Stack relies on Keycloak for OAuth2 and OpenID Connect flows. When you run `stack init`, the CLI installs everything required to run a shared Keycloak control plane inside your cluster.
+Stack relies on Keycloak for OAuth2 and OpenID Connect flows. To install Keycloak, run `stack init --install-keycloak` so the CLI installs everything required to run a shared Keycloak control plane inside your cluster.
 
 OIDC in Stack is implemented with oauth2-proxy in front of your app plus a Keycloak realm per namespace.
 This is separate from `components.auth` (Supabase Auth), which provides the `/auth` API.
@@ -47,7 +47,7 @@ kubectl get keycloaks.k8s.keycloak.org -n keycloak
 kubectl get secret keycloak-initial-admin -n keycloak -o yaml
 ```
 
-If you ever need to reinstall Keycloak components (for example after manually deleting the namespace), re-run `stack init`. The CLI reapplies the CRDs, operator deployment, and database manifests idempotently.
+If you ever need to reinstall Keycloak components (for example after manually deleting the namespace), re-run `stack init --install-keycloak`. The CLI reapplies the CRDs, operator deployment, and database manifests idempotently.
 
 ## Accessing the Keycloak admin
 

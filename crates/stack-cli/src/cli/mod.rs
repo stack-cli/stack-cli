@@ -19,7 +19,7 @@ pub struct Cli {
 #[derive(Parser)]
 pub struct Initializer {
     /// Install Keycloak operator and shared realm
-    #[arg(long, default_value_t = true)]
+    #[arg(long)]
     pub install_keycloak: bool,
     /// Namespace for the operator
     #[arg(long, default_value = "stack-system")]

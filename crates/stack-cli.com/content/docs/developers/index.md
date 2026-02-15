@@ -32,7 +32,8 @@ stack deploy --manifest demo.stack.yaml
 stack operator --once
 ```
 
-- `stack init --no-operator` installs CloudNativePG, Keycloak, nginx, and the StackApp CRD without leaving a controller running in the cluster.
+- `stack init --no-operator` installs CloudNativePG, nginx, and the StackApp CRD without leaving a controller running in the cluster.
+- Add `--install-keycloak` when you also want Keycloak installed during init.
 - `stack deploy ...` applies the demo workload so you have something to inspect.
 - `stack operator --once` reconciles locally for a single tick; remove `--once` to keep it running.
 

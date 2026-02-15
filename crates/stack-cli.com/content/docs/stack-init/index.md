@@ -16,7 +16,13 @@ Before you begin, set up a local Kubernetes cluster. See the [Kubernetes Already
    stack init
    ```
 
-   This command installs CloudNativePG, Keycloak, ingress, the Stack controller, and custom resource definitions that describe your applications.
+   This command installs CloudNativePG, ingress, the Stack controller, and custom resource definitions that describe your applications.
+
+   To install Keycloak as part of init, pass `--install-keycloak`.
+
+   ```bash
+   stack init --install-keycloak
+   ```
 
    ```bash
    🔌 Connecting to the cluster...
