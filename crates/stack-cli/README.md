@@ -1,60 +1,87 @@
-## The Stack CLI and Kubernetes Operator
+# stack-cli: Local Development Guide
 
-Run and see the CLI help
+This crate contains the Stack CLI and in-cluster operator.
+Use this guide for local development and smoke testing against Kubernetes.
 
-```sh
+## CLI Help
+
+```bash
 cargo run --bin stack-cli -- -h
 ```
 
-## Run as an Operator
+## Local Cluster Setup
 
-```sh
-cargo run --bin stack-cli -- operator
+Use k3d for a fast local cluster:
+
+```bash
+k3d cluster delete stack-demo || true
+k3d cluster create stack-demo --agents 1 -p "30000-30013:30000-30013@agent:0"
 ```
 
-## (Re-)install K3's
+If kubeconfig is not already available in your environment:
 
-```sh
-# Uninstall
-sudo /usr/local/bin/k3s-uninstall.sh
+```bash
+cp ~/.kube/config /workspace/tmp/kubeconfig
+export KUBECONFIG=/workspace/tmp/kubeconfig
 ```
 
-```sh
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server --write-kubeconfig-mode="644"' sh -
-```
+## Bootstrap Stack Components
 
-## Install the application into a cluster
+Install core operators and CRDs:
 
-The `.kube/config` is already mapped in by `devcontainer.json`
-c
-
-If that one doesn't work copy `~/.kube/config` to `tmp/kubeconfig` then
-
-```
-export KUBECONFIG=/workspace/tmp/kubeconfig 
-```
-
-Then run
-
-```sh
+```bash
 cargo run --bin stack-cli -- init
-cargo run --bin stack-cli -- deploy --manifest ../../demo-stack-app.yaml
 ```
 
-## Testing the Operator
+Install Keycloak too (optional):
 
-Install the manifests without the in-cluster controller so you can iterate on the binary locally and observe the resources it creates:
+```bash
+cargo run --bin stack-cli -- init --install-keycloak
+```
 
-```sh
+Install manifests without running the in-cluster Stack operator:
+
+```bash
 cargo run --bin stack-cli -- init --no-operator
-cargo run --bin stack-cli -- deploy --manifest ../../demo-stack-app.yaml
 ```
 
-Then run the operator locally and confirm it reconciles `StackApp` objects:
+## Deploy a Demo StackApp
 
-```sh
+```bash
+cargo run --bin stack-cli -- deploy --manifest ../../infra-as-code/demo.stack.yaml
+```
+
+## Run Operator Locally
+
+Run one reconciliation tick:
+
+```bash
+cargo run --bin stack-cli -- operator --once
+```
+
+Run continuously:
+
+```bash
 cargo run --bin stack-cli -- operator
+```
+
+Watch StackApp resources:
+
+```bash
 kubectl get stackapplications --all-namespaces --watch
 ```
 
-Say go
+## Inspect Generated Access Details
+
+```bash
+cargo run --bin stack-cli -- status --manifest ../../infra-as-code/demo.stack.yaml
+cargo run --bin stack-cli -- secrets --manifest ../../infra-as-code/demo.stack.yaml
+```
+
+## Before Opening a PR
+
+```bash
+cargo fmt
+cargo clippy -- -D warnings
+cargo test
+```
