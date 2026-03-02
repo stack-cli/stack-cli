@@ -3,7 +3,7 @@ use super::finalizer;
 use crate::error::Error;
 use crate::services::{
     auth, database, deployment, document_engine, jwt_secrets, keycloak, mailhog, nginx,
-    oauth2_proxy, postgrest, rabbitmq, realtime, redis, selenium, storage,
+    oauth2_proxy, postgrest, realtime, selenium, storage,
 };
 use k8s_openapi::api::{apps::v1::Deployment as KubeDeployment, core::v1::Service};
 use kube::api::{DeleteParams, Patch, PatchParams};
@@ -16,9 +16,6 @@ const DEFAULT_DB_DISK_SIZE_GB: i32 = 20;
 const DB_NODEPORT_SERVICE_NAME: &str = "postgres-development";
 const APP_NODEPORT_SERVICE_NAME: &str = "nginx-development";
 const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
-const REDIS_NODEPORT_SERVICE_NAME: &str = "redis-development";
-const RABBITMQ_AMQP_NODEPORT_SERVICE_NAME: &str = "rabbitmq-amqp-development";
-const RABBITMQ_MANAGEMENT_NODEPORT_SERVICE_NAME: &str = "rabbitmq-management-development";
 const SELENIUM_NODEPORT_SERVICE_NAME: &str = "selenium-development";
 const MAILHOG_NODEPORT_SERVICE_NAME: &str = "mailhog-development";
 const WEB_APP_REPLICAS: i32 = 1;
@@ -60,8 +57,6 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         keycloak::delete(client.clone(), &namespace).await?;
         auth::delete(client.clone(), &namespace).await?;
         storage::delete(client.clone(), &namespace).await?;
-        redis::delete(client.clone(), &namespace).await?;
-        rabbitmq::delete(client.clone(), &namespace).await?;
         postgrest::delete(client.clone(), &namespace).await?;
         realtime::delete(client.clone(), &namespace).await?;
         document_engine::delete(client.clone(), &namespace).await?;
@@ -101,18 +96,6 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         storage::deploy(client.clone(), &namespace, &name, Some(storage_spec)).await?;
     } else {
         storage::delete(client.clone(), &namespace).await?;
-    }
-
-    if let Some(redis_spec) = app.spec.components.redis.as_ref() {
-        redis::deploy(client.clone(), &namespace, Some(redis_spec)).await?;
-    } else {
-        redis::delete(client.clone(), &namespace).await?;
-    }
-
-    if let Some(rabbitmq_spec) = app.spec.components.rabbitmq.as_ref() {
-        rabbitmq::deploy(client.clone(), &namespace, Some(rabbitmq_spec)).await?;
-    } else {
-        rabbitmq::delete(client.clone(), &namespace).await?;
     }
 
     if let Some(rest_spec) = app.spec.components.rest.as_ref() {
@@ -257,8 +240,6 @@ async fn deploy_web_app(
         &spec.services.web.migrations_database_url,
         &spec.services.web.readonly_database_url,
     );
-    append_redis_env(&mut env, &spec.services.web.redis_url);
-    append_rabbitmq_env(&mut env, &spec.services.web.rabbitmq_url);
 
     env.push(json!({
         "name": "WEB_IMAGE",
@@ -279,8 +260,6 @@ async fn deploy_web_app(
             &init.migrations_database_url,
             &init.readonly_database_url,
         );
-        append_redis_env(&mut init_env, &init.redis_url);
-        append_rabbitmq_env(&mut init_env, &init.rabbitmq_url);
         append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
 
         deployment::InitContainer {
@@ -321,9 +300,6 @@ async fn deploy_extra_services(
         nginx::NGINX_NAME,
         postgrest::REST_NAME,
         realtime::REALTIME_NAME,
-        redis::REDIS_NAME,
-        rabbitmq::RABBITMQ_NAME,
-        rabbitmq::RABBITMQ_MANAGEMENT_SERVICE_NAME,
         storage::STORAGE_NAME,
         document_engine::DOCUMENT_ENGINE_NAME,
         selenium::SELENIUM_NAME,
@@ -361,8 +337,6 @@ async fn deploy_extra_services(
             &service.migrations_database_url,
             &service.readonly_database_url,
         );
-        append_redis_env(&mut env, &service.redis_url);
-        append_rabbitmq_env(&mut env, &service.rabbitmq_url);
 
         append_env_from_spec(&mut env, &service.env, &service.secret_env);
 
@@ -374,8 +348,6 @@ async fn deploy_extra_services(
                 &init.migrations_database_url,
                 &init.readonly_database_url,
             );
-            append_redis_env(&mut init_env, &init.redis_url);
-            append_rabbitmq_env(&mut init_env, &init.rabbitmq_url);
             append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
 
             deployment::InitContainer {
@@ -489,82 +461,6 @@ async fn ensure_optional_nodeports(
         delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
     }
 
-    if let Some(node_port) = spec
-        .components
-        .redis
-        .as_ref()
-        .and_then(|redis_config| redis_config.expose_redis_port)
-    {
-        let redis_port = spec
-            .components
-            .redis
-            .as_ref()
-            .and_then(|redis_config| redis_config.port)
-            .unwrap_or(redis::DEFAULT_REDIS_PORT);
-        ensure_nodeport_service(
-            client,
-            namespace,
-            REDIS_NODEPORT_SERVICE_NAME,
-            json!({ "app": redis::REDIS_NAME }),
-            redis_port,
-            node_port,
-        )
-        .await?;
-    } else {
-        delete_service_if_exists(client, namespace, REDIS_NODEPORT_SERVICE_NAME).await?;
-    }
-
-    if let Some(node_port) = spec
-        .components
-        .rabbitmq
-        .as_ref()
-        .and_then(|rabbitmq_config| rabbitmq_config.expose_amqp_port)
-    {
-        let amqp_port = spec
-            .components
-            .rabbitmq
-            .as_ref()
-            .and_then(|rabbitmq_config| rabbitmq_config.port)
-            .unwrap_or(rabbitmq::DEFAULT_RABBITMQ_PORT);
-        ensure_nodeport_service(
-            client,
-            namespace,
-            RABBITMQ_AMQP_NODEPORT_SERVICE_NAME,
-            json!({ "app": rabbitmq::RABBITMQ_NAME }),
-            amqp_port,
-            node_port,
-        )
-        .await?;
-    } else {
-        delete_service_if_exists(client, namespace, RABBITMQ_AMQP_NODEPORT_SERVICE_NAME).await?;
-    }
-
-    if let Some(node_port) = spec
-        .components
-        .rabbitmq
-        .as_ref()
-        .and_then(|rabbitmq_config| rabbitmq_config.expose_management_port)
-    {
-        let management_port = spec
-            .components
-            .rabbitmq
-            .as_ref()
-            .and_then(|rabbitmq_config| rabbitmq_config.management_port)
-            .unwrap_or(rabbitmq::DEFAULT_RABBITMQ_MANAGEMENT_PORT);
-        ensure_nodeport_service(
-            client,
-            namespace,
-            RABBITMQ_MANAGEMENT_NODEPORT_SERVICE_NAME,
-            json!({ "app": rabbitmq::RABBITMQ_NAME }),
-            management_port,
-            node_port,
-        )
-        .await?;
-    } else {
-        delete_service_if_exists(client, namespace, RABBITMQ_MANAGEMENT_NODEPORT_SERVICE_NAME)
-            .await?;
-    }
-
     let selenium_config = spec.components.selenium.as_ref();
     let webdriver_nodeport = selenium_config.and_then(|cfg| cfg.expose_webdriver_port);
     let vnc_nodeport = selenium_config.and_then(|cfg| cfg.expose_vnc_port);
@@ -652,9 +548,6 @@ async fn delete_application_resources(
     delete_service_if_exists(client, namespace, APP_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, DB_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, REST_NODEPORT_SERVICE_NAME).await?;
-    delete_service_if_exists(client, namespace, REDIS_NODEPORT_SERVICE_NAME).await?;
-    delete_service_if_exists(client, namespace, RABBITMQ_AMQP_NODEPORT_SERVICE_NAME).await?;
-    delete_service_if_exists(client, namespace, RABBITMQ_MANAGEMENT_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, SELENIUM_NODEPORT_SERVICE_NAME).await?;
     delete_service_if_exists(client, namespace, MAILHOG_NODEPORT_SERVICE_NAME).await?;
 
@@ -836,34 +729,6 @@ fn append_db_envs(
                 "secretKeyRef": {
                     "name": "database-urls",
                     "key": "readonly-url"
-                }
-            }
-        }));
-    }
-}
-
-fn append_redis_env(env: &mut Vec<Value>, redis_url: &Option<String>) {
-    if let Some(redis_env_name) = redis_url.clone() {
-        env.push(json!({
-            "name": redis_env_name,
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "redis-urls",
-                    "key": "redis-url"
-                }
-            }
-        }));
-    }
-}
-
-fn append_rabbitmq_env(env: &mut Vec<Value>, rabbitmq_url: &Option<String>) {
-    if let Some(rabbitmq_env_name) = rabbitmq_url.clone() {
-        env.push(json!({
-            "name": rabbitmq_env_name,
-            "valueFrom": {
-                "secretKeyRef": {
-                    "name": "rabbitmq-urls",
-                    "key": "amqp-url"
                 }
             }
         }));

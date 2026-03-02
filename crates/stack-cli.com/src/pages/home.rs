@@ -16,8 +16,6 @@ spec:
     ingress:
       port: 30010
     db:
-    redis: {}
-    rabbitmq: {}
     rest: {}
     oidc:
       hostname-url: http://localhost:30013
@@ -184,34 +182,6 @@ spec:
                     }
 
                     a {
-                        href: "/docs/redis",
-                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
-                        div {
-                            class: "flex items-center gap-3",
-                            span { class: "text-xs font-mono text-base-content/70", "[CACHE]" }
-                            h3 { class: "text-lg font-semibold", "Redis" }
-                        }
-                        p {
-                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
-                            "Add low-latency cache and queue-style workloads with optional persistence and secret-managed credentials."
-                        }
-                    }
-
-                    a {
-                        href: "/docs/rabbitmq",
-                        class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
-                        div {
-                            class: "flex items-center gap-3",
-                            span { class: "text-xs font-mono text-base-content/70", "[MQ]" }
-                            h3 { class: "text-lg font-semibold", "RabbitMQ" }
-                        }
-                        p {
-                            class: "mt-4 text-sm leading-relaxed text-base-content/80",
-                            "Run broker-backed workflows for background jobs, events, and service-to-service messaging."
-                        }
-                    }
-
-                    a {
                         href: "/docs/realtime",
                         class: "group rounded-xl border p-6 transition-colors hover:bg-base-200/60 md:col-span-6 xl:col-span-3",
                         div {
@@ -303,26 +273,6 @@ spec:
                                 span {
                                     span { class: "font-medium", "REST APIs" }
                                     " via PostgREST"
-                                }
-                            }
-                            li {
-                                class: "flex gap-3",
-                                span {
-                                    class: "mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-black"
-                                }
-                                span {
-                                    span { class: "font-medium", "Redis" }
-                                    " for caching and fast app state"
-                                }
-                            }
-                            li {
-                                class: "flex gap-3",
-                                span {
-                                    class: "mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-black"
-                                }
-                                span {
-                                    span { class: "font-medium", "RabbitMQ" }
-                                    " for worker queues and event messaging"
                                 }
                             }
                             li {

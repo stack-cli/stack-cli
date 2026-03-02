@@ -41,8 +41,6 @@ pub struct Components {
     pub oidc: Option<OidcConfig>,
     pub auth: Option<SupabaseAuthConfig>,
     pub storage: Option<StorageConfig>,
-    pub redis: Option<RedisConfig>,
-    pub rabbitmq: Option<RabbitMqConfig>,
     pub ingress: Option<IngressConfig>,
     pub realtime: Option<RealtimeConfig>,
     pub rest: Option<RestConfig>,
@@ -87,10 +85,6 @@ pub struct ServiceSpec {
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
     pub readonly_database_url: Option<String>,
-    /// Optional environment variable name to receive the REDIS_URL (from `redis-urls/redis-url`).
-    pub redis_url: Option<String>,
-    /// Optional environment variable name to receive the AMQP URL (from `rabbitmq-urls/amqp-url`).
-    pub rabbitmq_url: Option<String>,
 }
 
 // Extra services use the same schema as the primary web service.
@@ -112,10 +106,6 @@ pub struct WebInit {
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
     pub readonly_database_url: Option<String>,
-    /// Optional environment variable name to receive the REDIS_URL (from `redis-urls/redis-url`).
-    pub redis_url: Option<String>,
-    /// Optional environment variable name to receive the AMQP URL (from `rabbitmq-urls/amqp-url`).
-    pub rabbitmq_url: Option<String>,
 }
 
 /// Optional database configuration.
@@ -161,44 +151,6 @@ pub struct StorageConfig {
     pub install_minio: Option<bool>,
     /// Maximum upload size accepted by Storage and nginx (e.g. 50mb, 10m, 1048576). Defaults to 50mb.
     pub max_upload_size: Option<String>,
-}
-
-/// Optional Redis configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
-pub struct RedisConfig {
-    /// Optional container image to run.
-    pub image: Option<String>,
-    /// Optional Redis service port.
-    pub port: Option<u16>,
-    /// Optional PVC size (e.g. 1Gi). Used when persistence is enabled.
-    pub size: Option<String>,
-    /// Optional secret name containing Redis password under key `password`.
-    pub password_secret_name: Option<String>,
-    /// Enable persistent storage. Defaults to true.
-    pub persistence: Option<bool>,
-    /// Optional NodePort number to expose Redis.
-    pub expose_redis_port: Option<u16>,
-}
-
-/// Optional RabbitMQ configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
-pub struct RabbitMqConfig {
-    /// Optional container image to run.
-    pub image: Option<String>,
-    /// Optional RabbitMQ AMQP service port.
-    pub port: Option<u16>,
-    /// Optional RabbitMQ management UI port.
-    pub management_port: Option<u16>,
-    /// Optional PVC size (e.g. 5Gi). Used when persistence is enabled.
-    pub size: Option<String>,
-    /// Optional secret name containing RabbitMQ credentials under keys `username` and `password`.
-    pub credentials_secret_name: Option<String>,
-    /// Enable persistent storage. Defaults to true.
-    pub persistence: Option<bool>,
-    /// Optional NodePort number to expose AMQP.
-    pub expose_amqp_port: Option<u16>,
-    /// Optional NodePort number to expose RabbitMQ management UI.
-    pub expose_management_port: Option<u16>,
 }
 
 /// Optional ingress configuration for exposing nginx via NodePort.
