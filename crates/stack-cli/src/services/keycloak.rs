@@ -1,6 +1,5 @@
 use crate::error::Error;
 use k8s_openapi::api::core::v1::{Secret, Service};
-use k8s_openapi::api::networking::v1::NetworkPolicy;
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::core::dynamic::{ApiResource, DynamicObject};
 use kube::core::gvk::GroupVersionKind;
@@ -354,18 +353,6 @@ async fn cleanup_bootstrap_conflicts(client: Client) -> Result<(), Error> {
     {
         let _ = secret_api
             .delete("keycloak-initial-admin", &DeleteParams::default())
-            .await;
-    }
-
-    let network_policy_api: Api<NetworkPolicy> = Api::namespaced(client, KEYCLOAK_NAMESPACE);
-    if network_policy_api
-        .get("keycloak-network-policy")
-        .await
-        .map(|_| ())
-        .is_ok()
-    {
-        let _ = network_policy_api
-            .delete("keycloak-network-policy", &DeleteParams::default())
             .await;
     }
 

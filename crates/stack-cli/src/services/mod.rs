@@ -7,7 +7,6 @@ pub mod jwt_secrets;
 pub mod keycloak;
 pub mod keycloak_db;
 pub mod mailhog;
-pub mod network_policy;
 pub mod nginx;
 pub mod oauth2_proxy;
 pub mod postgrest;

@@ -295,8 +295,6 @@ async fn deploy_web_app(
             volumes: vec![],
         },
         namespace,
-        spec.components.ingress.is_some(),
-        true,
     )
     .await
 }
@@ -395,8 +393,6 @@ async fn deploy_extra_services(
                 volumes: vec![],
             },
             namespace,
-            false,
-            false,
         )
         .await?;
     }

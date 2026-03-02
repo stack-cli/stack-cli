@@ -30,10 +30,6 @@ pub async fn deploy(
     let shm_size = config
         .and_then(|cfg| cfg.shm_size.clone())
         .unwrap_or_else(|| DEFAULT_SHM_SIZE.to_string());
-    let allow_from_anywhere = config
-        .map(|cfg| cfg.expose_webdriver_port.is_some() || cfg.expose_vnc_port.is_some())
-        .unwrap_or(false);
-
     let volume_mounts = vec![json!({
         "name": "dshm",
         "mountPath": "/dev/shm"
@@ -60,8 +56,6 @@ pub async fn deploy(
             volumes,
         },
         namespace,
-        allow_from_anywhere,
-        false,
     )
     .await?;
 

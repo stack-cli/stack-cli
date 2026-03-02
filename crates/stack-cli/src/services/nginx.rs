@@ -413,8 +413,6 @@ server {{
             })],
         },
         namespace,
-        true,
-        false,
     )
     .await?;
 

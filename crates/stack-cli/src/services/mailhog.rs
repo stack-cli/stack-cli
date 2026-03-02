@@ -26,10 +26,6 @@ pub async fn deploy(
     let web_port = config
         .and_then(|cfg| cfg.web_port)
         .unwrap_or(DEFAULT_WEB_PORT);
-    let allow_from_anywhere = config
-        .map(|cfg| cfg.expose_smtp_port.is_some() || cfg.expose_web_port.is_some())
-        .unwrap_or(false);
-
     deployment::deployment(
         client.clone(),
         deployment::ServiceDeployment {
@@ -44,8 +40,6 @@ pub async fn deploy(
             volumes: vec![],
         },
         namespace,
-        allow_from_anywhere,
-        false,
     )
     .await?;
 

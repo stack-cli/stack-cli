@@ -34,8 +34,6 @@ pub async fn deployment(
     client: Client,
     service_deployment: ServiceDeployment,
     namespace: &str,
-    allow_from_anywhere: bool,
-    allow_all_egress: bool,
 ) -> Result<(), Error> {
     let app_labels = serde_json::json!({
         "app": service_deployment.name,
@@ -124,15 +122,6 @@ pub async fn deployment(
     if let Some(port) = service_deployment.port {
         service(client.clone(), &service_deployment.name, port, namespace).await?;
     }
-
-    crate::services::network_policy::default_deny(
-        client,
-        &service_deployment.name,
-        namespace,
-        allow_from_anywhere,
-        allow_all_egress,
-    )
-    .await?;
 
     Ok(())
 }
