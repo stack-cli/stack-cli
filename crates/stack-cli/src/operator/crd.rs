@@ -85,6 +85,12 @@ pub struct ServiceSpec {
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
     pub readonly_database_url: Option<String>,
+    /// Optional environment variable name to receive the JWT signing secret (from `jwt-auth/jwt-secret`).
+    pub jwt_secret: Option<String>,
+    /// Optional environment variable name to receive the anon JWT (from `jwt-auth/anon-jwt`).
+    pub anon_jwt: Option<String>,
+    /// Optional environment variable name to receive the service role JWT (from `jwt-auth/service-role-jwt`).
+    pub service_role_jwt: Option<String>,
 }
 
 // Extra services use the same schema as the primary web service.
@@ -106,6 +112,12 @@ pub struct WebInit {
     pub migrations_database_url: Option<String>,
     /// Optional environment variable name to receive the readonly URL (from `database-urls/readonly-url`).
     pub readonly_database_url: Option<String>,
+    /// Optional environment variable name to receive the JWT signing secret (from `jwt-auth/jwt-secret`).
+    pub jwt_secret: Option<String>,
+    /// Optional environment variable name to receive the anon JWT (from `jwt-auth/anon-jwt`).
+    pub anon_jwt: Option<String>,
+    /// Optional environment variable name to receive the service role JWT (from `jwt-auth/service-role-jwt`).
+    pub service_role_jwt: Option<String>,
 }
 
 /// Optional database configuration.

@@ -240,6 +240,12 @@ async fn deploy_web_app(
         &spec.services.web.migrations_database_url,
         &spec.services.web.readonly_database_url,
     );
+    append_jwt_envs(
+        &mut env,
+        &spec.services.web.jwt_secret,
+        &spec.services.web.anon_jwt,
+        &spec.services.web.service_role_jwt,
+    );
 
     env.push(json!({
         "name": "WEB_IMAGE",
@@ -259,6 +265,12 @@ async fn deploy_web_app(
             &init.database_url,
             &init.migrations_database_url,
             &init.readonly_database_url,
+        );
+        append_jwt_envs(
+            &mut init_env,
+            &init.jwt_secret,
+            &init.anon_jwt,
+            &init.service_role_jwt,
         );
         append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
 
@@ -337,6 +349,12 @@ async fn deploy_extra_services(
             &service.migrations_database_url,
             &service.readonly_database_url,
         );
+        append_jwt_envs(
+            &mut env,
+            &service.jwt_secret,
+            &service.anon_jwt,
+            &service.service_role_jwt,
+        );
 
         append_env_from_spec(&mut env, &service.env, &service.secret_env);
 
@@ -347,6 +365,12 @@ async fn deploy_extra_services(
                 &init.database_url,
                 &init.migrations_database_url,
                 &init.readonly_database_url,
+            );
+            append_jwt_envs(
+                &mut init_env,
+                &init.jwt_secret,
+                &init.anon_jwt,
+                &init.service_role_jwt,
             );
             append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
 
@@ -729,6 +753,51 @@ fn append_db_envs(
                 "secretKeyRef": {
                     "name": "database-urls",
                     "key": "readonly-url"
+                }
+            }
+        }));
+    }
+}
+
+fn append_jwt_envs(
+    env: &mut Vec<Value>,
+    jwt_secret: &Option<String>,
+    anon_jwt: &Option<String>,
+    service_role_jwt: &Option<String>,
+) {
+    append_secret_env_ref(
+        env,
+        jwt_secret,
+        jwt_secrets::JWT_AUTH_SECRET_NAME,
+        jwt_secrets::JWT_SECRET_KEY,
+    );
+    append_secret_env_ref(
+        env,
+        anon_jwt,
+        jwt_secrets::JWT_AUTH_SECRET_NAME,
+        jwt_secrets::JWT_ANON_TOKEN_KEY,
+    );
+    append_secret_env_ref(
+        env,
+        service_role_jwt,
+        jwt_secrets::JWT_AUTH_SECRET_NAME,
+        jwt_secrets::JWT_SERVICE_ROLE_TOKEN_KEY,
+    );
+}
+
+fn append_secret_env_ref(
+    env: &mut Vec<Value>,
+    env_name: &Option<String>,
+    secret_name: &str,
+    secret_key: &str,
+) {
+    if let Some(env_name) = env_name.clone() {
+        env.push(json!({
+            "name": env_name,
+            "valueFrom": {
+                "secretKeyRef": {
+                    "name": secret_name,
+                    "key": secret_key
                 }
             }
         }));

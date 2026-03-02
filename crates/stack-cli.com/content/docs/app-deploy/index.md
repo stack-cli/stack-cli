@@ -1,6 +1,6 @@
 # Application Deployment
 
-Your app is defined in the `services.web` section of the `StackApp` manifest. Stack deploys that container and wires in secrets, env vars, and database URLs.
+Your app is defined in the `services.web` section of the `StackApp` manifest. Stack deploys that container and wires in secrets, env vars, database URLs, and Stack-managed JWT values.
 
 ## Basic web service
 
@@ -49,6 +49,21 @@ spec:
       migrations_database_url: DATABASE_MIGRATIONS_URL
       readonly_database_url: DATABASE_READONLY_URL
 ```
+
+## JWT values
+
+Stack also creates a `jwt-auth` secret. You can request the generated JWT values the same way by naming the env vars you want set:
+
+```yaml
+spec:
+  services:
+    web:
+      jwt_secret: SUPABASE_JWT_SECRET
+      anon_jwt: NEXT_PUBLIC_SUPABASE_ANON_KEY
+      service_role_jwt: SUPABASE_SERVICE_ROLE_KEY
+```
+
+These map to the `jwt-auth` secret keys `jwt-secret`, `anon-jwt`, and `service-role-jwt`.
 
 ## Init containers
 

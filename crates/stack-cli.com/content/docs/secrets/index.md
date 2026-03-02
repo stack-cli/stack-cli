@@ -40,6 +40,21 @@ spec:
       readonly_database_url: DATABASE_READONLY_URL
 ```
 
+## JWT shorthands
+
+The controller also creates a `jwt-auth` secret and can project those values directly when you opt in on the service:
+
+```yaml
+spec:
+  services:
+    web:
+      jwt_secret: SUPABASE_JWT_SECRET
+      anon_jwt: NEXT_PUBLIC_SUPABASE_ANON_KEY
+      service_role_jwt: SUPABASE_SERVICE_ROLE_KEY
+```
+
+This is equivalent to `secret_env`, but uses the built-in `jwt-auth` secret keys for you.
+
 When working locally, you can rewrite the database URLs to point at a forwarded host/port:
 
 ```bash
