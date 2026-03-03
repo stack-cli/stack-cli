@@ -125,7 +125,7 @@ pub struct WebInit {
 pub struct DbConfig {
     /// Danger: overrides generated DB passwords. Use only for local development.
     pub danger_override_password: Option<String>,
-    /// Optional CloudNativePG postgres image (e.g. ghcr.io/voltade/cnpg-supabase:17.5-system-1).
+    /// Optional CloudNativePG postgres image override.
     pub image_name: Option<String>,
     /// Optional NodePort number to expose the database service.
     pub expose_db_port: Option<u16>,

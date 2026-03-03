@@ -26,7 +26,7 @@ use serde_json::json;
 
 const OPERATOR_IMAGE: &str = "ghcr.io/stack-cli/stack-operator";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const CNPG_YAML: &str = include_str!("../../config/cnpg-1.22.1.yaml");
+const CNPG_YAML: &str = include_str!("../../config/cnpg-1.28.1.yaml");
 const KEYCLOAK_CRD_KEYCLOAKS: &str = include_str!("../../keycloak/keycloak-crd-keycloaks.yaml");
 const KEYCLOAK_CRD_REALM_IMPORTS: &str =
     include_str!("../../keycloak/keycloak-crd-keycloakrealmimports.yaml");

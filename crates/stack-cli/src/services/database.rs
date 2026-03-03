@@ -37,8 +37,7 @@ pub struct StorageSpec {
     pub size: String,
 }
 
-pub const CNPG_INSTALL_HINT: &str = "CloudNativePG operator is not installed. Run `stack-cli init` or apply `crates/stack-cli/config/cnpg-1.22.1.yaml` before reconciling.";
-pub const DEFAULT_IMAGE_NAME: &str = "ghcr.io/voltade/cnpg-supabase:17.5-system-1";
+pub const CNPG_INSTALL_HINT: &str = "CloudNativePG operator is not installed. Run `stack-cli init` or apply `crates/stack-cli/config/cnpg-1.28.1.yaml` before reconciling.";
 
 pub fn cluster_resource_name(app_name: &str) -> String {
     format!("{app_name}-db-cluster")
@@ -100,11 +99,7 @@ pub async fn deploy(
             ..Default::default()
         },
         spec: ClusterSpec {
-            image_name: Some(
-                image_name
-                    .clone()
-                    .unwrap_or_else(|| DEFAULT_IMAGE_NAME.to_string()),
-            ),
+            image_name: image_name.clone(),
             instances: 1,
             bootstrap: BootstrapSpec {
                 initdb: InitDBSpec {
