@@ -1,11 +1,15 @@
 use super::crd::{EnvVar, SecretEnvVar, ServiceSpec, StackApp, StackAppSpec};
 use super::finalizer;
+use crate::crypto;
 use crate::error::Error;
 use crate::services::{
     auth, database, deployment, document_engine, jwt_secrets, keycloak, mailhog, nginx,
     oauth2_proxy, postgrest, realtime, selenium, storage,
 };
-use k8s_openapi::api::{apps::v1::Deployment as KubeDeployment, core::v1::Service};
+use k8s_openapi::api::{
+    apps::v1::Deployment as KubeDeployment,
+    core::v1::{Secret, Service},
+};
 use kube::api::{DeleteParams, Patch, PatchParams};
 use kube::{Api, Client, Resource, ResourceExt};
 use kube_runtime::controller::Action;
@@ -19,6 +23,7 @@ const REST_NODEPORT_SERVICE_NAME: &str = "rest-development";
 const SELENIUM_NODEPORT_SERVICE_NAME: &str = "selenium-development";
 const MAILHOG_NODEPORT_SERVICE_NAME: &str = "mailhog-development";
 const WEB_APP_REPLICAS: i32 = 1;
+const INLINE_SECRET_NAME_SUFFIX: &str = "inline-secrets";
 /// Context injected with each `reconcile` and `on_error` method invocation.
 pub struct ContextData {
     /// Kubernetes client to make Kubernetes API requests with. Required for K8S resource management.
@@ -191,6 +196,8 @@ pub async fn reconcile(app: Arc<StackApp>, context: Arc<ContextData>) -> Result<
         .await?;
     }
 
+    ensure_inline_secret_values(&client, &namespace, &name, &app.spec).await?;
+
     if let Some(auth_config) = app.spec.components.auth.as_ref() {
         auth::deploy(client.clone(), &namespace, &name, auth_config).await?;
     } else {
@@ -256,30 +263,37 @@ async fn deploy_web_app(
         &mut env,
         &spec.services.web.env,
         &spec.services.web.secret_env,
-    );
+        app_name,
+    )?;
 
-    let init_containers = spec.services.web.init.as_ref().map(|init| {
-        let mut init_env = Vec::new();
-        append_db_envs(
-            &mut init_env,
-            &init.database_url,
-            &init.migrations_database_url,
-            &init.readonly_database_url,
-        );
-        append_jwt_envs(
-            &mut init_env,
-            &init.jwt_secret,
-            &init.anon_jwt,
-            &init.service_role_jwt,
-        );
-        append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
+    let init_containers = spec
+        .services
+        .web
+        .init
+        .as_ref()
+        .map(|init| {
+            let mut init_env = Vec::new();
+            append_db_envs(
+                &mut init_env,
+                &init.database_url,
+                &init.migrations_database_url,
+                &init.readonly_database_url,
+            );
+            append_jwt_envs(
+                &mut init_env,
+                &init.jwt_secret,
+                &init.anon_jwt,
+                &init.service_role_jwt,
+            );
+            append_env_from_spec(&mut init_env, &init.env, &init.secret_env, app_name)?;
 
-        deployment::InitContainer {
-            image_name: init.image.clone(),
-            env: init_env,
-            command: None,
-        }
-    });
+            Ok::<deployment::InitContainer, Error>(deployment::InitContainer {
+                image_name: init.image.clone(),
+                env: init_env,
+                command: None,
+            })
+        })
+        .transpose()?;
 
     deployment::deployment(
         client.clone(),
@@ -354,30 +368,34 @@ async fn deploy_extra_services(
             &service.service_role_jwt,
         );
 
-        append_env_from_spec(&mut env, &service.env, &service.secret_env);
+        append_env_from_spec(&mut env, &service.env, &service.secret_env, app_name)?;
 
-        let init_containers = service.init.as_ref().map(|init| {
-            let mut init_env = Vec::new();
-            append_db_envs(
-                &mut init_env,
-                &init.database_url,
-                &init.migrations_database_url,
-                &init.readonly_database_url,
-            );
-            append_jwt_envs(
-                &mut init_env,
-                &init.jwt_secret,
-                &init.anon_jwt,
-                &init.service_role_jwt,
-            );
-            append_env_from_spec(&mut init_env, &init.env, &init.secret_env);
+        let init_containers = service
+            .init
+            .as_ref()
+            .map(|init| {
+                let mut init_env = Vec::new();
+                append_db_envs(
+                    &mut init_env,
+                    &init.database_url,
+                    &init.migrations_database_url,
+                    &init.readonly_database_url,
+                );
+                append_jwt_envs(
+                    &mut init_env,
+                    &init.jwt_secret,
+                    &init.anon_jwt,
+                    &init.service_role_jwt,
+                );
+                append_env_from_spec(&mut init_env, &init.env, &init.secret_env, app_name)?;
 
-            deployment::InitContainer {
-                image_name: init.image.clone(),
-                env: init_env,
-                command: None,
-            }
-        });
+                Ok::<deployment::InitContainer, Error>(deployment::InitContainer {
+                    image_name: init.image.clone(),
+                    env: init_env,
+                    command: None,
+                })
+            })
+            .transpose()?;
 
         deployment::deployment(
             client.clone(),
@@ -691,7 +709,8 @@ fn append_env_from_spec(
     env: &mut Vec<Value>,
     env_vars: &[EnvVar],
     secret_env_vars: &[SecretEnvVar],
-) {
+    app_name: &str,
+) -> Result<(), Error> {
     for env_var in env_vars {
         env.push(json!({
             "name": env_var.name,
@@ -704,12 +723,109 @@ fn append_env_from_spec(
             "name": env_var.name,
             "valueFrom": {
                 "secretKeyRef": {
-                    "name": env_var.secret_name,
-                    "key": env_var.secret_key
+                    "name": resolve_secret_name(env_var, app_name),
+                    "key": resolve_secret_key(env_var)
                 }
             }
         }));
     }
+
+    Ok(())
+}
+
+fn resolve_secret_name(env_var: &SecretEnvVar, app_name: &str) -> String {
+    env_var
+        .secret_name
+        .clone()
+        .unwrap_or_else(|| format!("{}-{}", app_name, INLINE_SECRET_NAME_SUFFIX))
+}
+
+fn resolve_secret_key(env_var: &SecretEnvVar) -> String {
+    env_var
+        .secret_key
+        .clone()
+        .unwrap_or_else(|| env_var.name.clone())
+}
+
+fn resolve_secret_value(value: &str) -> Result<String, Error> {
+    if crypto::is_encrypted(value) {
+        let secret_key = std::env::var("STACK_CLI_AGE_SECRET_KEY").map_err(|_| {
+            Error::Other(
+                "STACK_CLI_AGE_SECRET_KEY is required to decrypt encrypted secret_value"
+                    .to_string(),
+            )
+        })?;
+        crypto::decrypt_with_secret_key(value, &secret_key)
+            .map_err(|err| Error::Other(format!("Failed to decrypt secret_value: {err}")))
+    } else {
+        Ok(value.to_string())
+    }
+}
+
+async fn ensure_inline_secret_values(
+    client: &Client,
+    namespace: &str,
+    app_name: &str,
+    spec: &StackAppSpec,
+) -> Result<(), Error> {
+    let mut string_data = serde_json::Map::new();
+
+    let mut gather = |vars: &[SecretEnvVar]| -> Result<(), Error> {
+        for var in vars {
+            if let Some(secret_value) = var.secret_value.as_deref() {
+                let secret_name = resolve_secret_name(var, app_name);
+                let default_inline_name = format!("{}-{}", app_name, INLINE_SECRET_NAME_SUFFIX);
+                if secret_name != default_inline_name {
+                    return Err(Error::Other(format!(
+                        "secret_env '{}' uses secret_value and must omit secret_name or set it to '{}'",
+                        var.name, default_inline_name
+                    )));
+                }
+                let secret_key = resolve_secret_key(var);
+                let value = resolve_secret_value(secret_value)?;
+                string_data.insert(secret_key, Value::String(value));
+            }
+        }
+        Ok(())
+    };
+
+    gather(&spec.services.web.secret_env)?;
+    if let Some(init) = spec.services.web.init.as_ref() {
+        gather(&init.secret_env)?;
+    }
+    for service in spec.services.extra.values() {
+        gather(&service.secret_env)?;
+        if let Some(init) = service.init.as_ref() {
+            gather(&init.secret_env)?;
+        }
+    }
+
+    if string_data.is_empty() {
+        return Ok(());
+    }
+
+    let secret_name = format!("{}-{}", app_name, INLINE_SECRET_NAME_SUFFIX);
+    let secret_manifest = json!({
+        "apiVersion": "v1",
+        "kind": "Secret",
+        "metadata": {
+            "name": secret_name,
+            "namespace": namespace
+        },
+        "type": "Opaque",
+        "stringData": string_data
+    });
+
+    let secret_api: Api<Secret> = Api::namespaced(client.clone(), namespace);
+    secret_api
+        .patch(
+            &secret_name,
+            &PatchParams::apply(crate::MANAGER).force(),
+            &Patch::Apply(secret_manifest),
+        )
+        .await?;
+
+    Ok(())
 }
 
 fn append_db_envs(

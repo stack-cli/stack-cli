@@ -1,5 +1,6 @@
 pub mod apply;
 pub mod cloudflare;
+pub mod crypto;
 pub mod deploy;
 pub mod init;
 pub mod manifest;
@@ -93,6 +94,8 @@ pub struct CloudflareArgs {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Encrypt/decrypt secret values with age
+    Crypto(crypto::CryptoArgs),
     /// Deploy an application into Kubernetes
     Deploy(Deployer),
     /// Install the required operators into Kubernetes
