@@ -11,3 +11,4 @@ target
 realtime-listen.mjs
 test.mjs
 .pnpm-store
+.codex
