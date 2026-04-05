@@ -1,4 +1,5 @@
 mod cli;
+mod crypto;
 mod error;
 mod operator;
 mod services;
@@ -12,6 +13,9 @@ async fn main() -> Result<()> {
     let cli = cli::Cli::parse();
 
     match &cli.command {
+        cli::Commands::Crypto(args) => {
+            cli::crypto::crypto(args).await?;
+        }
         cli::Commands::Deploy(deployer) => {
             cli::deploy::deploy(deployer).await?;
         }

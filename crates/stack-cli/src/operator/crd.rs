@@ -60,8 +60,12 @@ pub struct EnvVar {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema)]
 pub struct SecretEnvVar {
     pub name: String,
-    pub secret_name: String,
-    pub secret_key: String,
+    #[serde(default)]
+    pub secret_name: Option<String>,
+    #[serde(default)]
+    pub secret_key: Option<String>,
+    #[serde(default)]
+    pub secret_value: Option<String>,
 }
 
 /// Application service container reference.
